@@ -10,7 +10,8 @@ import {
   StatusBar,
 } from "react-native";
 import { useAuth } from "../AuthContext";
-import CategoriasScreen from "../modules/Restaurante/components/CategoriasSection";
+import CategoriasScreen from "../modules/Restaurante/admin/components/CategoriasSection";
+import MateriaPrimaSection from "../modules/Restaurante/admin/components/MateriasPrimasSection";
 
 export default function HomeScreen({ navigation }) {
   const { token } = useAuth();
@@ -20,6 +21,7 @@ export default function HomeScreen({ navigation }) {
   const menuItems = [
     { id: "dashboard", title: "Dashboard", icon: "📊" },
     { id: "categorias", title: "Gestión de Categorías", icon: "🏷️" },
+    { id: "materias-primas", title: "Gestión de Materias Primas", icon: "📦" },
     { id: "recetas", title: "Gestión de Recetas", icon: "👨‍🍳" },
     { id: "productos", title: "Gestión de Productos", icon: "🍽️" },
   ];
@@ -40,6 +42,8 @@ export default function HomeScreen({ navigation }) {
         return <DashboardContent />;
       case "categorias":
         return <CategoriasScreen token={token} navigation={navigation} />;
+      case "materias-primas":
+        return <MateriaPrimaSection token={token} navigation={navigation} />;
       case "recetas":
         return <RecetasContent />;
       case "productos":

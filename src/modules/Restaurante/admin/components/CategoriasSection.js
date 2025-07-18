@@ -222,8 +222,6 @@ export default function CategoriasScreen({ token, navigation }) {
       </TouchableOpacity>
 
       <View style={styles.listContainer}>
-        <Text style={styles.listTitle}>Categorías Existentes:</Text>
-
         {/* Encabezado de la tabla */}
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
