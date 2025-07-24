@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import axios from "axios";
+import { API } from "../../../../services/api";
 
 export default function CategoriasScreen({ token, navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
@@ -32,14 +33,11 @@ export default function CategoriasScreen({ token, navigation }) {
     if (!token) return;
 
     try {
-      const response = await axios.get(
-        "http://192.168.0.13:8000/api/ver_categorias",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await API.get("/restaurante/admin/categorias", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.data.success) {
         setCategorias(response.data.data);
@@ -81,16 +79,12 @@ export default function CategoriasScreen({ token, navigation }) {
 
     setIsLoading(true);
     try {
-      await axios.post(
-        "http://192.168.0.13:8000/api/crear_categoria",
-        categoriaData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await API.post("/restaurante/admin/categorias", categoriaData, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       Alert.alert("Éxito", "Categoría creada exitosamente");
       setModalVisible(false);
@@ -124,8 +118,8 @@ export default function CategoriasScreen({ token, navigation }) {
 
     setIsLoading(true);
     try {
-      await axios.put(
-        `http://192.168.0.13:8000/api/editar_categoria/${editingCategoria.id}`,
+      await API.put(
+        `/restaurante/admin/categorias/${editingCategoria.id}`,
         categoriaData,
         {
           headers: {
@@ -164,14 +158,11 @@ export default function CategoriasScreen({ token, navigation }) {
           style: "destructive",
           onPress: async () => {
             try {
-              await axios.delete(
-                `http://192.168.0.13:8000/api/eliminar_categoria/${id}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
+              await API.delete(`/restaurante/admin/categorias/${id}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
               Alert.alert("Éxito", "Categoría eliminada exitosamente");
               fetchCategorias();
             } catch (error) {

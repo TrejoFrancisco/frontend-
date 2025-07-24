@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import axios from "axios";
 import { useAuth } from "../AuthContext";
+import { API } from "../services/api";
 
 const { width, height } = Dimensions.get("window");
 
@@ -35,7 +36,7 @@ export default function LoginScreen({ navigation }) {
 
     try {
       setLoading(true);
-      const response = await axios.post("http://192.168.0.13:8000/api/login", {
+      const response = await API.post("/login", {
         email,
         password,
       });

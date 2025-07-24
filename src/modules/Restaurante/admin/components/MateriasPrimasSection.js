@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import axios from "axios";
+import { API } from "../../../../services/api";
 
 export default function MateriaPrimaSection({ token, navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
@@ -33,14 +34,11 @@ export default function MateriaPrimaSection({ token, navigation }) {
   const fetchMateriasPrimas = async () => {
     if (!token) return;
     try {
-      const response = await axios.get(
-        "http://192.168.0.13:8000/api/ver_materias_primas",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await API.get("/restaurante/admin/materias-primas", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.data.success) {
         setMateriasPrimas(response.data.data);
       }
@@ -93,16 +91,12 @@ export default function MateriaPrimaSection({ token, navigation }) {
     }
     setIsLoading(true);
     try {
-      await axios.post(
-        "http://192.168.0.13:8000/api/crear_materias_primas",
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await API.post("/restaurante/admin/materias-primas", formData, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       Alert.alert("Éxito", "Materia prima creada exitosamente");
       setModalVisible(false);
       resetForm();
@@ -119,8 +113,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
     if (!token || !editingItem) return;
     setIsLoading(true);
     try {
-      await axios.put(
-        `http://192.168.0.13:8000/api/editar_materia_prima/${editingItem.id}`,
+      await API.put(
+        `/restaurante/admin/materias-primas/${editingItem.id}`,
         formData,
         {
           headers: {
@@ -149,12 +143,9 @@ export default function MateriaPrimaSection({ token, navigation }) {
         style: "destructive",
         onPress: async () => {
           try {
-            await axios.delete(
-              `http://192.168.0.13:8000/api/eliminar_materia_prima/${id}`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-              }
-            );
+            await API.delete(`/restaurante/admin/materias-primas/${id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
             Alert.alert("Éxito", "Materia prima eliminada exitosamente");
             fetchMateriasPrimas();
           } catch (error) {
