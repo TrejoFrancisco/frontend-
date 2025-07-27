@@ -12,7 +12,8 @@ import {
 import { useAuth } from "../AuthContext";
 import CategoriasScreen from "../modules/Restaurante/admin/components/CategoriasSection";
 import MateriaPrimaSection from "../modules/Restaurante/admin/components/MateriasPrimasSection";
-import RecetasPrimaSection from "../modules/Restaurante/admin/components/RcetasSection";
+import RecetasSection from "../modules/Restaurante/admin/components/RecetasSection";
+import ProductosSection from "../modules/Restaurante/admin/components/ProductosSection";
 
 export default function HomeScreen({ navigation }) {
   const { token } = useAuth();
@@ -46,9 +47,9 @@ export default function HomeScreen({ navigation }) {
       case "materias-primas":
         return <MateriaPrimaSection token={token} navigation={navigation} />;
       case "recetas":
-        return <RecetasPrimaSection token={token} navigation={navigation} />;
+        return <RecetasSection token={token} navigation={navigation} />;
       case "productos":
-        return <ProductosContent />;
+        return <ProductosSection token={token} navigation={navigation} />;
       default:
         return <DashboardContent />;
     }
