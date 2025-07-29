@@ -8,9 +8,11 @@ import {
     StyleSheet,
     Modal,
     Alert,
-    Picker,
+    Image,
 } from "react-native";
+import { Picker } from '@react-native-picker/picker';
 import { API } from "../../../../services/api";
+
 
 export default function ProductosSection({ token, navigation }) {
     const [modalVisible, setModalVisible] = useState(false);
@@ -85,13 +87,19 @@ export default function ProductosSection({ token, navigation }) {
             <Text style={styles.title}>Gestión de Productos</Text>
 
             <TouchableOpacity style={styles.createButton} onPress={() => setModalVisible(true)}>
-                <Text style={styles.createButtonText}>➕ Agregar Produc</Text>
+                <View style={styles.inlineContent}>
+                    <Image
+                        source={require('../../../../../assets/mas.png')} // o {uri: 'https://...'}
+                        style={styles.icon}
+                    />
+                    <Text style={styles.createButtonText}>Agregar Producto</Text>
+                </View>
             </TouchableOpacity>
 
             <Modal visible={modalVisible} animationType="slide" transparent>
                 <ScrollView contentContainerStyle={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Agregar Pro</Text>
+                        <Text style={styles.modalTitle}>Agregar Producto</Text>
 
                         <TextInput style={styles.input} placeholder="Clave" value={productoData.clave} onChangeText={(text) => handleInputChange("clave", text)} />
 
@@ -192,15 +200,26 @@ const styles = StyleSheet.create({
     },
 
     createButton: {
-        backgroundColor: "#4CAF50",
-        padding: 12, borderRadius: 8
+        backgroundColor: '#007AFF',
+        padding: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    inlineContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    icon: {
+        width: 20,
+        height: 20,
+        marginRight: 8,
+    },
+    createButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 
-    createButtonText: {
-        color: "#fff",
-        textAlign: "center",
-        fontWeight: "bold"
-    },
 
     modalContainer: {
         flexGrow: 1,
@@ -237,7 +256,7 @@ const styles = StyleSheet.create({
         marginBottom: 12
     },
     marginTop: {
-        marginTop: 10, // ajusta según el espacio que necesites
+        marginTop: 10, 
     },
 
     label: {
@@ -284,7 +303,7 @@ const styles = StyleSheet.create({
     },
     modalButtons: { flexDirection: "row", justifyContent: "space-between", marginTop: 16 },
     button: { flex: 1, padding: 12, borderRadius: 4, marginHorizontal: 4 },
-    cancelButton: { backgroundColor: "#666" },
+    cancelButton: { backgroundColor: "#F44336", marginRight: 10 },
     cancelButtonText: { color: "#fff", textAlign: "center", fontWeight: "bold" },
     submitButton: { backgroundColor: "#4CAF50" },
     submitButtonText: { color: "#fff", textAlign: "center", fontWeight: "bold" },

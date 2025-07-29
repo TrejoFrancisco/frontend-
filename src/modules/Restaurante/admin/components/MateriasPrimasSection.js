@@ -195,7 +195,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
         {materiasPrimas.map((item) => (
           <View key={item.id} style={styles.itemRow}>
             <Text style={styles.itemText}>
-              #{item.id} -{item.clave} - {item.nombre}
+              #{item.id} - {item.clave} - {item.nombre}
             </Text>
             <View style={styles.actions}>
               <TouchableOpacity
@@ -284,8 +284,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
                       ? "Creando..."
                       : "Actualizando..."
                     : modalType === "crear"
-                    ? "Crear"
-                    : "Actualizar"}
+                      ? "Crear"
+                      : "Actualizar"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -311,7 +311,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  createButtonText: { color: "white", fontWeight: "bold" },
+  createButtonText: { 
+    color: "white", 
+    fontWeight: "bold" },
   itemRow: {
     backgroundColor: "#FFF",
     padding: 12,
@@ -322,18 +324,48 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     elevation: 2,
   },
-  itemText: { fontSize: 16, color: "#333" },
-  actions: { flexDirection: "row" },
+  itemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "white",
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+    elevation: 2,
+  },
+  itemText: {
+    flex: 1,
+    fontSize: 16,
+  },
+  actions: {
+    flexDirection: "row",
+  },
   editButton: {
     backgroundColor: "#2196F3",
     padding: 8,
-    borderRadius: 6,
-    marginRight: 6,
+    borderRadius: 4,
+    marginRight: 8,
   },
-  editButtonText: { color: "#FFF" },
-  deleteButton: { backgroundColor: "#F44336", padding: 8, borderRadius: 6 },
-  deleteButtonText: { color: "#FFF" },
-  emptyText: { textAlign: "center", color: "#666", marginTop: 30 },
+  editButtonText: {
+    color: "white",
+  },
+  deleteButton: {
+    backgroundColor: "#f44336",
+    padding: 8,
+    borderRadius: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    color: "white",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#666",
+    fontStyle: "italic",
+    marginTop: 32,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",

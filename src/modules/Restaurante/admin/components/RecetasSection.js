@@ -8,8 +8,8 @@ import {
   Modal,
   TextInput,
   Alert,
-  Picker,
 } from "react-native";
+import { Picker } from '@react-native-picker/picker';
 import axios from "axios";
 import { API } from "../../../../services/api";
 
@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   cancelButton: {
-    backgroundColor: "#666",
+    backgroundColor: "#F44336", marginRight: 10
   },
   cancelButtonText: {
     color: "white",
