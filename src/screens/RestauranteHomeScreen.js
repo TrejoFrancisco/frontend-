@@ -14,6 +14,9 @@ import CategoriasScreen from "../modules/Restaurante/admin/components/Categorias
 import MateriaPrimaSection from "../modules/Restaurante/admin/components/MateriasPrimasSection";
 import RecetasSection from "../modules/Restaurante/admin/components/RecetasSection";
 import ProductosSection from "../modules/Restaurante/admin/components/ProductosSection";
+import UsuariosSection from "../modules/Restaurante/admin/components/UsuariosSection";
+import AsociarSection from "../modules/Restaurante/admin/components/AsociarSection";
+import InventarioSection from "../modules/Restaurante/admin/components/InventarioSection";
 
 export default function HomeScreen({ navigation }) {
   const { token } = useAuth();
@@ -22,10 +25,13 @@ export default function HomeScreen({ navigation }) {
 
   const menuItems = [
     { id: "dashboard", title: "Dashboard", icon: "📊" },
+    { id: "usuarios", title: "Gestión de Usuarios", icon: "👥" },
     { id: "categorias", title: "Gestión de Categorías", icon: "🏷️" },
     { id: "materias-primas", title: "Gestión de Materias Primas", icon: "📦" },
-    { id: "recetas", title: "Gestión de Recetas", icon: "👨‍🍳" },
+    { id: "recetas", title: "Gestión de Recetas", icon: "👩‍🍳" },
     { id: "productos", title: "Gestión de Productos", icon: "🍽️" },
+    { id: "asociar", title: "Asociar Usuarios", icon: "🔗" },
+    { id: "inventario", title: "Gestión de Inventario", icon: "📋" },
   ];
 
   const handleMenuPress = (itemId) => {
@@ -42,6 +48,8 @@ export default function HomeScreen({ navigation }) {
     switch (activeSection) {
       case "dashboard":
         return <DashboardContent />;
+      case "usuarios":
+        return <UsuariosSection token={token} navigation={navigation} />;
       case "categorias":
         return <CategoriasScreen token={token} navigation={navigation} />;
       case "materias-primas":
@@ -50,6 +58,10 @@ export default function HomeScreen({ navigation }) {
         return <RecetasSection token={token} navigation={navigation} />;
       case "productos":
         return <ProductosSection token={token} navigation={navigation} />;
+      case "asociar":
+        return <AsociarSection token={token} navigation={navigation} />;
+      case "inventario":
+        return <InventarioSection token={token} navigation={navigation} />;
       default:
         return <DashboardContent />;
     }

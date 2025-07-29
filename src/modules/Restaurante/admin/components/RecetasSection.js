@@ -9,7 +9,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { Picker } from '@react-native-picker/picker';
+import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
 import { API } from "../../../../services/api";
 
@@ -20,7 +20,7 @@ export default function RecetasSection({ token, navigation }) {
   const [recetas, setRecetas] = useState([]);
   const [materiasPrimas, setMateriasPrimas] = useState([]);
   const [editingRecetas, setEditingRecetas] = useState(null);
-  const [recetaDetalle, setRecetaDetalle] = useState(null); // Para almacenar el detalle de la receta
+  const [recetaDetalle, setRecetaDetalle] = useState(null);
 
   const [recetaData, setRecetaData] = useState({
     clave: "",
@@ -642,7 +642,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   cancelButton: {
-    backgroundColor: "#F44336", marginRight: 10
+    backgroundColor: "#F44336",
+    marginRight: 10,
   },
   cancelButtonText: {
     color: "white",
