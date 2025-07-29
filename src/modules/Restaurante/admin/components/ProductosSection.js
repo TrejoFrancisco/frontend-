@@ -85,13 +85,13 @@ export default function ProductosSection({ token, navigation }) {
             <Text style={styles.title}>Gestión de Productos</Text>
 
             <TouchableOpacity style={styles.createButton} onPress={() => setModalVisible(true)}>
-                <Text style={styles.createButtonText}>➕ Agregar Producto</Text>
+                <Text style={styles.createButtonText}>➕ Agregar Produc</Text>
             </TouchableOpacity>
 
             <Modal visible={modalVisible} animationType="slide" transparent>
                 <ScrollView contentContainerStyle={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Agregar Producto</Text>
+                        <Text style={styles.modalTitle}>Agregar Pro</Text>
 
                         <TextInput style={styles.input} placeholder="Clave" value={productoData.clave} onChangeText={(text) => handleInputChange("clave", text)} />
 
