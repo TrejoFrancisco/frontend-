@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Image,
 } from "react-native";
 import axios from "axios";
 import { API } from "../../../../services/api";
@@ -188,8 +189,14 @@ export default function MateriaPrimaSection({ token, navigation }) {
       <Text style={styles.title}>Gestión de Materias Primas</Text>
 
       <TouchableOpacity style={styles.createButton} onPress={openCreateModal}>
-        <Text style={styles.createButtonText}>➕ Agregar Materia Prima</Text>
-      </TouchableOpacity>
+              <View style={styles.inlineContent}>
+                <Image
+                  source={require("../../../../../assets/mas.png")}
+                  style={styles.icon}
+                />
+                <Text style={styles.createButtonText}>Agregar Materia Prima</Text>
+              </View>
+            </TouchableOpacity>
 
       <ScrollView>
         {materiasPrimas.map((item) => (
@@ -306,14 +313,25 @@ const styles = StyleSheet.create({
   },
   createButton: {
     backgroundColor: "#4CAF50",
-    padding: 12,
+    padding: 15,
     borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  createButtonText: { 
-    color: "white", 
-    fontWeight: "bold" },
+  inlineContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  icon: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
+  },
+  createButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
   itemRow: {
     backgroundColor: "#FFF",
     padding: 12,

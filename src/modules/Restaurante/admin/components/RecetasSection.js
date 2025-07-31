@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Image,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
@@ -301,7 +302,13 @@ export default function RecetasSection({ token, navigation }) {
       <Text style={styles.title}>Gestión de Recetas</Text>
 
       <TouchableOpacity style={styles.createButton} onPress={openCreateModal}>
-        <Text style={styles.createButtonText}>➕ Agregar Receta</Text>
+        <View style={styles.inlineContent}>
+          <Image
+            source={require("../../../../../assets/mas.png")}
+            style={styles.icon}
+          />
+          <Text style={styles.createButtonText}>Agregar Receta</Text>
+        </View>
       </TouchableOpacity>
 
       <ScrollView>
@@ -476,8 +483,8 @@ export default function RecetasSection({ token, navigation }) {
                       ? "Creando..."
                       : "Actualizando..."
                     : modalType === "crear"
-                    ? "Crear"
-                    : "Actualizar"}
+                      ? "Crear"
+                      : "Actualizar"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -503,13 +510,23 @@ const styles = StyleSheet.create({
   },
   createButton: {
     backgroundColor: "#4CAF50",
-    padding: 12,
+    padding: 15,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  inlineContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  icon: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
   },
   createButtonText: {
     color: "white",
-    textAlign: "center",
+    fontSize: 16,
     fontWeight: "bold",
   },
   itemRow: {

@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Image,
 } from "react-native";
 import axios from "axios";
 import { API } from "../../../../services/api";
@@ -209,7 +210,13 @@ export default function CategoriasScreen({ token, navigation }) {
       <Text style={styles.subtitle}>Administra las categorías de tu menú</Text>
 
       <TouchableOpacity style={styles.createButton} onPress={openCreateModal}>
-        <Text style={styles.createButtonText}>➕ Crear Nueva Categoría</Text>
+        <View style={styles.inlineContent}>
+          <Image
+            source={require("../../../../../assets/mas.png")}
+            style={styles.icon}
+          />
+          <Text style={styles.createButtonText}>Crear Nueva Categoria</Text>
+        </View>
       </TouchableOpacity>
 
       <View style={styles.listContainer}>
@@ -317,8 +324,8 @@ export default function CategoriasScreen({ token, navigation }) {
                         ? "Creando..."
                         : "Actualizando..."
                       : modalType === "crear"
-                      ? "Crear"
-                      : "Actualizar"}
+                        ? "Crear"
+                        : "Actualizar"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -349,19 +356,22 @@ const styles = StyleSheet.create({
   },
   createButton: {
     backgroundColor: "#4CAF50",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  inlineContent: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 30,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    justifyContent: "center",
+  },
+  icon: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
   },
   createButtonText: {
-    color: "#FFFFFF",
+    color: "white",
     fontSize: 16,
     fontWeight: "bold",
   },
