@@ -51,7 +51,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
         Alert.alert(
           "Error",
           error.response?.data?.error?.message ||
-            "Error al obtener los usuarios"
+          "Error al obtener los usuarios"
         );
       }
     } finally {
@@ -73,7 +73,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-          "Error al obtener las categorías"
+        "Error al obtener las categorías"
       );
     }
   };
@@ -176,7 +176,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                  "Error al eliminar la asociación"
+                "Error al eliminar la asociación"
               );
             }
           },
@@ -215,12 +215,17 @@ export default function UsuariosCocinaSection({ token, navigation }) {
         <View style={styles.usuarioActions}>
           {!tieneCategoria ? (
             // Mostrar solo botón "Agregar" si no tiene categoría
-            <TouchableOpacity
-              style={[styles.actionButton, styles.addButton]}
-              onPress={() => abrirModalAgregar(usuario)}
-            >
-              <Text style={styles.actionButtonText}>➕ Agregar Categoría</Text>
+
+            <TouchableOpacity style={styles.createButton} onPress={() => abrirModalAgregar(usuario)}>
+              <View style={styles.inlineContent}>
+                <Image
+                  source={require("../../../../../assets/mas.png")}
+                  style={styles.icon}
+                />
+                <Text style={styles.createButtonText}>Agregar Categoría</Text>
+              </View>
             </TouchableOpacity>
+
           ) : (
             // Mostrar botones "Editar" y "Eliminar" si tiene categoría
             <View style={styles.actionsContainer}>
@@ -496,6 +501,27 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: "#28a745",
+  },
+  createButton: {
+    backgroundColor: "#4CAF50",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  inlineContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  icon: {
+    width: 25,
+    height: 25,
+    marginRight: 10,
+  },
+  createButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   editButton: {
     backgroundColor: "#ffc107",

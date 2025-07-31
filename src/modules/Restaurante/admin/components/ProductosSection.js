@@ -336,7 +336,7 @@ export default function ProductosSection({ token, navigation }) {
           </View>
         </TouchableOpacity>
 
-        {/* Lista de productos usando map en lugar de FlatList */}
+        {/* Lista de productos */}
         <View style={styles.productsList}>
           {productos.map((producto) => renderProductoItem(producto))}
         </View>
@@ -372,14 +372,14 @@ export default function ProductosSection({ token, navigation }) {
                   onChangeText={(text) => handleInputChange("nombre", text)}
                 />
 
-                <Text style={styles.label}>Categoría</Text>
-                <Picker
-                  selectedValue={productoData.categoria_id}
-                  onValueChange={(value) =>
-                    handleInputChange("categoria_id", value)
-                  }
-                  style={styles.picker}
-                >
+                    <Text style={styles.label}>Categoría</Text>
+                    <Picker
+                    selectedValue={productoData.categoria_id}
+                    onValueChange={(value) =>
+                        handleInputChange("categoria_id", value)
+                    }
+                    style={styles.picker}
+                    >
                   <Picker.Item label="Selecciona una categoría" value="" />
                   {categorias.map((categoria) => (
                     <Picker.Item
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   createButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 8,
     marginBottom: 20,
@@ -557,8 +557,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   icon: {
-    width: 20,
-    height: 20,
+    width: 30,
+    height: 30,
     marginRight: 10,
   },
   createButtonText: {

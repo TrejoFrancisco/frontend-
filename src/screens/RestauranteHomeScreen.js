@@ -8,6 +8,7 @@ import {
   Modal,
   SafeAreaView,
   StatusBar,
+  Image,
 } from "react-native";
 import { useAuth } from "../AuthContext";
 import CategoriasScreen from "../modules/Restaurante/admin/components/CategoriasSection";
@@ -24,14 +25,87 @@ export default function HomeScreen({ navigation }) {
   const [activeSection, setActiveSection] = useState("dashboard");
 
   const menuItems = [
-    { id: "dashboard", title: "Dashboard", icon: "📊" },
-    { id: "usuarios", title: "Gestión de Usuarios", icon: "👥" },
-    { id: "categorias", title: "Gestión de Categorías", icon: "🏷️" },
-    { id: "materias-primas", title: "Gestión de Materias Primas", icon: "📦" },
-    { id: "recetas", title: "Gestión de Recetas", icon: "👩‍🍳" },
-    { id: "productos", title: "Gestión de Productos", icon: "🍽️" },
-    { id: "asociar", title: "Asociar Usuarios", icon: "🔗" },
-    { id: "inventario", title: "Gestión de Inventario", icon: "📋" },
+    {
+      id: "dashboard",
+      title: "Dashboard",
+      icon: (
+        <Image
+          source={require('../../assets/dashboard.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "usuarios",
+      title: "Gestion de Usuarios",
+      icon: (
+        <Image
+          source={require('../../assets/gestionU.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "categorias",
+      title: "Gestion de Categorias",
+      icon: (
+        <Image
+          source={require('../../assets/gestionC.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "materias-primas",
+      title: "Gestión de Materias Primas",
+      icon: (
+        <Image
+          source={require('../../assets/gestionMP.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "recetas",
+      title: "Gestión de Recetas",
+      icon: (
+        <Image
+          source={require('../../assets/gestionR.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "productos",
+      title: "Gestión de Productos",
+      icon: (
+        <Image
+          source={require('../../assets/gestionP.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "asociar",
+      title: "Asociar Usuarios",
+      icon: (
+        <Image
+          source={require('../../assets/asociarU.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "inventario",
+      title: "Gestión de Inventario",
+      icon: (
+        <Image
+          source={require('../../assets/gestionI.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+
   ];
 
   const handleMenuPress = (itemId) => {
@@ -73,16 +147,22 @@ export default function HomeScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
+
         <TouchableOpacity
           style={styles.menuButton}
           onPress={() => setDrawerVisible(true)}
         >
-          <Text style={styles.menuIcon}>☰</Text>
+          <Image
+            source={require('../../assets/menu.png')} // Ajusta la ruta a tu imagen
+            style={styles.menuIcon}
+          />
         </TouchableOpacity>
+
         <View style={styles.headerTitle}>
           <Text style={styles.appName}>🍴 Mi Restaurante</Text>
           <Text style={styles.userRole}>Admin</Text>
         </View>
+
         <TouchableOpacity style={styles.logoutButton}>
           <Text style={styles.logoutIcon}>⚙️</Text>
         </TouchableOpacity>
@@ -173,27 +253,7 @@ const DashboardContent = () => {
   );
 };
 
-// Componente Recetas
-const RecetasContent = () => {
-  return (
-    <View style={styles.contentContainer}>
-      <Text style={styles.contentTitle}>Gestión de Recetas</Text>
-      <Text style={styles.contentSubtitle}>Crea y administra tus recetas</Text>
-    </View>
-  );
-};
 
-// Componente Productos
-const ProductosContent = () => {
-  return (
-    <View style={styles.contentContainer}>
-      <Text style={styles.contentTitle}>Gestión de Productos</Text>
-      <Text style={styles.contentSubtitle}>
-        Administra los productos de tu menú
-      </Text>
-    </View>
-  );
-};
 
 const styles = StyleSheet.create({
   container: {
@@ -203,7 +263,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A1A2E",
+    backgroundColor: "#1d1d4bff",
     paddingHorizontal: 16,
     paddingVertical: 12,
     elevation: 4,
@@ -216,8 +276,16 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   menuIcon: {
-    fontSize: 24,
-    color: "#FFFFFF",
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+  },
+
+  menuIco: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+    marginRight: 9,
   },
   headerTitle: {
     flex: 1,
@@ -361,7 +429,7 @@ const styles = StyleSheet.create({
   },
 
   activeMenuItem: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: "#9ac3f2ff",
   },
 
   menuText: {
@@ -372,7 +440,7 @@ const styles = StyleSheet.create({
   },
 
   activeMenuText: {
-    color: "#FFFFFF",
+    color: "#17396cff",
     fontWeight: "bold",
   },
 });
