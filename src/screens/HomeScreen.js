@@ -1,4 +1,3 @@
-// src/screens/HomeScreen.js
 import React, { useState } from "react";
 import {
   View,
@@ -23,7 +22,6 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeSection, setActiveSection] = useState("dashboard");
 
-  // Estados para el formulario
   const [formData, setFormData] = useState({
     nombre: "",
     direccion: "",

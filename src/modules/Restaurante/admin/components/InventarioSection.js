@@ -65,9 +65,9 @@ export default function InventarioSection({ token, navigation }) {
   };
 
   const getStatusColor = (existencia) => {
-    if (existencia <= 0) return "#dc3545"; // Rojo - Sin existencia
-    if (existencia <= 10) return "#ffc107"; // Amarillo - Existencia baja
-    return "#28a745"; // Verde - Existencia normal
+    if (existencia <= 0) return "#dc3545";
+    if (existencia <= 10) return "#ffc107";
+    return "#28a745";
   };
 
   const getStatusText = (existencia) => {

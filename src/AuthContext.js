@@ -1,4 +1,3 @@
-// src/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -14,43 +13,57 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Cargar token al iniciar la app
   useEffect(() => {
-    loadToken();
+    loadAuthData();
   }, []);
 
-  const loadToken = async () => {
+  const loadAuthData = async () => {
     try {
       const storedToken = await AsyncStorage.getItem("authToken");
+      const storedUser = await AsyncStorage.getItem("userData");
+
       if (storedToken) {
         setToken(storedToken);
       }
+
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
     } catch (error) {
-      console.error("Error loading token:", error);
+      console.error("Error loading auth data:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveToken = async (newToken) => {
+  const saveToken = async (newToken, userData) => {
     try {
       await AsyncStorage.setItem("authToken", newToken);
+      await AsyncStorage.setItem("userData", JSON.stringify(userData));
+
       setToken(newToken);
-      console.log("Token guardado:", newToken);
+      setUser(userData);
+
+      console.log("Token y datos de usuario guardados:", newToken, userData);
     } catch (error) {
-      console.error("Error saving token:", error);
+      console.error("Error saving auth data:", error);
     }
   };
 
   const removeToken = async () => {
     try {
       await AsyncStorage.removeItem("authToken");
+      await AsyncStorage.removeItem("userData");
+
       setToken(null);
-      console.log("Token eliminado");
+      setUser(null);
+
+      console.log("Token y datos de usuario eliminados");
     } catch (error) {
-      console.error("Error removing token:", error);
+      console.error("Error removing auth data:", error);
     }
   };
 
@@ -62,6 +75,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         token,
+        user,
         isLoading,
         saveToken,
         removeToken,

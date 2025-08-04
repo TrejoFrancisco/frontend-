@@ -93,7 +93,6 @@ export default function UsuariosCocinaSection({ token, navigation }) {
 
   const abrirModalEditar = (usuario) => {
     setSelectedUser(usuario);
-    // Usar la categoría actual del usuario
     const categoriaActual = usuario.categoria_encargado_id || "";
     setSelectedCategoriaId(categoriaActual.toString());
     setEditMode(true);
@@ -114,7 +113,6 @@ export default function UsuariosCocinaSection({ token, navigation }) {
 
       let response;
       if (editMode) {
-        // Para editar, usamos el ID de la asociación que viene del backend
         const asociacionId = selectedUser.asociacion_id;
         response = await API.put(
           `/restaurante/admin/usuarios/${asociacionId}`,
@@ -137,7 +135,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
             : "Categoría asignada correctamente"
         );
         setModalVisible(false);
-        await fetchUsuarios(); // Recargar la lista
+        await fetchUsuarios();
       }
     } catch (error) {
       console.error("Error al guardar asociación:", error);
@@ -209,12 +207,13 @@ export default function UsuariosCocinaSection({ token, navigation }) {
           <Text style={styles.usuarioDetail}>
             Categoría: {usuario.categoria_nombre || "Sin categoría asignada"}
           </Text>
-          <Text style={styles.usuarioDetail}>Rol: Cocina</Text>
+          <Text style={styles.usuarioDetail}>
+            Rol: {usuario.rol === "cocina" ? "Cocina" : "Bartender"}
+          </Text>
         </View>
 
         <View style={styles.usuarioActions}>
           {!tieneCategoria ? (
-            // Mostrar solo botón "Agregar" si no tiene categoría
             <TouchableOpacity
               style={[styles.actionButton, styles.addButton]}
               onPress={() => abrirModalAgregar(usuario)}
@@ -222,7 +221,6 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               <Text style={styles.actionButtonText}>➕ Agregar Categoría</Text>
             </TouchableOpacity>
           ) : (
-            // Mostrar botones "Editar" y "Eliminar" si tiene categoría
             <View style={styles.actionsContainer}>
               <TouchableOpacity
                 style={[styles.actionButton, styles.editButton]}
@@ -260,13 +258,13 @@ export default function UsuariosCocinaSection({ token, navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Text style={styles.title}>Gestión de Cocineros</Text>
+        <Text style={styles.title}>Gestión de Personal de Cocina</Text>
 
         {/* Estadísticas */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{usuarios.length}</Text>
-            <Text style={styles.statLabel}>Total Cocineros</Text>
+            <Text style={styles.statLabel}>Total Personal</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>

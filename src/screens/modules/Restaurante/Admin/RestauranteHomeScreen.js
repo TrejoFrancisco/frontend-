@@ -8,18 +8,22 @@ import {
   Modal,
   SafeAreaView,
   StatusBar,
+  Alert,
 } from "react-native";
-import { useAuth } from "../AuthContext";
-import CategoriasScreen from "../modules/Restaurante/admin/components/CategoriasSection";
-import MateriaPrimaSection from "../modules/Restaurante/admin/components/MateriasPrimasSection";
-import RecetasSection from "../modules/Restaurante/admin/components/RecetasSection";
-import ProductosSection from "../modules/Restaurante/admin/components/ProductosSection";
-import UsuariosSection from "../modules/Restaurante/admin/components/UsuariosSection";
-import AsociarSection from "../modules/Restaurante/admin/components/AsociarSection";
-import InventarioSection from "../modules/Restaurante/admin/components/InventarioSection";
+import { API } from "../../../../services/api";
+import { useAuth } from "../../../../AuthContext";
+import { useNavigation } from "@react-navigation/native";
+import CategoriasScreen from "../../../../modules/Restaurante/admin/components/CategoriasSection";
+import MateriaPrimaSection from "../../../../modules/Restaurante/admin/components/MateriasPrimasSection";
+import RecetasSection from "../../../../modules/Restaurante/admin/components/RecetasSection";
+import ProductosSection from "../../../../modules/Restaurante/admin/components/ProductosSection";
+import UsuariosSection from "../../../../modules/Restaurante/admin/components/UsuariosSection";
+import AsociarSection from "../../../../modules/Restaurante/admin/components/AsociarSection";
+import InventarioSection from "../../../../modules/Restaurante/admin/components/InventarioSection";
 
-export default function HomeScreen({ navigation }) {
-  const { token } = useAuth();
+export default function HomeScreen() {
+  const { token, logout, user } = useAuth();
+  const navigation = useNavigation();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeSection, setActiveSection] = useState("dashboard");
 
@@ -40,7 +44,6 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleRefresh = () => {
-    // La lógica de refresh se maneja en cada componente individual
     console.log("Refreshing section:", activeSection);
   };
 
@@ -66,6 +69,47 @@ export default function HomeScreen({ navigation }) {
         return <DashboardContent />;
     }
   };
+  const handleLogout = () => {
+    Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas cerrar sesión?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Cerrar Sesión",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            if (token) {
+              try {
+                await API.post(
+                  "/logout",
+                  {},
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+              } catch (error) {
+                console.log("Error al hacer logout en servidor:", error);
+              }
+            }
+
+            await logout();
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          } catch (error) {
+            console.error("Error en logout:", error);
+            Alert.alert("Error", "Hubo un problema al cerrar sesión");
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -79,16 +123,31 @@ export default function HomeScreen({ navigation }) {
         >
           <Text style={styles.menuIcon}>☰</Text>
         </TouchableOpacity>
-        <View style={styles.headerTitle}>
+
+        <View style={styles.headerCenter}>
           <Text style={styles.appName}>🍴 Mi Restaurante</Text>
-          <Text style={styles.userRole}>Admin</Text>
+          <Text style={styles.userWelcome}>
+            👋 Hola, {user?.name || "Usuario"}
+          </Text>
+          <Text style={styles.userRole}>
+            Rol:{" "}
+            {user?.role === "admin_local_restaurante"
+              ? "Admin"
+              : user?.role || "Admin"}
+          </Text>
         </View>
-        <TouchableOpacity style={styles.logoutButton}>
-          <Text style={styles.logoutIcon}>⚙️</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
-          <Text style={styles.refreshIcon}>🔄</Text>
-        </TouchableOpacity>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={handleRefresh}
+          >
+            <Text style={styles.refreshIcon}>🔄</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>🚪</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Main Content */}
@@ -147,7 +206,6 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-// Componente Dashboard
 const DashboardContent = () => {
   return (
     <View style={styles.contentContainer}>
@@ -173,7 +231,6 @@ const DashboardContent = () => {
   );
 };
 
-// Componente Recetas
 const RecetasContent = () => {
   return (
     <View style={styles.contentContainer}>
@@ -183,7 +240,6 @@ const RecetasContent = () => {
   );
 };
 
-// Componente Productos
 const ProductosContent = () => {
   return (
     <View style={styles.contentContainer}>
@@ -196,6 +252,50 @@ const ProductosContent = () => {
 };
 
 const styles = StyleSheet.create({
+  topHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "#f8f9fa",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userWelcome: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  userRole: {
+    fontSize: 12,
+    color: "#6c757d",
+    textTransform: "capitalize",
+  },
+  logoutButton: {
+    backgroundColor: "#dc3545",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 12,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
@@ -203,8 +303,9 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#1A1A2E",
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 12,
     elevation: 4,
     shadowColor: "#000",
@@ -212,40 +313,54 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  appName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 2,
+  },
+  userWelcome: {
+    fontSize: 12,
+    color: "#E8E8E8",
+    marginBottom: 1,
+  },
+  userRole: {
+    fontSize: 10,
+    color: "#B0B0B0",
+  },
   menuButton: {
     padding: 8,
   },
   menuIcon: {
     fontSize: 24,
-    color: "#FFFFFF",
-  },
-  headerTitle: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  appName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  userRole: {
-    fontSize: 14,
-    color: "#CCCCCC",
-  },
-  logoutButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  logoutIcon: {
-    fontSize: 24,
-    color: "#FFFFFF",
+    color: "#fff",
   },
   refreshButton: {
     padding: 8,
+    marginRight: 8,
   },
   refreshIcon: {
     fontSize: 20,
-    color: "#FFFFFF",
+    color: "#fff",
+  },
+  logoutButton: {
+    backgroundColor: "#dc3545",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 12,
   },
   content: {
     flex: 1,

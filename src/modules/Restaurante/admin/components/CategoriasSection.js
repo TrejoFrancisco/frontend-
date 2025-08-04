@@ -24,7 +24,6 @@ export default function CategoriasScreen({ token, navigation }) {
     descripcion: "",
   });
 
-  // Cargar categorías al montar el componente
   useEffect(() => {
     fetchCategorias();
   }, []);

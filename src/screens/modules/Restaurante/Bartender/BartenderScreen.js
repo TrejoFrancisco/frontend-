@@ -1,0 +1,702 @@
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
+} from "react-native";
+import { API } from "../../../../services/api";
+import { useAuth } from "../../../../AuthContext";
+import { useNavigation } from "@react-navigation/native";
+
+export default function BarSection() {
+  const { token, logout, user } = useAuth();
+  const navigation = useNavigation();
+  const [comandas, setComandas] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [categoriaAsignada, setCategoriaAsignada] = useState(null);
+  const [stats, setStats] = useState({
+    totalComandas: 0,
+    totalProductos: 0,
+  });
+
+  useEffect(() => {
+    if (token) {
+      fetchComandas();
+    }
+  }, [token]);
+
+  const fetchComandas = async () => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await API.get("/restaurante/bar/comandas_", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        const data = response.data.data;
+        setComandas(data.comandas || []);
+        setCategoriaAsignada(data.categoria_asignada);
+        setStats({
+          totalComandas: data.total_comandas || 0,
+          totalProductos: data.total_productos || 0,
+        });
+      }
+    } catch (error) {
+      console.log("Error al obtener comandas de Bar:", error);
+      if (error.response?.status === 401) {
+        navigation.navigate("Login");
+      } else if (error.response?.data?.error) {
+        Alert.alert("Error", error.response.data.error.message);
+      }
+      setComandas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchComandas();
+    setRefreshing(false);
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas cerrar sesión?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Cerrar Sesión",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            if (token) {
+              try {
+                await API.post(
+                  "/logout",
+                  {},
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+              } catch (error) {
+                console.log("Error al hacer logout en servidor:", error);
+              }
+            }
+
+            await logout();
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          } catch (error) {
+            console.error("Error en logout:", error);
+            Alert.alert("Error", "Hubo un problema al cerrar sesión");
+          }
+        },
+      },
+    ]);
+  };
+
+  const marcarComoEntregado = async (comandaProductoId) => {
+    if (!token) return;
+
+    try {
+      const response = await API.patch(
+        `/restaurante/bar/comandas_/${comandaProductoId}/estado`,
+        {
+          estado: "entregado",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        Alert.alert("Éxito", "Producto marcado como entregado");
+
+        setComandas((prevComandas) =>
+          prevComandas.map((comanda) => ({
+            ...comanda,
+            productos: comanda.productos.map((producto) =>
+              producto.comanda_producto_id === comandaProductoId
+                ? { ...producto, estado: "entregado" }
+                : producto
+            ),
+          }))
+        );
+
+        setStats((prev) => ({
+          ...prev,
+          totalProductos: Math.max(0, prev.totalProductos - 1),
+        }));
+      }
+    } catch (error) {
+      console.log("Error al marcar producto como entregado:", error);
+      if (error.response?.status === 401) {
+        navigation.navigate("Login");
+      } else if (error.response?.data?.error) {
+        Alert.alert("Error", error.response.data.error.message);
+      }
+    }
+  };
+
+  const getEstadoColor = (estado) => {
+    switch (estado) {
+      case "pendiente":
+        return "#ffc107";
+      case "en preparación":
+        return "#fd7e14";
+      case "entregado":
+        return "#28a745";
+      default:
+        return "#6c757d";
+    }
+  };
+
+  const getEstadoText = (estado) => {
+    switch (estado) {
+      case "pendiente":
+        return "Pendiente";
+      case "en preparación":
+        return "En Preparación";
+      case "entregado":
+        return "Entregado";
+      default:
+        return estado;
+    }
+  };
+
+  const getPrioridadColor = (prioridad) => {
+    switch (prioridad) {
+      case "alta":
+        return "#dc3545";
+      case "media":
+        return "#fd7e14";
+      case "baja":
+        return "#28a745";
+      default:
+        return "#6c757d";
+    }
+  };
+
+  const renderProductoItem = (producto, comanda) => (
+    <View
+      key={producto.comanda_producto_id}
+      style={[
+        styles.productoCard,
+        producto.estado === "entregado" && styles.productoEntregado,
+      ]}
+    >
+      {/* Header con información principal */}
+      <View style={styles.productoHeader}>
+        <View style={styles.productoMainInfo}>
+          <View style={styles.productoTitleRow}>
+            <Text style={styles.productoNombre}>{producto.nombre}</Text>
+            <View
+              style={[
+                styles.prioridadBadge,
+                { backgroundColor: getPrioridadColor(producto.prioridad) },
+              ]}
+            >
+              <Text style={styles.prioridadText}>
+                {producto.prioridad
+                  ? String(producto.prioridad).toUpperCase()
+                  : "NORMAL"}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.productoClave}>#{producto.clave}</Text>
+        </View>
+
+        <View style={styles.productoRightInfo}>
+          <Text style={styles.productoPrecio}>${producto.precio_venta}</Text>
+          <View
+            style={[
+              styles.estadoBadge,
+              { backgroundColor: getEstadoColor(producto.estado) },
+            ]}
+          >
+            <Text style={styles.estadoText}>
+              {getEstadoText(producto.estado)}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Información de la mesa y pedido */}
+      <View style={styles.mesaInfo}>
+        <View style={styles.mesaInfoLeft}>
+          <View style={styles.mesaNumber}>
+            <Text style={styles.mesaNumberText}>{comanda.mesa}</Text>
+          </View>
+          <View style={styles.mesaDetails}>
+            <Text style={styles.mesaDetailText}>
+              Mesa {comanda.personas} pax
+            </Text>
+            {comanda.comensal && (
+              <Text style={styles.comensalText}>{comanda.comensal}</Text>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.tiempoInfo}>
+          <Text style={styles.tiempoLabel}>Pedido</Text>
+          <Text style={styles.tiempoText}>
+            {new Date(producto.fecha_pedido).toLocaleTimeString("es-MX", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        </View>
+      </View>
+
+      {/* Información del mesero */}
+      <View style={styles.meseroInfo}>
+        <Text style={styles.meseroLabel}>👤 {comanda.mesero_nombre}</Text>
+      </View>
+
+      {/* Botón de acción */}
+      <View style={styles.productoActions}>
+        {producto.estado !== "entregado" ? (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.entregarButton]}
+            onPress={() => marcarComoEntregado(producto.comanda_producto_id)}
+          >
+            <Text style={styles.actionButtonText}>
+              ✅ Marcar como Entregado
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={[styles.actionButton, styles.completadoButton]}>
+            <Text style={styles.completadoText}>✅ Entregado</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
+  const renderComandaGroup = (comanda) => (
+    <View key={comanda.comanda_id} style={styles.comandaGroup}>
+      <View style={styles.comandaGroupHeader}>
+        <Text style={styles.comandaGroupTitle}>
+          Mesa {comanda.mesa} - {comanda.productos.length} producto(s)
+        </Text>
+        <Text style={styles.comandaGroupTime}>
+          {new Date(comanda.fecha_comanda).toLocaleTimeString("es-MX")}
+        </Text>
+      </View>
+
+      {comanda.productos.map((producto) =>
+        renderProductoItem(producto, comanda)
+      )}
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.loadingText}>Cargando productos de bar...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Header con información del usuario y botón de logout */}
+      <View style={styles.topHeader}>
+        <View style={styles.userInfo}>
+          <Text style={styles.userWelcome}>👋 Hola, {user?.name}</Text>
+          <Text style={styles.userRole}>
+            Rol:{" "}
+            {user?.role === "bartender_restaurante" ? "Bartender" : user?.role}
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>🚪 Salir</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Bar - Productos Pendientes</Text>
+          {categoriaAsignada && (
+            <Text style={styles.categoriaText}>
+              Categoría: {categoriaAsignada.nombre}
+            </Text>
+          )}
+        </View>
+
+        {/* Estadísticas */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{stats.totalComandas}</Text>
+            <Text style={styles.statLabel}>Comandas</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{stats.totalProductos}</Text>
+            <Text style={styles.statLabel}>Productos</Text>
+          </View>
+        </View>
+
+        {comandas.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>🎉 No hay productos pendientes</Text>
+            <Text style={styles.emptySubtext}>
+              Todos los productos de tu categoría han sido procesados
+            </Text>
+          </View>
+        ) : (
+          comandas.map((comanda) => renderComandaGroup(comanda))
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  topHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "#f8f9fa",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userWelcome: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  userRole: {
+    fontSize: 12,
+    color: "#6c757d",
+    textTransform: "capitalize",
+  },
+  logoutButton: {
+    backgroundColor: "#dc3545",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 12,
+  },
+
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
+  },
+  centered: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scrollView: {
+    flex: 1,
+    padding: 16,
+  },
+  header: {
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#212529",
+    marginBottom: 4,
+  },
+  categoriaText: {
+    fontSize: 16,
+    color: "#6c757d",
+    fontStyle: "italic",
+  },
+  statsContainer: {
+    flexDirection: "row",
+    marginBottom: 20,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#007bff",
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#6c757d",
+    marginTop: 4,
+  },
+  comandaGroup: {
+    marginBottom: 8,
+  },
+  comandaGroupHeader: {
+    backgroundColor: "#343a40",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  comandaGroupTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  comandaGroupTime: {
+    color: "#adb5bd",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  productoCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: "hidden",
+  },
+  productoEntregado: {
+    opacity: 0.7,
+    backgroundColor: "#f8f9fa",
+  },
+  productoHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    padding: 16,
+    paddingBottom: 12,
+  },
+  productoMainInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  productoTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  productoNombre: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#212529",
+    flex: 1,
+    marginRight: 8,
+  },
+  productoClave: {
+    fontSize: 14,
+    color: "#6c757d",
+    fontWeight: "500",
+  },
+  productoRightInfo: {
+    alignItems: "flex-end",
+  },
+  productoPrecio: {
+    fontSize: 16,
+    color: "#28a745",
+    fontWeight: "bold",
+    marginBottom: 6,
+  },
+  prioridadBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    minWidth: 50,
+    alignItems: "center",
+  },
+  prioridadText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  estadoBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 70,
+    alignItems: "center",
+  },
+  estadoText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  mesaInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#f8f9fa",
+    borderTopWidth: 1,
+    borderTopColor: "#e9ecef",
+  },
+  mesaInfoLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  mesaNumber: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#007bff",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  mesaNumberText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  mesaDetails: {
+    flex: 1,
+  },
+  mesaDetailText: {
+    fontSize: 14,
+    color: "#495057",
+    fontWeight: "600",
+  },
+  comensalText: {
+    fontSize: 12,
+    color: "#6c757d",
+    marginTop: 2,
+  },
+  tiempoInfo: {
+    alignItems: "flex-end",
+  },
+  tiempoLabel: {
+    fontSize: 11,
+    color: "#6c757d",
+    textTransform: "uppercase",
+    fontWeight: "500",
+  },
+  tiempoText: {
+    fontSize: 16,
+    color: "#007bff",
+    fontWeight: "bold",
+    marginTop: 1,
+  },
+  meseroInfo: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "#fff",
+  },
+  meseroLabel: {
+    fontSize: 13,
+    color: "#6c757d",
+    fontWeight: "500",
+  },
+  productoActions: {
+    padding: 16,
+    paddingTop: 12,
+  },
+  actionButton: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  entregarButton: {
+    backgroundColor: "#28a745",
+    shadowColor: "#28a745",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  completadoButton: {
+    backgroundColor: "#e9ecef",
+    borderWidth: 1,
+    borderColor: "#dee2e6",
+  },
+  actionButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  completadoText: {
+    color: "#6c757d",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#28a745",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 16,
+    color: "#6c757d",
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  loadingText: {
+    fontSize: 18,
+    color: "#6c757d",
+  },
+});
