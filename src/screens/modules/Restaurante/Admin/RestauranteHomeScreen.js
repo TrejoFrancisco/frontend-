@@ -8,6 +8,7 @@ import {
   Modal,
   SafeAreaView,
   StatusBar,
+  Image,
   Alert,
 } from "react-native";
 import { API } from "../../../../services/api";
@@ -27,15 +28,89 @@ export default function HomeScreen() {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeSection, setActiveSection] = useState("dashboard");
 
+
   const menuItems = [
-    { id: "dashboard", title: "Dashboard", icon: "📊" },
-    { id: "usuarios", title: "Gestión de Usuarios", icon: "👥" },
-    { id: "categorias", title: "Gestión de Categorías", icon: "🏷️" },
-    { id: "materias-primas", title: "Gestión de Materias Primas", icon: "📦" },
-    { id: "recetas", title: "Gestión de Recetas", icon: "👩‍🍳" },
-    { id: "productos", title: "Gestión de Productos", icon: "🍽️" },
-    { id: "asociar", title: "Asociar Usuarios", icon: "🔗" },
-    { id: "inventario", title: "Gestión de Inventario", icon: "📋" },
+    {
+      id: "dashboard",
+      title: "Dashboard",
+      icon: (
+        <Image
+          source={require('../../../../../assets/dashboard.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "usuarios",
+      title: "Gestion de Usuarios",
+      icon: (
+        <Image
+          source={require('../../../../../assets/gestionU.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "categorias",
+      title: "Gestion de Categorias",
+      icon: (
+        <Image
+          source={require('../../../../../assets/gestionC.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "materias-primas",
+      title: "Gestión de Materias Primas",
+      icon: (
+        <Image
+          source={require('../../../../../assets/gestionMP.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "recetas",
+      title: "Gestión de Recetas",
+      icon: (
+        <Image
+          source={require('../../../../../assets/gestionR.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "productos",
+      title: "Gestión de Productos",
+      icon: (
+        <Image
+          source={require('../../../../../assets/gestionP.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "asociar",
+      title: "Asociar Usuarios",
+      icon: (
+        <Image
+          source={require('../../../../../assets/asociarU.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "inventario",
+      title: "Gestión de Inventario",
+      icon: (
+        <Image
+          source={require('../../../../../assets/gestionI.png')}
+          style={styles.menuIco}
+        />
+      ),
+    },
+
   ];
 
   const handleMenuPress = (itemId) => {
@@ -252,50 +327,6 @@ const ProductosContent = () => {
 };
 
 const styles = StyleSheet.create({
-  topHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userWelcome: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 2,
-  },
-  userRole: {
-    fontSize: 12,
-    color: "#6c757d",
-    textTransform: "capitalize",
-  },
-  logoutButton: {
-    backgroundColor: "#dc3545",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-  },
-  logoutButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 12,
-  },
-
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
@@ -342,6 +373,12 @@ const styles = StyleSheet.create({
   menuIcon: {
     fontSize: 24,
     color: "#fff",
+  },
+  menuIco: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+    marginRight: 9,
   },
   refreshButton: {
     padding: 8,
@@ -476,7 +513,7 @@ const styles = StyleSheet.create({
   },
 
   activeMenuItem: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: "#9ac3f2ff",
   },
 
   menuText: {

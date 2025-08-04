@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   createButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 8,
     marginBottom: 20,
@@ -554,14 +554,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   icon: {
-    width: 20,
-    height: 20,
+    width: 30,
+    height: 30,
     marginRight: 10,
   },
   createButtonText: {
-    color: "white",
+    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+    marginLeft: 8,
   },
   productsList: {
     paddingBottom: 20,
@@ -675,13 +676,22 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   button: {
-    padding: 15,
+    flex: 1,
+    paddingVertical: 10,
     borderRadius: 8,
-    minWidth: 120,
     alignItems: "center",
+    marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#F44336",
+    marginRight: 10,
+  },
+  submitButton: {
+    backgroundColor: "#28a745",
+  },
+  cancelButton: {
+    backgroundColor: "#F44336",
+    marginRight: 10,
   },
   submitButton: {
     backgroundColor: "#28a745",

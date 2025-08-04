@@ -7,6 +7,7 @@ import {
   ScrollView,
   Modal,
   TextInput,
+  Image,
   Alert,
 } from "react-native";
 import axios from "axios";
@@ -208,7 +209,13 @@ export default function CategoriasScreen({ token, navigation }) {
       <Text style={styles.subtitle}>Administra las categorías de tu menú</Text>
 
       <TouchableOpacity style={styles.createButton} onPress={openCreateModal}>
-        <Text style={styles.createButtonText}>➕ Crear Nueva Categoría</Text>
+        <View style={styles.inlineContent}>
+          <Image
+            source={require("../../../../../assets/mas.png")}
+            style={styles.icon}
+          />
+          <Text style={styles.createButtonText}>Crear Nueva Categoria</Text>
+        </View>
       </TouchableOpacity>
 
       <View style={styles.listContainer}>
@@ -316,8 +323,8 @@ export default function CategoriasScreen({ token, navigation }) {
                         ? "Creando..."
                         : "Actualizando..."
                       : modalType === "crear"
-                      ? "Crear"
-                      : "Actualizar"}
+                        ? "Crear"
+                        : "Actualizar"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -359,10 +366,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
+  inlineContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  icon: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
+  },
   createButtonText: {
-    color: "#FFFFFF",
+    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+    marginLeft: 8,
   },
   listContainer: {
     backgroundColor: "#FFFFFF",
@@ -497,25 +515,32 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    paddingVertical: 15,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
     alignItems: "center",
+    marginHorizontal: 5,
   },
   cancelButton: {
     backgroundColor: "#F44336",
     marginRight: 10,
   },
+  submitButton: {
+    backgroundColor: "#28a745",
+  },
+  cancelButton: {
+    backgroundColor: "#F44336",
+    marginRight: 10,
+  },
+  submitButton: {
+    backgroundColor: "#28a745",
+  },
   cancelButtonText: {
-    color: "#FFFFFF",
+    color: "white",
     fontSize: 16,
     fontWeight: "bold",
   },
-  submitButton: {
-    backgroundColor: "#4CAF50",
-    marginLeft: 10,
-  },
   submitButtonText: {
-    color: "#FFFFFF",
+    color: "white",
     fontSize: 16,
     fontWeight: "bold",
   },

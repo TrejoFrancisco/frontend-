@@ -7,6 +7,7 @@ import {
   ScrollView,
   Modal,
   TextInput,
+  Image,
   Alert,
 } from "react-native";
 import axios from "axios";
@@ -188,7 +189,13 @@ export default function MateriaPrimaSection({ token, navigation }) {
       <Text style={styles.title}>Gestión de Materias Primas</Text>
 
       <TouchableOpacity style={styles.createButton} onPress={openCreateModal}>
-        <Text style={styles.createButtonText}>➕ Agregar Materia Prima</Text>
+        <View style={styles.inlineContent}>
+          <Image
+            source={require("../../../../../assets/mas.png")}
+            style={styles.icon}
+          />
+          <Text style={styles.createButtonText}>Agregar Materia Prima</Text>
+        </View>
       </TouchableOpacity>
 
       <ScrollView>
@@ -311,9 +318,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  createButtonText: { 
-    color: "white", 
-    fontWeight: "bold" },
+  inlineContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  icon: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
+  },
+  createButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
   itemRow: {
     backgroundColor: "#FFF",
     padding: 12,
@@ -401,12 +421,33 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 8,
     alignItems: "center",
+    marginHorizontal: 5,
   },
-  cancelButton: { backgroundColor: "#F44336", marginRight: 10 },
-  cancelButtonText: { color: "#FFF", fontWeight: "bold" },
-  submitButton: { backgroundColor: "#4CAF50" },
-  submitButtonText: { color: "#FFF", fontWeight: "bold" },
+  cancelButton: {
+    backgroundColor: "#F44336",
+    marginRight: 10,
+  },
+  submitButton: {
+    backgroundColor: "#28a745",
+  },
+  cancelButton: {
+    backgroundColor: "#F44336",
+    marginRight: 10,
+  },
+  submitButton: {
+    backgroundColor: "#28a745",
+  },
+  cancelButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  submitButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });

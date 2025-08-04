@@ -365,8 +365,8 @@ const styles = StyleSheet.create({
   },
 
   icon: {
-    width: 20,
-    height: 20,
+    width: 30,
+    height: 30,
   },
   inlineContent: {
     flexDirection: "row",
@@ -449,17 +449,27 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: "#ccc",
+    backgroundColor: "#F44336",
+    marginRight: 10,
   },
   submitButton: {
-    backgroundColor: "#3478f6",
+    backgroundColor: "#28a745",
+  },
+  cancelButton: {
+    backgroundColor: "#F44336",
+    marginRight: 10,
+  },
+  submitButton: {
+    backgroundColor: "#28a745",
   },
   cancelButtonText: {
-    color: "#333",
+    color: "white",
+    fontSize: 16,
     fontWeight: "bold",
   },
   submitButtonText: {
-    color: "#fff",
+    color: "white",
+    fontSize: 16,
     fontWeight: "bold",
   },
 });
