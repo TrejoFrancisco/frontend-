@@ -11,7 +11,6 @@ import {
   Dimensions,
   Image,
 } from "react-native";
-import axios from "axios";
 import { useAuth } from "../AuthContext";
 import { API } from "../services/api";
 
@@ -23,12 +22,11 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { saveToken } = useAuth(); // Importa la función para guardar el token
+  const { saveToken } = useAuth();
 
   const handleLogin = async () => {
     setError("");
 
-    // Validación básica
     if (!email || !password) {
       setError("Por favor ingresa tu email y contraseña");
       return;
@@ -41,25 +39,26 @@ export default function LoginScreen({ navigation }) {
         password,
       });
 
-      const { token, role } = response.data.data;
+      const { token: newToken, role, id, name } = response.data.data;
 
-      // Guarda el token en el contexto
-      saveToken(token);
+      await saveToken(newToken, { id, name, role });
 
-      Alert.alert("Login exitoso");
+      console.log("Login exitoso para usuario:", { id, name, role });
 
-      // Redirección por rol
+      Alert.alert("Login exitoso", `Bienvenido ${name}`);
+
       if (role === "admin_local_restaurante") {
         navigation.navigate("RestauranteHome");
-      } else if (role === "admin_cliente_Bar") {
-        navigation.navigate("BarHome");
-      } else if (role === "admin_cliente_Tienda") {
-        navigation.navigate("TiendaHome");
+      } else if (role === "meseros_restaurant") {
+        navigation.navigate("MeseroScreen");
+      } else if (role === "cocina") {
+        navigation.navigate("CocinaScreen");
+      } else if (role === "bartender_restaurante") {
+        navigation.navigate("BartenderScreen");
       } else {
         navigation.navigate("Home");
       }
     } catch (error) {
-      // Verifica si es una respuesta con error del backend
       if (error.response) {
         const { http_code, message } = error.response.data.error || {};
 
@@ -69,7 +68,6 @@ export default function LoginScreen({ navigation }) {
           setError(message || "Ocurrió un error inesperado.");
         }
       } else {
-        // Error de red u otro tipo
         setError("No se pudo conectar con el servidor.");
       }
 
@@ -85,7 +83,7 @@ export default function LoginScreen({ navigation }) {
       <View style={styles.headerContainer}>
         <View style={styles.logoContainer}>
           <Image
-            source={require("../../assets/icono.png")} // Ruta a tu imagen
+            source={require("../../assets/icono.png")}
             style={styles.logoImage}
             resizeMode="contain"
           />

@@ -30,7 +30,7 @@ export default function ProductosSection({ token, navigation }) {
     precio_venta: "",
     costo_receta: "",
     costo_redondeado: "",
-    tiene_receta: "", // "si" o "no"
+    tiene_receta: "",
     receta_id: "",
     existencia_inicial: "",
     unidad: "",
@@ -91,7 +91,6 @@ export default function ProductosSection({ token, navigation }) {
     setProductoData((prev) => {
       const newData = { ...prev, [field]: value };
 
-      // Si cambia el tipo de producto, limpiar campos relacionados
       if (field === "tiene_receta") {
         if (value === "si") {
           newData.existencia_inicial = "";
@@ -164,7 +163,6 @@ export default function ProductosSection({ token, navigation }) {
     if (!validarFormulario()) return;
 
     try {
-      // Preparar datos para enviar al backend
       const dataToSend = {
         clave: productoData.clave,
         nombre: productoData.nombre,
@@ -175,7 +173,6 @@ export default function ProductosSection({ token, navigation }) {
         costo_redondeado: parseFloat(productoData.costo_redondeado),
       };
 
-      // Agregar campos condicionales
       if (productoData.tiene_receta === "si") {
         dataToSend.receta_id = parseInt(productoData.receta_id);
       } else {
@@ -210,7 +207,7 @@ export default function ProductosSection({ token, navigation }) {
         );
         resetForm();
         setModalVisible(false);
-        fetchProductos(); // Recargar la lista
+        fetchProductos();
       }
     } catch (error) {
       console.error("Error al guardar producto:", error);

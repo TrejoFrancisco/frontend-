@@ -64,7 +64,6 @@ export default function RecetasSection({ token, navigation }) {
     }
   };
 
-  // Nueva función para obtener el detalle de una receta
   const fetchRecetaDetalle = async (recetaId) => {
     if (!token) return;
     try {
@@ -102,7 +101,6 @@ export default function RecetasSection({ token, navigation }) {
     setRecetaData((prev) => ({ ...prev, materias_primas: updated }));
   };
 
-  // Nueva función para editar cantidad de materia prima existente
   const handleExistingMateriaPrimaChange = (materiaPrimaId, newCantidad) => {
     setRecetaDetalle((prev) => ({
       ...prev,
@@ -114,7 +112,6 @@ export default function RecetasSection({ token, navigation }) {
     }));
   };
 
-  // Nueva función para eliminar materia prima existente
   const removeExistingMateriaPrima = (materiaPrimaId) => {
     Alert.alert(
       "Eliminar Materia Prima",
@@ -174,7 +171,7 @@ export default function RecetasSection({ token, navigation }) {
       clave: recetaData.clave,
       nombre: recetaData.nombre,
       materias_primas: recetaData.materias_primas.map((mp) => ({
-        id: mp.materia_prima_id, // aquí cambiamos el nombre de la clave
+        id: mp.materia_prima_id,
         cantidad: parseFloat(mp.cantidad),
       })),
     };
@@ -206,7 +203,6 @@ export default function RecetasSection({ token, navigation }) {
     if (!token || !editingRecetas) return;
     setIsLoading(true);
     try {
-      // Combinar materias primas existentes (modificadas) con las nuevas
       const materiasExistentes =
         recetaDetalle?.materias_primas?.map((mp) => ({
           materia_prima_id: mp.id,
@@ -278,13 +274,12 @@ export default function RecetasSection({ token, navigation }) {
     setEditingRecetas(item);
     setModalType("editar");
 
-    // Cargar el detalle de la receta
     const detalle = await fetchRecetaDetalle(item.id);
     if (detalle) {
       setRecetaData({
         clave: detalle.clave,
         nombre: detalle.nombre,
-        materias_primas: [], // Iniciamos vacío para las nuevas materias primas
+        materias_primas: [],
       });
     }
 
@@ -488,7 +483,6 @@ export default function RecetasSection({ token, navigation }) {
   );
 }
 
-// Agregamos los estilos necesarios para la tabla
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -586,7 +580,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 16,
   },
-  // Nuevos estilos para la tabla
   existingMateriasContainer: {
     marginBottom: 16,
   },
