@@ -2,7 +2,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../screens/LoginScreen";
 import HomeScreen from "../screens/HomeScreen";
 import RestauranteScreen from "../screens/modules/Restaurante/Admin/RestauranteHomeScreen";
-import MeseroScreen from "../screens/modules/Restaurante/mesero/MeseroScreen";
+import MeseroScreen from "../screens/modules/Restaurante/Mesero/MeseroScreen";
 import CocinaScreen from "../screens/modules/Restaurante/Cocina/CocinaScreen";
 import BartenderScreen from "../screens/modules/Restaurante/Bartender/BartenderScreen";
 

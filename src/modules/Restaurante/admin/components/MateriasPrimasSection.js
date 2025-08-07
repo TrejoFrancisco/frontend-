@@ -206,17 +206,25 @@ export default function MateriaPrimaSection({ token, navigation }) {
             </Text>
             <View style={styles.actions}>
               <TouchableOpacity
-                onPress={() => openEditModal(item)}
-                style={styles.editButton}
-              >
-                <Text style={styles.editButtonText}>✏️</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleDelete(item.id)}
-                style={styles.deleteButton}
-              >
-                <Text style={styles.deleteButtonText}>🗑️</Text>
-              </TouchableOpacity>
+                  style={styles.editButton}
+                  onPress={() => openEditModal(item)}
+                >
+                  <Image
+                    source={require('../../../../../assets/editarr.png')}
+                    style={styles.icon}
+                    accessibilityLabel="Editar"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.id)}
+                >
+                  <Image
+                    source={require('../../../../../assets/eliminar.png')}
+                    style={styles.icon}
+                    accessibilityLabel="Eliminar"
+                  />
+                </TouchableOpacity>
             </View>
           </View>
         ))}
@@ -306,10 +314,10 @@ export default function MateriaPrimaSection({ token, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#F5F5F5" },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
-    color: "#1A1A2E",
-    marginBottom: 20,
+    marginBottom: 16,
+    textAlign: "center",
   },
   createButton: {
     backgroundColor: "#4CAF50",
@@ -323,14 +331,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  icon: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
-  },
   createButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     marginLeft: 8,
   },
@@ -356,29 +359,26 @@ const styles = StyleSheet.create({
   },
   itemText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 12,
   },
   actions: {
     flexDirection: "row",
   },
   editButton: {
-    backgroundColor: "#2196F3",
     padding: 8,
     borderRadius: 4,
     marginRight: 8,
   },
-  editButtonText: {
-    color: "white",
-  },
   deleteButton: {
-    backgroundColor: "#f44336",
     padding: 8,
     borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
   },
-  deleteButtonText: {
-    color: "white",
+    icon: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
   },
   emptyText: {
     textAlign: "center",
@@ -399,10 +399,10 @@ const styles = StyleSheet.create({
     width: "90%",
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#1A1A2E",
-    marginBottom: 16,
+    marginBottom: 8,
     textAlign: "center",
   },
   input: {

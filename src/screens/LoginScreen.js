@@ -43,8 +43,6 @@ export default function LoginScreen({ navigation }) {
 
       await saveToken(newToken, { id, name, role });
 
-      console.log("Login exitoso para usuario:", { id, name, role });
-
       Alert.alert("Login exitoso", `Bienvenido ${name}`);
 
       if (role === "admin_local_restaurante") {
@@ -70,8 +68,6 @@ export default function LoginScreen({ navigation }) {
       } else {
         setError("No se pudo conectar con el servidor.");
       }
-
-      console.log("Error:", error.response?.data || error.message);
     } finally {
       setLoading(false);
     }
@@ -96,7 +92,10 @@ export default function LoginScreen({ navigation }) {
         {/* Error message */}
         {error ? (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorIcon}>⚠️</Text>
+            <Image
+              source={require('../../assets/warning.png')}
+              style={styles.errorIcon}
+            />
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : null}
@@ -121,9 +120,9 @@ export default function LoginScreen({ navigation }) {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Contraseña</Text>
             <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>🔒</Text>
+
               <TextInput
-                placeholder="••••••••"
+                placeholder="••••••"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -133,7 +132,14 @@ export default function LoginScreen({ navigation }) {
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeButton}
               >
-                <Text style={styles.eyeIcon}>{showPassword ? "👁️" : "🙈"}</Text>
+                <Image
+                  source={
+                    showPassword
+                      ? require('../../assets/open.png')
+                      : require('../../assets/close.png')
+                  }
+                  style={styles.eyeIcon}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -223,8 +229,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   errorIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    width: 30,
+    height: 30,
+    marginRight: 8,
+    resizeMode: 'contain',
   },
   errorText: {
     color: "#dc2626",
@@ -270,12 +278,17 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   eyeButton: {
-    padding: 8,
+    padding: 10,
+    position: 'absolute',
+    right: 10,
+    top: 10,
   },
   eyeIcon: {
-    fontSize: 20,
-    color: "#9ca3af",
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
   },
+
   loginButton: {
     backgroundColor: "#2563eb",
     padding: 18,

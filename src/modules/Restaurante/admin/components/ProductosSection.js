@@ -265,7 +265,7 @@ export default function ProductosSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                  "Error al eliminar el producto"
+                "Error al eliminar el producto"
               );
             }
           },
@@ -303,13 +303,20 @@ export default function ProductosSection({ token, navigation }) {
           style={[styles.actionButton, styles.editButton]}
           onPress={() => editarProducto(item)}
         >
-          <Text style={styles.actionButtonText}>✏️ Editar</Text>
+          <Image
+            source={require('../../../../../assets/editarr.png')}
+            style={styles.icon}
+          />
         </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.actionButton, styles.deleteButton]}
           onPress={() => eliminarProducto(item.id, item.nombre)}
         >
-          <Text style={styles.actionButtonText}>🗑️ Eliminar</Text>
+          <Image
+            source={require('../../../../../assets/eliminar.png')}
+            style={styles.icon}
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -537,9 +544,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: "center",
   },
   createButton: {
@@ -553,14 +560,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  icon: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
-  },
   createButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     marginLeft: 8,
   },
@@ -614,16 +616,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   editButton: {
-    backgroundColor: "#ffc107",
+    backgroundColor: "#f9ebc3ff",
   },
+  
   deleteButton: {
-    backgroundColor: "#dc3545",
+    backgroundColor: "#fed0d5ff",
   },
-  actionButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
+  icon: {
+  width: 30,
+  height: 30,
+  resizeMode: 'contain',
+},
+
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -642,9 +646,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 8,
     textAlign: "center",
   },
   input: {
@@ -656,7 +660,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     marginBottom: 5,
     marginTop: 10,

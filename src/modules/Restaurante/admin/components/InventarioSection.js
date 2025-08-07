@@ -45,7 +45,7 @@ export default function InventarioSection({ token, navigation }) {
         Alert.alert(
           "Error",
           error.response?.data?.error?.message ||
-            "Error al obtener el inventario"
+          "Error al obtener el inventario"
         );
       }
     } finally {
@@ -107,7 +107,14 @@ export default function InventarioSection({ token, navigation }) {
           style={[styles.actionButton, styles.historialButton]}
           onPress={() => verHistorial(item)}
         >
-          <Text style={styles.actionButtonText}>📊 Ver Historial</Text>
+          <View style={styles.actionButtonContainer}>
+            <Image
+              source={require('../../../../../assets/historial.png')}
+              style={styles.icon}
+            />
+            <Text style={styles.actionButtonText}>Ver Historial</Text>
+          </View>
+
         </TouchableOpacity>
       </View>
     </View>
@@ -166,9 +173,16 @@ export default function InventarioSection({ token, navigation }) {
 
         {/* Sección de Productos */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            📦 Productos ({inventarioData.productos.length})
-          </Text>
+          <View style={styles.sectionTitle}>
+            <Image
+              source={require('../../../../../assets/gestionP.png')}
+              style={styles.iconImage}
+            />
+            <Text style={styles.sectionTitle}>
+              Productos ({inventarioData.productos.length})
+            </Text>
+          </View>
+
           {inventarioData.productos.length === 0 ? (
             <Text style={styles.emptyText}>No hay productos en inventario</Text>
           ) : (
@@ -178,11 +192,19 @@ export default function InventarioSection({ token, navigation }) {
           )}
         </View>
 
+
         {/* Sección de Materias Primas */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            🥬 Materias Primas ({inventarioData.materias_primas.length})
-          </Text>
+          <View style={styles.sectionTitle}>
+            <Image
+              source={require('../../../../../assets/gestionMP.png')}
+              style={styles.iconImage}
+            />
+            <Text style={styles.sectionTitle}>
+              Materias Primas ({inventarioData.materias_primas.length})
+            </Text>
+          </View>
+
           {inventarioData.materias_primas.length === 0 ? (
             <Text style={styles.emptyText}>
               No hay materias primas en inventario
@@ -209,7 +231,7 @@ export default function InventarioSection({ token, navigation }) {
                 showsVerticalScrollIndicator={false}
               >
                 {selectedItem?.historial &&
-                selectedItem.historial.length > 0 ? (
+                  selectedItem.historial.length > 0 ? (
                   selectedItem.historial.map((item, index) =>
                     renderHistorialItem(item, index)
                   )
@@ -247,11 +269,10 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: "center",
-    color: "#2c3e50",
   },
   loadingText: {
     fontSize: 18,
@@ -279,10 +300,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
+    flexDirection: "row",
+    fontSize: 15,
     fontWeight: "bold",
     marginBottom: 15,
     color: "#495057",
@@ -290,6 +312,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e9ecef",
     paddingBottom: 5,
   },
+  iconImage: {
+    width: 40,
+    height: 40,
+    marginRight: 8,
+  },
+
   emptyText: {
     textAlign: "center",
     fontSize: 16,
@@ -356,9 +384,15 @@ const styles = StyleSheet.create({
   historialButton: {
     backgroundColor: "#6f42c1",
   },
+  actionButtonContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
+
   actionButtonText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
   },
   modalContainer: {
@@ -427,7 +461,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   closeButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#F44336",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",

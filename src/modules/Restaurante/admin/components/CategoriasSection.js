@@ -206,8 +206,6 @@ export default function CategoriasScreen({ token, navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gestión de Categorías</Text>
-      <Text style={styles.subtitle}>Administra las categorías de tu menú</Text>
-
       <TouchableOpacity style={styles.createButton} onPress={openCreateModal}>
         <View style={styles.inlineContent}>
           <Image
@@ -221,7 +219,8 @@ export default function CategoriasScreen({ token, navigation }) {
       <View style={styles.listContainer}>
         {/* Encabezado de la tabla */}
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
+          <Text style={[styles.tableHeaderText, styles.idColumn]}>
+            ID</Text>
           <Text style={[styles.tableHeaderText, styles.nameColumn]}>
             Nombre
           </Text>
@@ -254,13 +253,21 @@ export default function CategoriasScreen({ token, navigation }) {
                   style={styles.editButton}
                   onPress={() => openEditModal(categoria)}
                 >
-                  <Text style={styles.editButtonText}>✏️</Text>
+                  <Image
+                    source={require('../../../../../assets/editarr.png')}
+                    style={styles.icon}
+                    accessibilityLabel="Editar categoría"
+                  />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={() => handleDeleteCategoria(categoria.id)}
                 >
-                  <Text style={styles.deleteButtonText}>🗑️</Text>
+                  <Image
+                    source={require('../../../../../assets/eliminar.png')}
+                    style={styles.icon}
+                    accessibilityLabel="Eliminar categoría"
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -343,15 +350,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
   },
   title: {
-    fontSize: 28,
+    fontSize: 25,
     fontWeight: "bold",
-    color: "#1A1A2E",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666666",
-    marginBottom: 20,
+    marginBottom: 16,
+    textAlign: "center",
   },
   createButton: {
     backgroundColor: "#4CAF50",
@@ -374,11 +376,11 @@ const styles = StyleSheet.create({
   icon: {
     width: 30,
     height: 30,
-    marginRight: 10,
+    resizeMode: 'contain',
   },
   createButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     marginLeft: 8,
   },
@@ -393,24 +395,19 @@ const styles = StyleSheet.create({
     shadowRadius: 2.22,
     flex: 1,
   },
-  listTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1A1A2E",
-    marginBottom: 16,
-  },
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#F0F0F0",
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 8,
     borderRadius: 8,
     marginBottom: 8,
+
   },
   tableHeaderText: {
     fontWeight: "bold",
     color: "#1A1A2E",
-    fontSize: 14,
+    fontSize: 12,
   },
   tableBody: {
     flex: 1,
@@ -419,27 +416,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingVertical: 12,
     paddingHorizontal: 8,
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
     borderBottomColor: "#F0F0F0",
     alignItems: "center",
   },
   tableCellText: {
-    fontSize: 14,
+    fontSize: 10,
     color: "#333333",
   },
   idColumn: {
-    width: 50,
+    width: 25,
+    alignItems: "center",
   },
   nameColumn: {
-    flex: 1,
-    marginRight: 8,
+    flex: 2,
+    marginRight: 5,
   },
   descriptionColumn: {
-    flex: 2,
-    marginRight: 8,
+    flex: 3,
+    marginRight: 5,
   },
   actionsColumn: {
-    width: 80,
+    width: 90,
   },
   actionsContainer: {
     flexDirection: "row",
@@ -447,21 +445,12 @@ const styles = StyleSheet.create({
   },
   editButton: {
     padding: 8,
-    backgroundColor: "#2196F3",
-    borderRadius: 6,
-  },
-  editButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    borderRadius: 8,
+    marginRight: 8,
   },
   deleteButton: {
     padding: 8,
-    backgroundColor: "#F44336",
-    borderRadius: 6,
-  },
-  deleteButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    borderRadius: 8,
   },
   emptyText: {
     textAlign: "center",
@@ -488,10 +477,10 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#1A1A2E",
-    marginBottom: 20,
+    marginBottom: 8,
     textAlign: "center",
   },
   input: {
