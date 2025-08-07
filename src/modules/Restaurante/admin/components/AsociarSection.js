@@ -51,7 +51,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
         Alert.alert(
           "Error",
           error.response?.data?.error?.message ||
-            "Error al obtener los usuarios"
+          "Error al obtener los usuarios"
         );
       }
     } finally {
@@ -73,7 +73,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-          "Error al obtener las categorías"
+        "Error al obtener las categorías"
       );
     }
   };
@@ -174,7 +174,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                  "Error al eliminar la asociación"
+                "Error al eliminar la asociación"
               );
             }
           },
@@ -218,21 +218,34 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               style={[styles.actionButton, styles.addButton]}
               onPress={() => abrirModalAgregar(usuario)}
             >
-              <Text style={styles.actionButtonText}>➕ Agregar Categoría</Text>
+              <Image
+                source={require('../../../../../assets/agreg.png')}
+                style={styles.iconImage}
+              />
+              <Text style={styles.actionButtonText}>Agregar Categoría</Text>
             </TouchableOpacity>
+
+
           ) : (
             <View style={styles.actionsContainer}>
               <TouchableOpacity
-                style={[styles.actionButton, styles.editButton]}
+                style={[styles.actionButtonn, styles.editButton]}
                 onPress={() => abrirModalEditar(usuario)}
               >
-                <Text style={styles.actionButtonText}>✏️ Editar</Text>
+                <Image
+                  source={require('../../../../../assets/editarr.png')}
+                  style={styles.icon}
+                />
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[styles.actionButton, styles.deleteButton]}
-                onPress={() => eliminarAsociacion(usuario)}
+                style={[styles.actionButtonn, styles.deleteButton]}
+                onPress={() => eliminarAsociacion(usuario.id, usuario.name)}
               >
-                <Text style={styles.actionButtonText}>🗑️ Eliminar</Text>
+                <Image
+                  source={require('../../../../../assets/eliminar.png')}
+                  style={styles.icon}
+                />
               </TouchableOpacity>
             </View>
           )}
@@ -359,11 +372,10 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: "center",
-    color: "#2c3e50",
   },
   loadingText: {
     fontSize: 18,
@@ -485,27 +497,41 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#4CAF50',
+  },
+  actionButtonn: {
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 6,
-    minWidth: 120,
+    minWidth: 100,
     alignItems: "center",
-    marginHorizontal: 5,
   },
+
   addButton: {
     backgroundColor: "#28a745",
   },
   editButton: {
-    backgroundColor: "#ffc107",
+    backgroundColor: "#f9ebc3ff",
   },
+
   deleteButton: {
-    backgroundColor: "#dc3545",
+    backgroundColor: "#fed0d5ff",
   },
   actionButtonText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
   },
+  iconImage: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
+  },
+
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -521,9 +547,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: "center",
     color: "#2c3e50",
   },
@@ -534,7 +560,7 @@ const styles = StyleSheet.create({
     color: "#6c757d",
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     marginBottom: 5,
     marginTop: 10,
@@ -557,7 +583,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#F44336",
   },
   submitButton: {
     backgroundColor: "#28a745",

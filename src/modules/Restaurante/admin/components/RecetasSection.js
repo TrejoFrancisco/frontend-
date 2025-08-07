@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Image,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
@@ -296,7 +297,13 @@ export default function RecetasSection({ token, navigation }) {
       <Text style={styles.title}>Gestión de Recetas</Text>
 
       <TouchableOpacity style={styles.createButton} onPress={openCreateModal}>
-        <Text style={styles.createButtonText}>➕ Agregar Receta</Text>
+        <View style={styles.inlineContent}>
+          <Image
+            source={require("../../../../../assets/mas.png")}
+            style={styles.icon}
+          />
+          <Text style={styles.createButtonText}>Agregar Receta</Text>
+        </View>
       </TouchableOpacity>
 
       <ScrollView>
@@ -307,16 +314,24 @@ export default function RecetasSection({ token, navigation }) {
             </Text>
             <View style={styles.actions}>
               <TouchableOpacity
-                onPress={() => openEditModal(item)}
                 style={styles.editButton}
+                onPress={() => openEditModal(item)}
               >
-                <Text style={styles.editButtonText}>✏️</Text>
+                <Image
+                  source={require('../../../../../assets/editarr.png')}
+                  style={styles.icon}
+                  accessibilityLabel="Editar"
+                />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => handleDelete(item.id)}
                 style={styles.deleteButton}
+                onPress={() => handleDelete(item.id)}
               >
-                <Text style={styles.deleteButtonText}>🗑️</Text>
+                <Image
+                  source={require('../../../../../assets/eliminar.png')}
+                  style={styles.icon}
+                  accessibilityLabel="Eliminar"
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -333,126 +348,134 @@ export default function RecetasSection({ token, navigation }) {
         visible={modalVisible}
         onRequestClose={closeModal}
       >
-        <ScrollView contentContainerStyle={styles.modalContainer}>
-          <View style={styles.modalContent}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainerFixed}>
             <Text style={styles.modalTitle}>
               {modalType === "crear" ? "Agregar" : "Editar"} Receta
             </Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Clave"
-              value={recetaData.clave}
-              onChangeText={(text) => handleInputChange("clave", text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre"
-              value={recetaData.nombre}
-              onChangeText={(text) => handleInputChange("nombre", text)}
-            />
+            <ScrollView style={styles.scrollableContent}>
+              <TextInput
+                style={styles.input}
+                placeholder="Clave"
+                value={recetaData.clave}
+                onChangeText={(text) => handleInputChange("clave", text)}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Nombre"
+                value={recetaData.nombre}
+                onChangeText={(text) => handleInputChange("nombre", text)}
+              />
 
-            {/* Tabla de materias primas existentes (solo en modo editar) */}
-            {modalType === "editar" &&
-              recetaDetalle?.materias_primas &&
-              recetaDetalle.materias_primas.length > 0 && (
-                <View style={styles.existingMateriasContainer}>
-                  <Text style={styles.sectionTitle}>
-                    Materias Primas Actuales
-                  </Text>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.tableHeaderText, { flex: 2 }]}>
-                      Materia Prima
-                    </Text>
-                    <Text style={[styles.tableHeaderText, { flex: 1 }]}>
-                      Cantidad
-                    </Text>
-                    <Text style={[styles.tableHeaderText, { flex: 1 }]}>
-                      Acciones
-                    </Text>
-                  </View>
+              {/* MATERIAS PRIMAS ACTUALES */}
+              {modalType === "editar" &&
+                recetaDetalle?.materias_primas &&
+                recetaDetalle.materias_primas.length > 0 && (
+                  <>
+                    <Text style={styles.sectionTitle}>Materias Primas Actuales</Text>
+                    <View style={styles.tableHeader}>
+                      <Text style={[styles.tableHeaderText, { flex: 2 }]}>Materia Prima</Text>
+                      <Text style={[styles.tableHeaderText, { flex: 1 }]}>Cantidad</Text>
+                      <Text style={[styles.tableHeaderText, { flex: 1 }]}>Acciones</Text>
+                    </View>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                      {recetaDetalle.materias_primas.map((mp) => (
+                        <View key={mp.id} style={styles.tableRow}>
+                          <Text style={[styles.tableCellText, { flex: 2 }]}>
+                            {mp.clave} - {mp.nombre}
+                          </Text>
+                          <TextInput
+                            style={[styles.input, styles.tableInput, { flex: 1 }]}
+                            value={mp.pivot.cantidad}
+                            keyboardType="decimal-pad"
+                            onChangeText={(text) =>
+                              handleExistingMateriaPrimaChange(mp.id, text)
+                            }
+                          />
+                          <TouchableOpacity
+                            style={[styles.deleteButton, { flex: 1 }]}
+                            onPress={() => removeExistingMateriaPrima(mp.id)}
+                          >
+                            <Image
+                              source={require("../../../../../assets/eliminar.png")}
+                              style={styles.icon}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
 
-                  {recetaDetalle.materias_primas.map((mp) => (
-                    <View key={mp.id} style={styles.tableRow}>
-                      <Text style={[styles.tableCellText, { flex: 2 }]}>
-                        {mp.clave} - {mp.nombre}
-                      </Text>
-                      <TextInput
-                        style={[styles.input, styles.tableInput, { flex: 1 }]}
-                        value={mp.pivot.cantidad}
-                        keyboardType="decimal-pad"
-                        onChangeText={(text) =>
-                          handleExistingMateriaPrimaChange(mp.id, text)
-                        }
-                      />
+              {/* NUEVAS MATERIAS PRIMAS */}
+              <Text style={styles.sectionTitle}>
+                {modalType === "editar"
+                  ? "Agregar Nuevas Materias Primas"
+                  : "Materias Primas"}
+              </Text>
+
+              <View style={{ maxHeight: 250 }}>
+                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true}>
+                  {recetaData.materias_primas.map((mp, index) => (
+                    <View key={index} style={styles.tableRow}>
+                      <View style={{ flex: 2 }}>
+                        <Text style={{ marginBottom: 4 }}>Materia Prima</Text>
+                        <Picker
+                          selectedValue={mp.materia_prima_id}
+                          onValueChange={(value) =>
+                            handleMateriaPrimaChange(index, "materia_prima_id", value)
+                          }
+                        >
+                          <Picker.Item label="Selecciona" value="" />
+                          {materiasPrimas.map((mp) => (
+                            <Picker.Item
+                              key={mp.id}
+                              label={`${mp.clave} - ${mp.nombre}`}
+                              value={mp.id}
+                            />
+                          ))}
+                        </Picker>
+                      </View>
+
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ marginBottom: 4 }}>Cantidad</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Cantidad"
+                          keyboardType="decimal-pad"
+                          value={mp.cantidad}
+                          onChangeText={(text) =>
+                            handleMateriaPrimaChange(index, "cantidad", text)
+                          }
+                        />
+                      </View>
+
                       <TouchableOpacity
-                        style={[styles.deleteButton, { flex: 1 }]}
-                        onPress={() => removeExistingMateriaPrima(mp.id)}
+                        onPress={() => removeMateriaPrima(index)}
+                        style={styles.deleteButton}
                       >
-                        <Text style={styles.deleteButtonText}>🗑️</Text>
+                        <Image
+                          source={require("../../../../../assets/eliminar.png")}
+                          style={styles.icon}
+                          resizeMode="contain"
+                        />
                       </TouchableOpacity>
                     </View>
                   ))}
-                </View>
-              )}
-
-            {/* Sección para agregar nuevas materias primas */}
-            <Text style={styles.sectionTitle}>
-              {modalType === "editar"
-                ? "Agregar Nuevas Materias Primas"
-                : "Materias Primas"}
-            </Text>
-
-            {recetaData.materias_primas.map((mp, index) => (
-              <View key={index} style={styles.materiaPrimaRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ marginBottom: 4 }}>Materia Prima</Text>
-                  <Picker
-                    selectedValue={mp.materia_prima_id}
-                    onValueChange={(value) =>
-                      handleMateriaPrimaChange(index, "materia_prima_id", value)
-                    }
-                  >
-                    <Picker.Item label="Selecciona" value="" />
-                    {materiasPrimas.map((mp) => (
-                      <Picker.Item
-                        key={mp.id}
-                        label={`${mp.clave} - ${mp.nombre}`}
-                        value={mp.id}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <Text style={{ marginBottom: 4 }}>Cantidad</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Cantidad"
-                    keyboardType="decimal-pad"
-                    value={mp.cantidad}
-                    onChangeText={(text) =>
-                      handleMateriaPrimaChange(index, "cantidad", text)
-                    }
-                  />
-                </View>
-
-                <TouchableOpacity
-                  onPress={() => removeMateriaPrima(index)}
-                  style={styles.deleteButton}
-                >
-                  <Text style={styles.deleteButtonText}>🗑️</Text>
-                </TouchableOpacity>
+                </ScrollView>
               </View>
-            ))}
 
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={addMateriaPrima}
-            >
-              <Text style={styles.addButtonText}>➕ Agregar Materia Prima</Text>
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.addButton} onPress={addMateriaPrima}>
+                <Image
+                  source={require("../../../../../assets/agreg.png")}
+                  style={styles.iconI}
+                />
+                <Text style={styles.addButtonText}>Agregar Materia Prima</Text>
+              </TouchableOpacity>
+            </ScrollView>
 
+            {/* BOTONES FIJOS */}
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
@@ -471,13 +494,13 @@ export default function RecetasSection({ token, navigation }) {
                       ? "Creando..."
                       : "Actualizando..."
                     : modalType === "crear"
-                    ? "Crear"
-                    : "Actualizar"}
+                      ? "Crear"
+                      : "Actualizar"}
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
-        </ScrollView>
+        </View>
       </Modal>
     </View>
   );
@@ -490,7 +513,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
@@ -501,10 +524,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
   },
+  inlineContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconI: {
+    alignItems: "center",
+    width: 25,
+    height: 25,
+    resizeMode: 'contain',
+    marginRight: 8,
+  },
   createButtonText: {
-    color: "white",
-    textAlign: "center",
+    color: "#fff",
+    fontSize: 15,
     fontWeight: "bold",
+    marginLeft: 8,
   },
   itemRow: {
     flexDirection: "row",
@@ -518,29 +554,26 @@ const styles = StyleSheet.create({
   },
   itemText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 12,
   },
   actions: {
     flexDirection: "row",
   },
   editButton: {
-    backgroundColor: "#2196F3",
     padding: 8,
     borderRadius: 4,
-    marginRight: 8,
-  },
-  editButtonText: {
-    color: "white",
+    marginRight: 5,
   },
   deleteButton: {
-    backgroundColor: "#f44336",
     padding: 8,
-    borderRadius: 4,
+    borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
   },
-  deleteButtonText: {
-    color: "white",
+  icon: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
   },
   emptyText: {
     textAlign: "center",
@@ -560,18 +593,38 @@ const styles = StyleSheet.create({
     padding: 20,
     maxHeight: "90%",
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  modalContainerFixed: {
+    backgroundColor: 'white',
+    width: '90%',
+    maxHeight: '90%',
+    borderRadius: 10,
+    padding: 16,
+    justifyContent: 'space-between',
+  },
+
   modalTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: 8,
     textAlign: "center",
+  },
+  scrollableContent: {
+    flexGrow: 1,
+    marginBottom: 16,
   },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 4,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: 5,
+    padding: 11,
+    marginBottom: 10,
     backgroundColor: "white",
   },
   sectionTitle: {
@@ -581,31 +634,40 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   existingMateriasContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: '#f9f9f9',
   },
   tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#f0f0f0",
-    padding: 8,
-    borderRadius: 4,
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
+    paddingBottom: 5,
+    marginBottom: 5,
   },
   tableHeaderText: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
+    fontSize: 14,
     textAlign: "center",
   },
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
     padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
   },
   tableCellText: {
+    fontSize: 14,
     textAlign: "center",
   },
   tableInput: {
-    marginBottom: 0,
-    marginHorizontal: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
   },
   materiaPrimaRow: {
     flexDirection: "row",
@@ -614,41 +676,53 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   addButton: {
-    backgroundColor: "#FF9800",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffaa29ff",
     padding: 12,
     borderRadius: 4,
     marginBottom: 16,
   },
   addButtonText: {
-    color: "white",
+    color: "#ffffffff",
     textAlign: "center",
     fontWeight: "bold",
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 12,
+    marginTop: 8,
   },
   button: {
     flex: 1,
-    padding: 12,
-    borderRadius: 4,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 5,
   },
   cancelButton: {
     backgroundColor: "#F44336",
     marginRight: 10,
   },
-  cancelButtonText: {
-    color: "white",
-    textAlign: "center",
-    fontWeight: "bold",
+  submitButton: {
+    backgroundColor: "#28a745",
+  },
+  cancelButton: {
+    backgroundColor: "#F44336",
+    marginRight: 10,
   },
   submitButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#28a745",
+  },
+  cancelButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   submitButtonText: {
     color: "white",
-    textAlign: "center",
+    fontSize: 16,
     fontWeight: "bold",
   },
 });

@@ -8,11 +8,11 @@ import {
   Modal,
   SafeAreaView,
   StatusBar,
-  Alert,
+  Image,
 } from "react-native";
-import { API } from "../../../../services/api";
-import { useAuth } from "../../../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../../../../AuthContext";
+import Header from "../../../../modules/Restaurante/admin/components/HeaderSection";
 import CategoriasScreen from "../../../../modules/Restaurante/admin/components/CategoriasSection";
 import MateriaPrimaSection from "../../../../modules/Restaurante/admin/components/MateriasPrimasSection";
 import RecetasSection from "../../../../modules/Restaurante/admin/components/RecetasSection";
@@ -22,20 +22,92 @@ import AsociarSection from "../../../../modules/Restaurante/admin/components/Aso
 import InventarioSection from "../../../../modules/Restaurante/admin/components/InventarioSection";
 
 export default function HomeScreen() {
-  const { token, logout, user } = useAuth();
+  const { token } = useAuth();
   const navigation = useNavigation();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeSection, setActiveSection] = useState("dashboard");
 
   const menuItems = [
-    { id: "dashboard", title: "Dashboard", icon: "📊" },
-    { id: "usuarios", title: "Gestión de Usuarios", icon: "👥" },
-    { id: "categorias", title: "Gestión de Categorías", icon: "🏷️" },
-    { id: "materias-primas", title: "Gestión de Materias Primas", icon: "📦" },
-    { id: "recetas", title: "Gestión de Recetas", icon: "👩‍🍳" },
-    { id: "productos", title: "Gestión de Productos", icon: "🍽️" },
-    { id: "asociar", title: "Asociar Usuarios", icon: "🔗" },
-    { id: "inventario", title: "Gestión de Inventario", icon: "📋" },
+    {
+      id: "dashboard",
+      title: "Dashboard",
+      icon: (
+        <Image
+          source={require("../../../../../assets/dashboard.png")}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "usuarios",
+      title: "Gestion de Usuarios",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionU.png")}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "categorias",
+      title: "Gestion de Categorias",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionC.png")}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "materias-primas",
+      title: "Gestión de Materias Primas",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionMP.png")}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "recetas",
+      title: "Gestión de Recetas",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionR.png")}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "productos",
+      title: "Gestión de Productos",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionP.png")}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "asociar",
+      title: "Asociar Usuarios",
+      icon: (
+        <Image
+          source={require("../../../../../assets/asociarU.png")}
+          style={styles.menuIco}
+        />
+      ),
+    },
+    {
+      id: "inventario",
+      title: "Gestión de Inventario",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionI.png")}
+          style={styles.menuIco}
+        />
+      ),
+    },
   ];
 
   const handleMenuPress = (itemId) => {
@@ -69,91 +141,14 @@ export default function HomeScreen() {
         return <DashboardContent />;
     }
   };
-  const handleLogout = () => {
-    Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas cerrar sesión?", [
-      {
-        text: "Cancelar",
-        style: "cancel",
-      },
-      {
-        text: "Cerrar Sesión",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            if (token) {
-              try {
-                await API.post(
-                  "/logout",
-                  {},
-                  {
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                    },
-                  }
-                );
-              } catch (error) {
-                console.log("Error al hacer logout en servidor:", error);
-              }
-            }
-
-            await logout();
-
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Login" }],
-            });
-          } catch (error) {
-            console.error("Error en logout:", error);
-            Alert.alert("Error", "Hubo un problema al cerrar sesión");
-          }
-        },
-      },
-    ]);
-  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
+      <Header onOpenDrawer={() => setDrawerVisible(true)} onRefresh={handleRefresh} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => setDrawerVisible(true)}
-        >
-          <Text style={styles.menuIcon}>☰</Text>
-        </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          <Text style={styles.appName}>🍴 Mi Restaurante</Text>
-          <Text style={styles.userWelcome}>
-            👋 Hola, {user?.name || "Usuario"}
-          </Text>
-          <Text style={styles.userRole}>
-            Rol:{" "}
-            {user?.role === "admin_local_restaurante"
-              ? "Admin"
-              : user?.role || "Admin"}
-          </Text>
-        </View>
-
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={handleRefresh}
-          >
-            <Text style={styles.refreshIcon}>🔄</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>🚪</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Main Content */}
       <ScrollView style={styles.content}>{renderContent()}</ScrollView>
 
-      {/* Drawer Menu */}
       <Modal
         animationType="none"
         transparent={true}
@@ -167,13 +162,22 @@ export default function HomeScreen() {
         >
           <View style={styles.drawerContainer}>
             <TouchableOpacity style={styles.drawerHeader} activeOpacity={1}>
-              <Text style={styles.drawerTitle}>🍴 Mi Restaurante</Text>
+              <View style={styles.iconTitleContainer}>
+                <Image
+                  source={require('../../../../../assets/logo.png')}
+                  style={styles.iconImage}
+                />
+                <Text style={styles.drawerTitle}>Mi Restaurante</Text>
+              </View>
               <Text style={styles.drawerSubtitle}>Panel de Administración</Text>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setDrawerVisible(false)}
               >
-                <Text style={styles.closeIcon}>✕</Text>
+                <Image
+                  source={require('../../../../../assets/cerrar.png')}
+                  style={styles.closeIconImage}
+                />
               </TouchableOpacity>
             </TouchableOpacity>
 
@@ -206,96 +210,31 @@ export default function HomeScreen() {
   );
 }
 
-const DashboardContent = () => {
-  return (
-    <View style={styles.contentContainer}>
-      <Text style={styles.contentTitle}>Dashboard del Restaurante</Text>
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>10</Text>
-          <Text style={styles.statLabel}>Categorías</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>23</Text>
-          <Text style={styles.statLabel}>Recetas</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>67</Text>
-          <Text style={styles.statLabel}>Productos</Text>
-        </View>
+const DashboardContent = () => (
+  <View style={styles.contentContainer}>
+    <Text style={styles.contentTitle}>Dashboard del Restaurante</Text>
+    <View style={styles.statsContainer}>
+      <View style={styles.statCard}>
+        <Text style={styles.statNumber}>10</Text>
+        <Text style={styles.statLabel}>Categorías</Text>
       </View>
-      <Text style={styles.welcomeText}>
-        Bienvenido al panel de administración del restaurante
-      </Text>
+      <View style={styles.statCard}>
+        <Text style={styles.statNumber}>23</Text>
+        <Text style={styles.statLabel}>Recetas</Text>
+      </View>
+      <View style={styles.statCard}>
+        <Text style={styles.statNumber}>67</Text>
+        <Text style={styles.statLabel}>Productos</Text>
+      </View>
     </View>
-  );
-};
+    <Text style={styles.welcomeText}>
+      Bienvenido al panel de administración del restaurante
+    </Text>
+  </View>
+);
 
-const RecetasContent = () => {
-  return (
-    <View style={styles.contentContainer}>
-      <Text style={styles.contentTitle}>Gestión de Recetas</Text>
-      <Text style={styles.contentSubtitle}>Crea y administra tus recetas</Text>
-    </View>
-  );
-};
-
-const ProductosContent = () => {
-  return (
-    <View style={styles.contentContainer}>
-      <Text style={styles.contentTitle}>Gestión de Productos</Text>
-      <Text style={styles.contentSubtitle}>
-        Administra los productos de tu menú
-      </Text>
-    </View>
-  );
-};
 
 const styles = StyleSheet.create({
-  topHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userWelcome: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 2,
-  },
-  userRole: {
-    fontSize: 12,
-    color: "#6c757d",
-    textTransform: "capitalize",
-  },
-  logoutButton: {
-    backgroundColor: "#dc3545",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-  },
-  logoutButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 12,
-  },
-
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
@@ -340,8 +279,15 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   menuIcon: {
-    fontSize: 24,
-    color: "#fff",
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
+  },
+  menuIco: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+    marginRight: 9,
   },
   refreshButton: {
     padding: 8,
@@ -370,10 +316,10 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   contentTitle: {
-    fontSize: 28,
+    fontSize: 25,
     fontWeight: "bold",
-    color: "#1A1A2E",
-    marginBottom: 8,
+    marginBottom: 16,
+    textAlign: "center",
   },
   contentSubtitle: {
     fontSize: 16,
@@ -427,6 +373,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 
+
   drawerHeader: {
     paddingVertical: 24,
     paddingHorizontal: 20,
@@ -434,38 +381,36 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E0E0E0",
     position: "relative",
   },
-
-  drawerTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1A1A2E",
+  iconTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-
+  iconImage: {
+    width: 40,
+    height: 40,
+    marginRight: 8,
+  },
+  drawerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   drawerSubtitle: {
     fontSize: 14,
-    color: "#666666",
-    marginTop: 4,
+    color: '#666',
   },
-
   closeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    padding: 12,
-    borderRadius: 50,
-    backgroundColor: "#F0F0F0",
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
-
-  closeIcon: {
-    fontSize: 22,
-    color: "#333333",
+  closeIconImage: {
+    width: 35,
+    height: 35,
   },
-
   drawerContent: {
     flex: 1,
     padding: 20,
   },
-
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -476,18 +421,19 @@ const styles = StyleSheet.create({
   },
 
   activeMenuItem: {
-    backgroundColor: "#1A1A2E",
+    backgroundColor: "#9ac3f2ff",
   },
 
   menuText: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#333333",
     marginLeft: 12,
     flex: 1,
+    fontWeight: "bold",
   },
 
   activeMenuText: {
-    color: "#FFFFFF",
+    color: "#000000ff",
     fontWeight: "bold",
   },
 });

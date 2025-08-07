@@ -206,7 +206,12 @@ export default function UsuariosSection({ token, navigation }) {
               style={styles.editButton}
               onPress={() => abrirModal(u)}
             >
-              <Text style={styles.editButtonText}>Editar</Text>
+              <Image
+                source={require('../../../../../assets/editarr.png')}
+                style={styles.editIcon}
+                accessibilityLabel="Editar"
+              />
+
             </TouchableOpacity>
           </View>
         ))}
@@ -301,9 +306,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: 25,
     fontWeight: "bold",
-    marginVertical: 12,
+    marginBottom: 16,
+    textAlign: "center",
   },
   statsContainer: {
     flexDirection: "row",
@@ -344,7 +350,7 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     marginLeft: 8,
   },
@@ -365,8 +371,8 @@ const styles = StyleSheet.create({
   },
 
   icon: {
-    width: 20,
-    height: 20,
+    width: 30,
+    height: 30,
   },
   inlineContent: {
     flexDirection: "row",
@@ -390,15 +396,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   editButton: {
-    backgroundColor: "#ffaa00",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
   },
-  editButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  editIcon: {
+    width: 35,
+    height: 35,
+    resizeMode: 'contain',
   },
+
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -413,9 +420,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     marginBottom: 16,
+    textAlign: "center",
   },
   input: {
     borderWidth: 1,
@@ -449,17 +457,27 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: "#ccc",
+    backgroundColor: "#F44336",
+    marginRight: 10,
   },
   submitButton: {
-    backgroundColor: "#3478f6",
+    backgroundColor: "#28a745",
+  },
+  cancelButton: {
+    backgroundColor: "#F44336",
+    marginRight: 10,
+  },
+  submitButton: {
+    backgroundColor: "#28a745",
   },
   cancelButtonText: {
-    color: "#333",
+    color: "white",
+    fontSize: 16,
     fontWeight: "bold",
   },
   submitButtonText: {
-    color: "#fff",
+    color: "white",
+    fontSize: 16,
     fontWeight: "bold",
   },
 });
