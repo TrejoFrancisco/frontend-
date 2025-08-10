@@ -51,7 +51,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
         Alert.alert(
           "Error",
           error.response?.data?.error?.message ||
-          "Error al obtener los usuarios"
+            "Error al obtener los usuarios"
         );
       }
     } finally {
@@ -73,7 +73,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-        "Error al obtener las categorías"
+          "Error al obtener las categorías"
       );
     }
   };
@@ -174,7 +174,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                "Error al eliminar la asociación"
+                  "Error al eliminar la asociación"
               );
             }
           },
@@ -219,13 +219,11 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               onPress={() => abrirModalAgregar(usuario)}
             >
               <Image
-                source={require('../../../../../assets/agreg.png')}
+                source={require("../../../../../assets/agreg.png")}
                 style={styles.iconImage}
               />
               <Text style={styles.actionButtonText}>Agregar Categoría</Text>
             </TouchableOpacity>
-
-
           ) : (
             <View style={styles.actionsContainer}>
               <TouchableOpacity
@@ -233,17 +231,17 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                 onPress={() => abrirModalEditar(usuario)}
               >
                 <Image
-                  source={require('../../../../../assets/editarr.png')}
+                  source={require("../../../../../assets/editarr.png")}
                   style={styles.icon}
                 />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.actionButtonn, styles.deleteButton]}
-                onPress={() => eliminarAsociacion(usuario.id, usuario.name)}
+                onPress={() => eliminarAsociacion(usuario)}
               >
                 <Image
-                  source={require('../../../../../assets/eliminar.png')}
+                  source={require("../../../../../assets/eliminar.png")}
                   style={styles.icon}
                 />
               </TouchableOpacity>
@@ -497,11 +495,11 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 10,
     borderRadius: 8,
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
   },
   actionButtonn: {
     paddingHorizontal: 20,

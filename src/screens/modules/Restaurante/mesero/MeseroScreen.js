@@ -292,6 +292,7 @@ export default function ComandaSection() {
       }
     }
   };
+
   const handleLogout = () => {
     Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas cerrar sesión?", [
       {
@@ -366,11 +367,15 @@ export default function ComandaSection() {
 
   const openPagoModal = (comanda) => {
     setSelectedComanda(comanda);
+    // Solo contar productos entregados para el total
     const total =
-      comanda.productos?.reduce(
-        (sum, producto) => sum + parseFloat(producto.precio_venta || 0),
-        0
-      ) || 0;
+      comanda.productos
+        ?.filter((producto) => producto.pivot?.estado === "entregado")
+        .reduce(
+          (sum, producto) => sum + parseFloat(producto.precio_venta || 0),
+          0
+        ) || 0;
+
     setPagos([{ metodo: "efectivo", monto: total.toString() }]);
     setPagoModalVisible(true);
   };
@@ -430,6 +435,43 @@ export default function ComandaSection() {
     if (pagos.length > 1) {
       setPagos(pagos.filter((_, i) => i !== index));
     }
+  };
+
+  // Función para obtener productos de la comanda actual
+  const getProductosComandaActual = () => {
+    if (!selectedComanda || !selectedComanda.productos) return [];
+
+    // Obtener IDs únicos de productos de la comanda
+    const productosIds = [
+      ...new Set(selectedComanda.productos.map((p) => p.id)),
+    ];
+
+    // Mapear con información completa del producto
+    return productosIds
+      .map((id) => {
+        const producto =
+          productos.find((p) => p.id === id) ||
+          selectedComanda.productos.find((p) => p.id === id);
+        return producto;
+      })
+      .filter(Boolean);
+  };
+
+  // Función para obtener productos filtrados por búsqueda (excluye los que ya están en la comanda)
+  const getProductosBusqueda = () => {
+    if (!busquedaProducto.trim()) return [];
+
+    const productosComandaIds =
+      selectedComanda?.productos?.map((p) => p.id) || [];
+
+    return productos.filter(
+      (producto) =>
+        !productosComandaIds.includes(producto.id) &&
+        (producto.nombre
+          .toLowerCase()
+          .includes(busquedaProducto.toLowerCase()) ||
+          producto.clave.toLowerCase().includes(busquedaProducto.toLowerCase()))
+    );
   };
 
   const renderComandaCard = (comanda) => (
@@ -493,18 +535,27 @@ export default function ComandaSection() {
     </View>
   );
 
-  const renderProductoItem = (producto) => {
+  const renderProductoItem = (producto, isFromBusqueda = false) => {
     const cantidad = productosSeleccionados[producto.id] || 0;
     const isSelected = cantidad > 0;
 
     return (
       <View
-        key={producto.id}
-        style={[styles.productoItem, isSelected && styles.productoSelected]}
+        key={`${producto.id}-${isFromBusqueda ? "busqueda" : "comanda"}`}
+        style={[
+          styles.productoItem,
+          isSelected && styles.productoSelected,
+          isFromBusqueda && styles.productoBusqueda,
+        ]}
       >
         <View style={styles.productoInfo}>
           <Text style={styles.productoClave}>{producto.clave}</Text>
-          <Text style={styles.productoNombre}>{producto.nombre}</Text>
+          <Text style={styles.productoNombre}>
+            {producto.nombre}
+            {isFromBusqueda && (
+              <Text style={styles.nuevoProductoTag}> (NUEVO)</Text>
+            )}
+          </Text>
           <Text style={styles.productoPrecio}>${producto.precio_venta}</Text>
         </View>
 
@@ -724,7 +775,7 @@ export default function ComandaSection() {
         </View>
       </Modal>
 
-      {/* Modal Editar Comanda */}
+      {/* Modal Editar Comanda - MODIFICADO */}
       <Modal visible={editModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalWrapper}>
@@ -760,27 +811,49 @@ export default function ComandaSection() {
                   }
                 />
 
-                <Text style={styles.sectionTitle}>Productos:</Text>
+                <Text style={styles.sectionTitle}>
+                  Productos de la Comanda:
+                </Text>
 
-                {/* Buscador de productos */}
+                {/* Productos actuales de la comanda */}
+                {getProductosComandaActual().length === 0 ? (
+                  <Text style={styles.noProductosText}>
+                    No hay productos en esta comanda
+                  </Text>
+                ) : (
+                  getProductosComandaActual().map((producto) =>
+                    renderProductoItem(producto, false)
+                  )
+                )}
+
+                {/* Separador visual */}
+                <View style={styles.separador}>
+                  <Text style={styles.separadorTexto}>
+                    Agregar más productos
+                  </Text>
+                </View>
+
+                {/* Buscador de productos nuevos */}
                 <TextInput
-                  style={styles.buscadorInput}
-                  placeholder="Buscar productos por nombre o clave..."
+                  style={[styles.buscadorInput, styles.buscadorAgregar]}
+                  placeholder="Buscar productos para agregar..."
                   value={busquedaProducto}
                   onChangeText={setBusquedaProducto}
                 />
 
-                {/* Lista de productos filtrados */}
-                {productosFiltrados.length === 0 ? (
-                  <Text style={styles.noProductosText}>
-                    {productos.length === 0
-                      ? "Cargando productos..."
-                      : "No se encontraron productos"}
-                  </Text>
-                ) : (
-                  productosFiltrados.map((producto) =>
-                    renderProductoItem(producto)
-                  )
+                {/* Productos encontrados en la búsqueda */}
+                {busquedaProducto.trim() !== "" && (
+                  <>
+                    {getProductosBusqueda().length === 0 ? (
+                      <Text style={styles.noProductosText}>
+                        No se encontraron productos nuevos
+                      </Text>
+                    ) : (
+                      getProductosBusqueda().map((producto) =>
+                        renderProductoItem(producto, true)
+                      )
+                    )}
+                  </>
                 )}
               </ScrollView>
 
@@ -876,7 +949,8 @@ export default function ComandaSection() {
               <Text style={styles.totalText}>
                 Total: $
                 {selectedComanda?.productos
-                  ?.reduce((sum, p) => sum + parseFloat(p.precio_venta || 0), 0)
+                  ?.filter((producto) => producto.pivot?.estado === "entregado")
+                  .reduce((sum, p) => sum + parseFloat(p.precio_venta || 0), 0)
                   .toFixed(2) || "0.00"}
               </Text>
 
@@ -1074,6 +1148,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
+  cantidadButtonDisabled: {
+    opacity: 0.5,
+  },
   cantidadText: {
     fontSize: 16,
     fontWeight: "bold",
@@ -1113,6 +1190,35 @@ const styles = StyleSheet.create({
   productoSelected: {
     backgroundColor: "#e7f3ff",
     borderColor: "#007bff",
+  },
+  // Nuevos estilos para el modal de edición
+  productoBusqueda: {
+    backgroundColor: "#f0f8f0",
+    borderColor: "#28a745",
+  },
+  nuevoProductoTag: {
+    fontSize: 12,
+    color: "#28a745",
+    fontWeight: "bold",
+  },
+  separador: {
+    marginVertical: 20,
+    alignItems: "center",
+  },
+  separadorTexto: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#007bff",
+    paddingHorizontal: 20,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#007bff",
+    borderRadius: 20,
+    paddingVertical: 8,
+  },
+  buscadorAgregar: {
+    backgroundColor: "#f0f8f0",
+    borderColor: "#28a745",
   },
 
   container: {
@@ -1270,48 +1376,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 16,
     marginBottom: 8,
-  },
-  productoItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: "white",
-  },
-  productoSelected: {
-    backgroundColor: "#e3f2fd",
-    borderColor: "#2196f3",
-    borderWidth: 2,
-  },
-  productoInfo: {
-    flex: 1,
-  },
-  productoClave: {
-    fontSize: 12,
-    color: "#666",
-    fontWeight: "500",
-  },
-  productoNombre: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
-    marginTop: 2,
-  },
-  productoPrecio: {
-    fontSize: 14,
-    color: "#28a745",
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-  productoSeleccionado: {
-    fontSize: 16,
-    color: "#2196f3",
-    fontWeight: "bold",
-    marginLeft: 8,
   },
   buscadorInput: {
     borderWidth: 1,
