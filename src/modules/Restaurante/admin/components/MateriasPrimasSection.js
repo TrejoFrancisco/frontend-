@@ -1,3 +1,5 @@
+import * as DocumentPicker from "expo-document-picker";
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -183,6 +185,90 @@ export default function MateriaPrimaSection({ token, navigation }) {
     setModalVisible(false);
     resetForm();
   };
+  const [archivoCSV, setArchivoCSV] = useState(null);
+
+  const handleSeleccionarArchivo = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ["text/csv", "text/plain", "application/csv"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (res.canceled || !res.assets || res.assets.length === 0) {
+        console.log("Selección cancelada");
+        return;
+      }
+
+      const archivo = res.assets[0];
+
+      // Validar tamaño del archivo (máximo 2MB como en el backend)
+      if (archivo.size > 2048 * 1024) {
+        Alert.alert("Error", "El archivo es muy grande. Máximo 2MB permitido.");
+        return;
+      }
+
+      // Validar extensión
+      const extension = archivo.name.split(".").pop().toLowerCase();
+      if (!["csv", "txt"].includes(extension)) {
+        Alert.alert("Error", "Solo se permiten archivos .csv o .txt");
+        return;
+      }
+
+      setArchivoCSV(archivo);
+      Alert.alert(
+        "Archivo seleccionado",
+        `${archivo.name} (${(archivo.size / 1024).toFixed(2)} KB)`
+      );
+    } catch (error) {
+      console.log("Error al seleccionar archivo:", error);
+      Alert.alert("Error", "No se pudo seleccionar el archivo.");
+    }
+  };
+
+  const handleImportCsv = async () => {
+    if (!archivoCSV) {
+      Alert.alert("Error", "Primero selecciona un archivo CSV.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(archivoCSV.uri);
+      const fileContent = await response.text();
+
+      console.log(
+        "Contenido del archivo (primeras 200 chars):",
+        fileContent.substring(0, 200)
+      );
+
+      // Crear un Blob del contenido
+      const blob = new Blob([fileContent], { type: "text/csv" });
+
+      const formData = new FormData();
+      formData.append("csv_file", blob, archivoCSV.name);
+
+      const baseURL = API.defaults.baseURL || "";
+      const url = `${baseURL}/restaurante/admin/materias-primas/import-csv`;
+
+      const uploadResponse = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const responseData = await uploadResponse.json();
+      setArchivoCSV(null);
+    } catch (error) {
+      console.log("Error en alternativa 1:", error);
+      Alert.alert("Error", "No se pudo importar el archivo CSV.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -197,6 +283,35 @@ export default function MateriaPrimaSection({ token, navigation }) {
           <Text style={styles.createButtonText}>Agregar Materia Prima</Text>
         </View>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.createButton}
+        onPress={handleSeleccionarArchivo}
+      >
+        <View style={styles.inlineContent}>
+          <Text style={styles.createButtonText}>Seleccionar archivo CSV</Text>
+        </View>
+      </TouchableOpacity>
+
+      {archivoCSV && (
+        <Text style={{ marginTop: 5, fontStyle: "italic" }}>
+          Archivo seleccionado: {archivoCSV.name}
+        </Text>
+      )}
+
+      <TouchableOpacity
+        style={[
+          styles.createButton,
+          { backgroundColor: archivoCSV ? "#28a745" : "#ccc" },
+        ]}
+        onPress={handleImportCsv}
+        disabled={!archivoCSV || isLoading}
+      >
+        <View style={styles.inlineContent}>
+          <Text style={styles.createButtonText}>
+            {isLoading ? "Importando..." : "Importar materias primas"}
+          </Text>
+        </View>
+      </TouchableOpacity>
 
       <ScrollView>
         {materiasPrimas.map((item) => (
@@ -206,25 +321,25 @@ export default function MateriaPrimaSection({ token, navigation }) {
             </Text>
             <View style={styles.actions}>
               <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => openEditModal(item)}
-                >
-                  <Image
-                    source={require('../../../../../assets/editarr.png')}
-                    style={styles.icon}
-                    accessibilityLabel="Editar"
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDelete(item.id)}
-                >
-                  <Image
-                    source={require('../../../../../assets/eliminar.png')}
-                    style={styles.icon}
-                    accessibilityLabel="Eliminar"
-                  />
-                </TouchableOpacity>
+                style={styles.editButton}
+                onPress={() => openEditModal(item)}
+              >
+                <Image
+                  source={require("../../../../../assets/editarr.png")}
+                  style={styles.icon}
+                  accessibilityLabel="Editar"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDelete(item.id)}
+              >
+                <Image
+                  source={require("../../../../../assets/eliminar.png")}
+                  style={styles.icon}
+                  accessibilityLabel="Eliminar"
+                />
+              </TouchableOpacity>
             </View>
           </View>
         ))}
@@ -299,8 +414,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
                       ? "Creando..."
                       : "Actualizando..."
                     : modalType === "crear"
-                      ? "Crear"
-                      : "Actualizar"}
+                    ? "Crear"
+                    : "Actualizar"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -375,10 +490,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-    icon: {
+  icon: {
     width: 30,
     height: 30,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
   emptyText: {
     textAlign: "center",

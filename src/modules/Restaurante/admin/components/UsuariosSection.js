@@ -207,11 +207,10 @@ export default function UsuariosSection({ token, navigation }) {
               onPress={() => abrirModal(u)}
             >
               <Image
-                source={require('../../../../../assets/editarr.png')}
+                source={require("../../../../../assets/editarr.png")}
                 style={styles.editIcon}
                 accessibilityLabel="Editar"
               />
-
             </TouchableOpacity>
           </View>
         ))}
@@ -403,7 +402,7 @@ const styles = StyleSheet.create({
   editIcon: {
     width: 35,
     height: 35,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
 
   modalContainer: {
