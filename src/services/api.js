@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "https://018c77fa1dde.ngrok-free.app/api";
+const BASE_URL = "http://192.168.0.18:8000/api";
 
 console.log("API Base URL:", BASE_URL);
 

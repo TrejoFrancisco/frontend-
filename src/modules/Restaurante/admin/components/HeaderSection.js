@@ -35,18 +35,14 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
                                     }
                                 );
                             } catch (error) {
-                                console.log("Error al hacer logout en servidor:", error);
                             }
                         }
-
                         await logout();
-
                         navigation.reset({
                             index: 0,
                             routes: [{ name: "Login" }],
                         });
                     } catch (error) {
-                        console.error("Error en logout:", error);
                         Alert.alert("Error", "Hubo un problema al cerrar sesión");
                     }
                 },
