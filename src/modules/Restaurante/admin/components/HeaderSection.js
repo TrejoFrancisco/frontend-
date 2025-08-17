@@ -7,6 +7,7 @@ import {
     Alert,
     StyleSheet,
 } from "react-native";
+import { ImageBackground } from "react-native";
 import { useAuth } from "../../../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { API } from "../../../../services/api";
@@ -51,7 +52,11 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
     };
 
     return (
-        <View style={styles.header}>
+        <ImageBackground
+            source={require("../../../../../assets/fondo1.jpeg")} // tu imagen de fondo
+            style={styles.header}
+            resizeMode="stretch" // "cover" o "contain" según quieras ajustar
+        >
             {/* Primera fila: menú, logo, botones */}
             <View style={styles.topRow}>
                 <TouchableOpacity style={styles.menuButton} onPress={onOpenDrawer}>
@@ -107,13 +112,14 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
                         : user?.role || "Admin"}
                 </Text>
             </View>
-        </View>
+        </ImageBackground>
     );
 }
 
 const styles = StyleSheet.create({
     header: {
-        backgroundColor: '#F7F7F7',
+        width: "100%",   // ocupa todo el ancho
+        height: 100,     // altura fija en px
         paddingVertical: 10,
         paddingHorizontal: 12,
         borderTopWidth: 1,

@@ -22,18 +22,20 @@ export default function ProductosSection({ token, navigation }) {
   const [productos, setProductos] = useState([]);
   const [recetas, setRecetas] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const [loadingCosts, setLoadingCosts] = useState(false);
+
   const [productoData, setProductoData] = useState({
     clave: "",
     nombre: "",
     categoria_id: "",
+    receta_id: "",
     prioridad: "",
-    precio_venta: "",
     costo_receta: "",
     costo_redondeado: "",
-    tiene_receta: "",
-    receta_id: "",
+    precio_venta: "",
     existencia_inicial: "",
     unidad: "",
+    estado: "activo",
   });
 
   useEffect(() => {
@@ -45,7 +47,9 @@ export default function ProductosSection({ token, navigation }) {
   const fetchProductos = async () => {
     try {
       const response = await API.get("/restaurante/admin/productos", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (response.data.success) {
         setProductos(response.data.data.productos);
@@ -61,7 +65,9 @@ export default function ProductosSection({ token, navigation }) {
   const fetchRecetas = async () => {
     try {
       const response = await API.get("/restaurante/admin/recetas", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (response.data.success) {
         setRecetas(response.data.data);
@@ -77,7 +83,9 @@ export default function ProductosSection({ token, navigation }) {
   const fetchCategorias = async () => {
     try {
       const response = await API.get("/restaurante/admin/categorias", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (response.data.success) {
         setCategorias(response.data.data);
@@ -87,16 +95,61 @@ export default function ProductosSection({ token, navigation }) {
     }
   };
 
+  // Nueva función para calcular costos de receta
+  const calcularCostosReceta = async (recetaId) => {
+    if (!recetaId) return;
+
+    setLoadingCosts(true);
+    try {
+      const response = await API.get(
+        `/restaurante/admin/recetas/${recetaId}/costos`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        const { costo_receta, costo_redondeado } = response.data.data;
+
+        setProductoData((prev) => ({
+          ...prev,
+          costo_receta: costo_receta.toString(),
+          costo_redondeado: costo_redondeado.toString(),
+        }));
+
+        // Mostrar mensaje informativo
+        Alert.alert(
+          "Costos Calculados",
+          `Se han calculado los costos de la receta:\n• Costo receta: $${costo_receta}\n• Costo redondeado: $${costo_redondeado}\n\nPuedes modificar estos valores si es necesario.`,
+          [{ text: "Entendido" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error al calcular costos:", error);
+      Alert.alert("Error", "No se pudieron calcular los costos de la receta");
+    } finally {
+      setLoadingCosts(false);
+    }
+  };
+
   const handleInputChange = (field, value) => {
     setProductoData((prev) => {
       const newData = { ...prev, [field]: value };
 
-      if (field === "tiene_receta") {
-        if (value === "si") {
+      // Limpiar campos cuando se deselecciona una receta
+      if (field === "receta_id") {
+        if (value) {
+          // Si se selecciona una receta, limpiar campos de producto sin receta
           newData.existencia_inicial = "";
           newData.unidad = "";
-        } else if (value === "no") {
-          newData.receta_id = "";
+          // Calcular costos automáticamente
+          calcularCostosReceta(value);
+        } else {
+          // Si se deselecciona la receta, limpiar costos calculados
+          newData.costo_receta = "";
+          newData.costo_redondeado = "";
         }
       }
 
@@ -109,14 +162,14 @@ export default function ProductosSection({ token, navigation }) {
       clave: "",
       nombre: "",
       categoria_id: "",
+      receta_id: "",
       prioridad: "",
-      precio_venta: "",
       costo_receta: "",
       costo_redondeado: "",
-      tiene_receta: "",
-      receta_id: "",
+      precio_venta: "",
       existencia_inicial: "",
       unidad: "",
+      estado: "activo",
     });
     setEditMode(false);
     setEditingProductId(null);
@@ -128,10 +181,9 @@ export default function ProductosSection({ token, navigation }) {
       "nombre",
       "categoria_id",
       "prioridad",
-      "precio_venta",
       "costo_receta",
       "costo_redondeado",
-      "tiene_receta",
+      "precio_venta",
     ];
 
     for (let campo of camposRequeridos) {
@@ -141,12 +193,8 @@ export default function ProductosSection({ token, navigation }) {
       }
     }
 
-    if (productoData.tiene_receta === "si" && !productoData.receta_id) {
-      Alert.alert("Error", "Debe seleccionar una receta");
-      return false;
-    }
-
-    if (productoData.tiene_receta === "no") {
+    // Validar campos específicos para productos sin receta
+    if (!productoData.receta_id) {
       if (!productoData.existencia_inicial || !productoData.unidad) {
         Alert.alert(
           "Error",
@@ -167,16 +215,18 @@ export default function ProductosSection({ token, navigation }) {
         clave: productoData.clave,
         nombre: productoData.nombre,
         categoria_id: parseInt(productoData.categoria_id),
+        receta_id: productoData.receta_id
+          ? parseInt(productoData.receta_id)
+          : null,
         prioridad: parseFloat(productoData.prioridad),
-        precio_venta: parseFloat(productoData.precio_venta),
         costo_receta: parseFloat(productoData.costo_receta),
         costo_redondeado: parseFloat(productoData.costo_redondeado),
+        precio_venta: parseFloat(productoData.precio_venta),
+        estado: productoData.estado,
       };
 
-      if (productoData.tiene_receta === "si") {
-        dataToSend.receta_id = parseInt(productoData.receta_id);
-      } else {
-        dataToSend.receta_id = null;
+      // Solo agregar campos de inventario si no tiene receta
+      if (!productoData.receta_id) {
         dataToSend.existencia_inicial = parseFloat(
           productoData.existencia_inicial
         );
@@ -189,12 +239,16 @@ export default function ProductosSection({ token, navigation }) {
           `/restaurante/admin/productos/${editingProductId}`,
           dataToSend,
           {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
         );
       } else {
         response = await API.post("/restaurante/admin/productos", dataToSend, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
       }
 
@@ -223,16 +277,16 @@ export default function ProductosSection({ token, navigation }) {
       clave: producto.clave,
       nombre: producto.nombre,
       categoria_id: producto.categoria_id.toString(),
+      receta_id: producto.receta_id ? producto.receta_id.toString() : "",
       prioridad: producto.prioridad.toString(),
-      precio_venta: producto.precio_venta.toString(),
       costo_receta: producto.costo_receta.toString(),
       costo_redondeado: producto.costo_redondeado.toString(),
-      tiene_receta: producto.receta_id ? "si" : "no",
-      receta_id: producto.receta_id ? producto.receta_id.toString() : "",
+      precio_venta: producto.precio_venta.toString(),
       existencia_inicial: producto.existencia
         ? producto.existencia.toString()
         : "",
       unidad: producto.unidad || "",
+      estado: producto.estado,
     });
     setEditMode(true);
     setEditingProductId(producto.id);
@@ -253,7 +307,9 @@ export default function ProductosSection({ token, navigation }) {
               const response = await API.delete(
                 `/restaurante/admin/productos/${id}`,
                 {
-                  headers: { Authorization: `Bearer ${token}` },
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
                 }
               );
               if (response.data.success) {
@@ -265,7 +321,7 @@ export default function ProductosSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                "Error al eliminar el producto"
+                  "Error al eliminar el producto"
               );
             }
           },
@@ -283,38 +339,49 @@ export default function ProductosSection({ token, navigation }) {
     <View key={item.id} style={styles.productCard}>
       <View style={styles.productHeader}>
         <Text style={styles.productName}>{item.nombre}</Text>
-        <Text style={styles.productCode}>{item.clave}</Text>
+        <View style={styles.statusContainer}>
+          <Text style={styles.productCode}>{item.clave}</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor:
+                  item.estado === "activo" ? "#4CAF50" : "#F44336",
+              },
+            ]}
+          >
+            <Text style={styles.statusText}>
+              {item.estado === "activo" ? "Activo" : "Inactivo"}
+            </Text>
+          </View>
+        </View>
       </View>
-
       <View style={styles.productDetails}>
         <Text style={styles.productDetail}>Precio: ${item.precio_venta}</Text>
         <Text style={styles.productDetail}>Prioridad: {item.prioridad}</Text>
         <Text style={styles.productDetail}>
           Tipo: {item.receta_id ? "Con receta" : "Producto directo"}
         </Text>
-
         <Text style={styles.productDetail}>
           Costo: ${item.costo_redondeado}
         </Text>
       </View>
-
       <View style={styles.productActions}>
         <TouchableOpacity
           style={[styles.actionButton, styles.editButton]}
           onPress={() => editarProducto(item)}
         >
           <Image
-            source={require('../../../../../assets/editarr.png')}
+            source={require("../../../../../assets/editarr.png")}
             style={styles.icon}
           />
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.actionButton, styles.deleteButton]}
           onPress={() => eliminarProducto(item.id, item.nombre)}
         >
           <Image
-            source={require('../../../../../assets/eliminar.png')}
+            source={require("../../../../../assets/eliminar.png")}
             style={styles.icon}
           />
         </TouchableOpacity>
@@ -329,7 +396,6 @@ export default function ProductosSection({ token, navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.title}>Gestión de Productos</Text>
-
         <TouchableOpacity style={styles.createButton} onPress={abrirModal}>
           <View style={styles.inlineContent}>
             <Image
@@ -340,7 +406,6 @@ export default function ProductosSection({ token, navigation }) {
           </View>
         </TouchableOpacity>
 
-        {/* Lista de productos usando map en lugar de FlatList */}
         <View style={styles.productsList}>
           {productos.map((producto) => renderProductoItem(producto))}
         </View>
@@ -362,6 +427,7 @@ export default function ProductosSection({ token, navigation }) {
                   {editMode ? "Editar Producto" : "Agregar Producto"}
                 </Text>
 
+                {/* 1. CLAVE */}
                 <TextInput
                   style={styles.input}
                   placeholder="Clave"
@@ -369,6 +435,7 @@ export default function ProductosSection({ token, navigation }) {
                   onChangeText={(text) => handleInputChange("clave", text)}
                 />
 
+                {/* 2. NOMBRE */}
                 <TextInput
                   style={styles.input}
                   placeholder="Nombre"
@@ -376,6 +443,7 @@ export default function ProductosSection({ token, navigation }) {
                   onChangeText={(text) => handleInputChange("nombre", text)}
                 />
 
+                {/* 3. CATEGORÍA */}
                 <Text style={styles.label}>Categoría</Text>
                 <Picker
                   selectedValue={productoData.categoria_id}
@@ -394,6 +462,33 @@ export default function ProductosSection({ token, navigation }) {
                   ))}
                 </Picker>
 
+                {/* 4. RECETA */}
+                <Text style={styles.label}>Receta (Opcional)</Text>
+                <Picker
+                  selectedValue={productoData.receta_id}
+                  onValueChange={(value) =>
+                    handleInputChange("receta_id", value)
+                  }
+                  style={styles.picker}
+                  enabled={!loadingCosts}
+                >
+                  <Picker.Item label="Sin receta (producto directo)" value="" />
+                  {recetas.map((receta) => (
+                    <Picker.Item
+                      key={receta.id}
+                      label={`${receta.clave} - ${receta.nombre}`}
+                      value={receta.id.toString()}
+                    />
+                  ))}
+                </Picker>
+
+                {loadingCosts && (
+                  <Text style={styles.loadingText}>
+                    Calculando costos de la receta...
+                  </Text>
+                )}
+
+                {/* 5. PRIORIDAD */}
                 <Text style={styles.label}>Prioridad</Text>
                 <Picker
                   selectedValue={productoData.prioridad}
@@ -408,6 +503,39 @@ export default function ProductosSection({ token, navigation }) {
                   <Picker.Item label="3 - Baja" value="3" />
                 </Picker>
 
+                {/* 6. COSTO RECETA */}
+                <TextInput
+                  style={[
+                    styles.input,
+                    productoData.receta_id && productoData.costo_receta
+                      ? styles.suggestedInput
+                      : null,
+                  ]}
+                  placeholder="Costo receta"
+                  keyboardType="decimal-pad"
+                  value={productoData.costo_receta}
+                  onChangeText={(text) =>
+                    handleInputChange("costo_receta", text)
+                  }
+                />
+
+                {/* 7. COSTO REDONDEADO */}
+                <TextInput
+                  style={[
+                    styles.input,
+                    productoData.receta_id && productoData.costo_redondeado
+                      ? styles.suggestedInput
+                      : null,
+                  ]}
+                  placeholder="Costo redondeado"
+                  keyboardType="decimal-pad"
+                  value={productoData.costo_redondeado}
+                  onChangeText={(text) =>
+                    handleInputChange("costo_redondeado", text)
+                  }
+                />
+
+                {/* 8. PRECIO VENTA */}
                 <TextInput
                   style={styles.input}
                   placeholder="Precio de venta"
@@ -418,76 +546,22 @@ export default function ProductosSection({ token, navigation }) {
                   }
                 />
 
-                <TextInput
-                  style={styles.input}
-                  placeholder="Costo receta"
-                  keyboardType="decimal-pad"
-                  value={productoData.costo_receta}
-                  onChangeText={(text) =>
-                    handleInputChange("costo_receta", text)
-                  }
-                />
-
-                <TextInput
-                  style={styles.input}
-                  placeholder="Costo redondeado"
-                  keyboardType="decimal-pad"
-                  value={productoData.costo_redondeado}
-                  onChangeText={(text) =>
-                    handleInputChange("costo_redondeado", text)
-                  }
-                />
-
-                {/* SELECTOR DE TIPO DE PRODUCTO */}
-                <Text style={styles.label}>¿El producto tiene receta?</Text>
-                <Picker
-                  selectedValue={productoData.tiene_receta}
-                  onValueChange={(value) =>
-                    handleInputChange("tiene_receta", value)
-                  }
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Selecciona una opción" value="" />
-                  <Picker.Item label="Sí, tiene receta" value="si" />
-                  <Picker.Item label="No, es producto directo" value="no" />
-                </Picker>
-
-                {/* CAMPOS CONDICIONALES PARA PRODUCTOS CON RECETA */}
-                {productoData.tiene_receta === "si" && (
-                  <>
-                    <Text style={styles.label}>Seleccionar Receta</Text>
-                    <Picker
-                      selectedValue={productoData.receta_id}
-                      onValueChange={(value) =>
-                        handleInputChange("receta_id", value)
-                      }
-                      style={styles.picker}
-                    >
-                      <Picker.Item label="Selecciona una receta" value="" />
-                      {recetas.map((receta) => (
-                        <Picker.Item
-                          key={receta.id}
-                          label={`${receta.clave} - ${receta.nombre}`}
-                          value={receta.id.toString()}
-                        />
-                      ))}
-                    </Picker>
-                  </>
+                {/* 9. EXISTENCIA - Solo para productos sin receta */}
+                {!productoData.receta_id && (
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Existencia inicial"
+                    keyboardType="decimal-pad"
+                    value={productoData.existencia_inicial}
+                    onChangeText={(text) =>
+                      handleInputChange("existencia_inicial", text)
+                    }
+                  />
                 )}
 
-                {/* CAMPOS CONDICIONALES PARA PRODUCTOS SIN RECETA */}
-                {productoData.tiene_receta === "no" && (
+                {/* 10. UNIDAD - Solo para productos sin receta */}
+                {!productoData.receta_id && (
                   <>
-                    <TextInput
-                      style={[styles.input, styles.marginTop]}
-                      placeholder="Existencia inicial"
-                      keyboardType="decimal-pad"
-                      value={productoData.existencia_inicial}
-                      onChangeText={(text) =>
-                        handleInputChange("existencia_inicial", text)
-                      }
-                    />
-
                     <Text style={styles.label}>Unidad</Text>
                     <Picker
                       selectedValue={productoData.unidad}
@@ -510,6 +584,17 @@ export default function ProductosSection({ token, navigation }) {
                   </>
                 )}
 
+                {/* 11. ESTADO */}
+                <Text style={styles.label}>Estado del Producto</Text>
+                <Picker
+                  selectedValue={productoData.estado}
+                  onValueChange={(value) => handleInputChange("estado", value)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Activo" value="activo" />
+                  <Picker.Item label="Inactivo" value="inactivo" />
+                </Picker>
+
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
                     style={[styles.button, styles.cancelButton]}
@@ -520,6 +605,7 @@ export default function ProductosSection({ token, navigation }) {
                   <TouchableOpacity
                     style={[styles.button, styles.submitButton]}
                     onPress={guardarProducto}
+                    disabled={loadingCosts}
                   >
                     <Text style={styles.submitButtonText}>
                       {editMode ? "Actualizar" : "Guardar"}
@@ -536,6 +622,39 @@ export default function ProductosSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  costLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginTop: 15,
+    marginBottom: 10,
+    color: "#333",
+  },
+  suggestedInput: {
+    backgroundColor: "#E8F5E8",
+    borderColor: "#4CAF50",
+    borderWidth: 1,
+  },
+  loadingText: {
+    textAlign: "center",
+    fontStyle: "italic",
+    color: "#666",
+    marginVertical: 10,
+  },
   container: {
     flex: 1,
   },
@@ -618,15 +737,15 @@ const styles = StyleSheet.create({
   editButton: {
     backgroundColor: "#f9ebc3ff",
   },
-  
+
   deleteButton: {
     backgroundColor: "#fed0d5ff",
   },
   icon: {
-  width: 30,
-  height: 30,
-  resizeMode: 'contain',
-},
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
+  },
 
   modalContainer: {
     flex: 1,
