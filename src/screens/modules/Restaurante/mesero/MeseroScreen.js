@@ -28,6 +28,7 @@ export default function ComandaSection() {
   const [ticket, setTicket] = useState(null);
 
   const [nuevaComanda, setNuevaComanda] = useState({
+    nombre: "",
     mesa: "",
     personas: "",
     comensal: "",
@@ -890,6 +891,7 @@ export default function ComandaSection() {
               {ticket && (
                 <ScrollView style={styles.ticketScrollView}>
                   <View style={styles.ticketHeader}>
+                    <Text style={styles.ticketNegocio}>{ticket.negocio}</Text>
                     <Text style={styles.ticketMesa}>Mesa: {ticket.mesa}</Text>
                     <Text style={styles.ticketFecha}>
                       {new Date(ticket.fecha).toLocaleString("es-MX")}
@@ -1039,93 +1041,119 @@ const styles = StyleSheet.create({
   },
 
   ticketModalContent: {
-    backgroundColor: "white",
-    borderRadius: 15,
+    backgroundColor: "#fff",
+    borderRadius: 20,
     padding: 20,
-    maxHeight: "80%",
-    width: "90%",
+    maxHeight: "100%",
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
   },
   ticketModalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "700",
     textAlign: "center",
     marginBottom: 20,
-    color: "#333",
+    color: "#2c3e50",
   },
   ticketScrollView: {
-    maxHeight: 400,
+    maxHeight: 420,
   },
   ticketHeader: {
     marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  ticketNegocio: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#2c3e50",
+    textAlign: "center",
+    marginBottom: 10,
   },
   ticketMesa: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: "#34495e",
     marginBottom: 5,
   },
   ticketFecha: {
     fontSize: 14,
-    color: "#666",
+    color: "#7f8c8d",
     marginBottom: 5,
   },
   ticketComensal: {
     fontSize: 16,
-    color: "#444",
+    color: "#555",
     marginBottom: 5,
   },
   ticketDivider: {
     height: 1,
-    backgroundColor: "#ddd",
+    backgroundColor: "#e0e0e0",
     marginVertical: 15,
   },
   ticketProductos: {
     marginBottom: 15,
   },
   ticketProductosTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#2c3e50",
     marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    paddingBottom: 5,
   },
   ticketProductoItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 5,
+    paddingVertical: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#f0f0f0",
   },
   ticketProductoNombre: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#444",
     flex: 1,
   },
   ticketProductoPrecio: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#27ae60",
   },
   ticketTotal: {
     alignItems: "center",
+    marginTop: 15,
   },
   ticketTotalText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#28a745",
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#27ae60",
   },
   ticketModalActions: {
-    marginTop: 20,
+    marginTop: 25,
+    flexDirection: "row",
   },
+
   closeTicketButton: {
-    backgroundColor: "#6c757d",
-    paddingVertical: 12,
+    backgroundColor: "#ffc107",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 8,
+    alignItems: "center",
   },
+
   closeTicketButtonText: {
     color: "white",
-    textAlign: "center",
     fontWeight: "bold",
     fontSize: 16,
   },
+
   cantidadControls: {
     flexDirection: "row",
     alignItems: "center",
