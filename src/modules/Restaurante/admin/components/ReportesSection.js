@@ -296,14 +296,14 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   title: {
-    fontSize: 28,
+    fontSize: 25,
     fontWeight: "bold",
     color: "#1A1A2E",
     textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#666",
     textAlign: "center",
     lineHeight: 22,

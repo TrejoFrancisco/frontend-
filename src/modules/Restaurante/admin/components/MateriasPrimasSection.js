@@ -427,7 +427,11 @@ export default function MateriaPrimaSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#F5F5F5" },
+  container: { 
+    flex: 1, 
+    padding: 20, 
+    backgroundColor: "#F5F5F5" 
+  },
   title: {
     fontSize: 25,
     fontWeight: "bold",
