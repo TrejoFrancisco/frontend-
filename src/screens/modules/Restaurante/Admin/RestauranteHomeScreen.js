@@ -7,13 +7,11 @@ import {
   ScrollView,
   Modal,
   StatusBar,
+  Image,
   ActivityIndicator,
-  Alert,
-  Platform,
 } from "react-native";
 import {
   SafeAreaProvider,
-  SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -49,65 +47,110 @@ function HomeScreen() {
     {
       id: "dashboard",
       title: "Dashboard",
-      icon: "📊",
-      color: "#3B82F6",
-      bgColor: "#EFF6FF",
+      icon: (
+        <Image
+          source={require("../../../../../assets/dash.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#aac6f0ff",
+      bgColor: "#e7f1feff",
     },
     {
       id: "usuarios",
-      title: "Gestión de Usuarios",
-      icon: "👥",
-      color: "#10B981",
-      bgColor: "#ECFDF5",
+      title: "Usuarios",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionU.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#58D68D",
+      bgColor: "#D5F5E3",
     },
     {
       id: "categorias",
-      title: "Gestión de Categorías",
-      icon: "📂",
-      color: "#F59E0B",
-      bgColor: "#FFFBEB",
+      title: "Categorías",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionC.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#eeb98aff",
+      bgColor: "#f9eaddff",
     },
     {
       id: "materias-primas",
       title: "Materias Primas",
-      icon: "🥕",
-      color: "#EF4444",
-      bgColor: "#FEF2F2",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionMP.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#F1948A",
+      bgColor: "#FADBD8",
     },
     {
       id: "recetas",
       title: "Gestión de Recetas",
-      icon: "📝",
-      color: "#8B5CF6",
-      bgColor: "#F5F3FF",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionR.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#C39BD3",
+      bgColor: "#E8DAEF",
     },
     {
       id: "productos",
-      title: "Gestión de Productos",
-      icon: "🍽️",
-      color: "#06B6D4",
-      bgColor: "#ECFEFF",
+      title: "Productos",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionP.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#F7DC6F",
+      bgColor: "#FCF3CF",
     },
     {
       id: "asociar",
       title: "Asociar Usuarios",
-      icon: "🔗",
-      color: "#84CC16",
-      bgColor: "#F7FEE7",
+      icon: (
+        <Image
+          source={require("../../../../../assets/asociarU.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#76D7C4",
+      bgColor: "#D1F2EB",
     },
     {
       id: "inventario",
-      title: "Gestión de Inventario",
-      icon: "📦",
-      color: "#F97316",
-      bgColor: "#FFF7ED",
+      title: "Inventario",
+      icon: (
+        <Image
+          source={require("../../../../../assets/gestionI.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#ffc089ff",
+      bgColor: "#fff0e2ff",
     },
     {
       id: "reportes",
       title: "Gestión de Reportes",
-      icon: "📈",
-      color: "#EC4899",
-      bgColor: "#FDF2F8",
+      icon: (
+        <Image
+          source={require("../../../../../assets/reportes.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#F8BBD0",
+      bgColor: "#FCE4EC",
     },
   ];
 
@@ -192,7 +235,12 @@ function HomeScreen() {
 
                 <View style={styles.drawerHeaderContent}>
                   <View style={styles.appLogoContainer}>
-                    <Text style={styles.appLogo}>🍽️</Text>
+                    <Image
+                      source={require('../../../../../assets/logo.png')}
+                      style={styles.appLogo}
+                      resizeMode="contain"
+                    />
+
                   </View>
                   <Text style={styles.drawerTitle}>Mi Restaurante</Text>
                   <Text style={styles.drawerSubtitle}>
@@ -302,7 +350,7 @@ function HomeScreen() {
   );
 }
 
-// El resto del código DashboardContent permanece igual...
+// El código DashboardContent permanece igual...
 const DashboardContent = ({ token }) => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
@@ -334,8 +382,8 @@ const DashboardContent = ({ token }) => {
       console.error("Error fetching dashboard data:", error);
       setError(
         error.response?.data?.error?.message ||
-          error.response?.data?.message ||
-          "Error de conexión. Verifica tu conexión a internet."
+        error.response?.data?.message ||
+        "Error de conexión. Verifica tu conexión a internet."
       );
     } finally {
       setLoading(false);
@@ -353,7 +401,7 @@ const DashboardContent = ({ token }) => {
   if (loading) {
     return (
       <View style={styles.contentContainer}>
-        <Text style={styles.contentTitle}>Dashboard del Restaurante</Text>
+        <Text style={styles.contentTitle}>Dashboard</Text>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1A1A2E" />
           <Text style={styles.loadingText}>Cargando datos...</Text>
@@ -365,7 +413,7 @@ const DashboardContent = ({ token }) => {
   if (error) {
     return (
       <View style={styles.contentContainer}>
-        <Text style={styles.contentTitle}>Dashboard del Restaurante</Text>
+        <Text style={styles.contentTitle}>Dashboard</Text>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Error: {error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
@@ -379,12 +427,16 @@ const DashboardContent = ({ token }) => {
   return (
     <View style={styles.contentContainer}>
       <View style={styles.titleContainer}>
-        <Text style={styles.contentTitle}>Dashboard del Restaurante</Text>
-        <Text style={styles.dateText}>Fecha: {dashboardData.fecha}</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
-          <Text style={styles.refreshButtonText}>🔄 Actualizar</Text>
-        </TouchableOpacity>
+        <Text style={styles.contentTitle}>Dashboard</Text>
+
+        <View style={styles.rowContainer}>
+          <Text style={styles.dateText}>Fecha: {dashboardData.fecha}</Text>
+          <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
+            <Text style={styles.refreshButtonText}>Actualizar</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
 
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -408,7 +460,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Productos Más Vendidos</Text>
         {dashboardData.productos_mas_vendidos &&
-        dashboardData.productos_mas_vendidos.length > 0 ? (
+          dashboardData.productos_mas_vendidos.length > 0 ? (
           dashboardData.productos_mas_vendidos.map((item, index) => (
             <View key={item.producto_id} style={styles.productItem}>
               <View style={styles.rankBadge}>
@@ -430,9 +482,9 @@ const DashboardContent = ({ token }) => {
       </View>
 
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Productos Cancelados Hoy</Text>
+        <Text style={styles.sectionTitle}>Cancelaciones del día</Text>
         {dashboardData.productos_cancelados &&
-        dashboardData.productos_cancelados.length > 0 ? (
+          dashboardData.productos_cancelados.length > 0 ? (
           dashboardData.productos_cancelados.map((item, index) => (
             <View key={index} style={styles.canceledItem}>
               <View style={styles.canceledIcon}>
@@ -466,9 +518,14 @@ const DashboardContent = ({ token }) => {
 };
 
 const styles = StyleSheet.create({
+  menuIco: {
+    width: 50,
+    height: 30,
+    resizeMode: 'contain',
+  },
   container: {
     flex: 1,
-    backgroundColor: "#1A1A2E",
+    backgroundColor: "#1e3151ff",
   },
   safeContainer: {
     flex: 1,
@@ -491,20 +548,27 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: "center",
   },
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 20,
+  },
   dateText: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 10,
+    flex: 1,
+    fontSize: 16,
+    color: '#2c2c2cff',
   },
   refreshButton: {
-    backgroundColor: "#1A1A2E",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
+  flexShrink: 0,
+  backgroundColor: '#264072ff',
+  paddingVertical: 11,
+  paddingHorizontal: 12,
+  borderRadius: 10,
   },
   refreshButtonText: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: "600",
   },
   statsContainer: {
@@ -637,7 +701,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   welcomeText: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: "center",
     color: "#666666",
     fontStyle: "italic",
@@ -727,13 +791,15 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 30,
     width: 60,
-    height: 60,
+    height: 61,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 10,
+    paddingVertical: 4,
   },
   appLogo: {
-    fontSize: 28,
+    width: 45,
+    height: 40,
   },
   drawerTitle: {
     fontSize: 20,
@@ -814,13 +880,14 @@ const styles = StyleSheet.create({
     borderColor: "rgba(59, 130, 246, 0.2)",
   },
   menuIconContainer: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#F2F4F4",
     borderRadius: 10,
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 9,
+    paddingVertical: 4,
   },
   menuIconText: {
     fontSize: 18,
@@ -833,8 +900,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   menuText: {
-    fontSize: 15,
-    color: "#374151",
+    fontSize: 17,
+    color: "#000000ff",
     fontWeight: "500",
     flex: 1,
   },
@@ -853,26 +920,6 @@ const styles = StyleSheet.create({
     width: 4,
     borderTopRightRadius: 2,
     borderBottomRightRadius: 2,
-  },
-  currentSectionContainer: {
-    marginTop: 20,
-    marginHorizontal: 16,
-    padding: 16,
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: "#3B82F6",
-  },
-  currentSectionLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  currentSectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1F2937",
   },
   drawerFooter: {
     paddingHorizontal: 20,
