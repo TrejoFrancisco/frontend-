@@ -236,11 +236,10 @@ function HomeScreen() {
                 <View style={styles.drawerHeaderContent}>
                   <View style={styles.appLogoContainer}>
                     <Image
-                      source={require('../../../../../assets/logo.png')}
+                      source={require("../../../../../assets/logo.png")}
                       style={styles.appLogo}
                       resizeMode="contain"
                     />
-
                   </View>
                   <Text style={styles.drawerTitle}>Mi Restaurante</Text>
                   <Text style={styles.drawerSubtitle}>
@@ -382,8 +381,8 @@ const DashboardContent = ({ token }) => {
       console.error("Error fetching dashboard data:", error);
       setError(
         error.response?.data?.error?.message ||
-        error.response?.data?.message ||
-        "Error de conexión. Verifica tu conexión a internet."
+          error.response?.data?.message ||
+          "Error de conexión. Verifica tu conexión a internet."
       );
     } finally {
       setLoading(false);
@@ -431,12 +430,14 @@ const DashboardContent = ({ token }) => {
 
         <View style={styles.rowContainer}>
           <Text style={styles.dateText}>Fecha: {dashboardData.fecha}</Text>
-          <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={handleRefresh}
+          >
             <Text style={styles.refreshButtonText}>Actualizar</Text>
           </TouchableOpacity>
         </View>
       </View>
-
 
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -460,7 +461,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Productos Más Vendidos</Text>
         {dashboardData.productos_mas_vendidos &&
-          dashboardData.productos_mas_vendidos.length > 0 ? (
+        dashboardData.productos_mas_vendidos.length > 0 ? (
           dashboardData.productos_mas_vendidos.map((item, index) => (
             <View key={item.producto_id} style={styles.productItem}>
               <View style={styles.rankBadge}>
@@ -484,7 +485,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Cancelaciones del día</Text>
         {dashboardData.productos_cancelados &&
-          dashboardData.productos_cancelados.length > 0 ? (
+        dashboardData.productos_cancelados.length > 0 ? (
           dashboardData.productos_cancelados.map((item, index) => (
             <View key={index} style={styles.canceledItem}>
               <View style={styles.canceledIcon}>
@@ -521,7 +522,7 @@ const styles = StyleSheet.create({
   menuIco: {
     width: 50,
     height: 30,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
   container: {
     flex: 1,
@@ -549,22 +550,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   rowContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingTop: 20,
   },
   dateText: {
     flex: 1,
     fontSize: 16,
-    color: '#2c2c2cff',
+    color: "#2c2c2cff",
   },
   refreshButton: {
-  flexShrink: 0,
-  backgroundColor: '#264072ff',
-  paddingVertical: 11,
-  paddingHorizontal: 12,
-  borderRadius: 10,
+    flexShrink: 0,
+    backgroundColor: "#264072ff",
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    borderRadius: 10,
   },
   refreshButtonText: {
     color: "#fff",

@@ -1,3 +1,5 @@
+//CocinaSreen
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -7,6 +9,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Modal,
+  Image,
 } from "react-native";
 import { API } from "../../../../services/api";
 import { useAuth } from "../../../../AuthContext";
@@ -23,6 +27,12 @@ export default function CocinaSection() {
     totalComandas: 0,
     totalProductos: 0,
   });
+  const [modalVisible, setModalVisible] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+  const abrirVentanaDetalles = (producto) => {
+    setProductoSeleccionado(producto);
+    setModalVisible(true);
+  };
 
   useEffect(() => {
     if (token) {
@@ -78,6 +88,7 @@ export default function CocinaSection() {
         text: "Cancelar",
         style: "cancel",
       },
+
       {
         text: "Cerrar Sesión",
         style: "destructive",
@@ -216,19 +227,13 @@ export default function CocinaSection() {
                 styles.prioridadBadge,
                 { backgroundColor: getPrioridadColor(producto.prioridad) },
               ]}
-            >
-              <Text style={styles.prioridadText}>
-                {producto.prioridad
-                  ? String(producto.prioridad).toUpperCase()
-                  : "NORMAL"}
-              </Text>
-            </View>
+            ></View>
           </View>
           <Text style={styles.productoClave}>#{producto.clave}</Text>
         </View>
 
         <View style={styles.productoRightInfo}>
-          <Text style={styles.productoPrecio}>${producto.precio_venta}</Text>
+          {/* Estado del producto */}
           <View
             style={[
               styles.estadoBadge,
@@ -239,6 +244,14 @@ export default function CocinaSection() {
               {getEstadoText(producto.estado)}
             </Text>
           </View>
+
+          {/* Botón de detalles */}
+          <TouchableOpacity
+            style={styles.detallesButton}
+            onPress={() => abrirVentanaDetalles(producto)}
+          >
+            <Text style={styles.detallesButtonText}>Detalles</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -260,12 +273,6 @@ export default function CocinaSection() {
 
         <View style={styles.tiempoInfo}>
           <Text style={styles.tiempoLabel}>Pedido</Text>
-          <Text style={styles.tiempoText}>
-            {new Date(producto.fecha_pedido).toLocaleTimeString("es-MX", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </Text>
         </View>
       </View>
 
@@ -281,13 +288,11 @@ export default function CocinaSection() {
             style={[styles.actionButton, styles.entregarButton]}
             onPress={() => marcarComoEntregado(producto.comanda_producto_id)}
           >
-            <Text style={styles.actionButtonText}>
-              ✅ Marcar como Entregado
-            </Text>
+            <Text style={styles.actionButtonText}>Marcar como Entregado</Text>
           </TouchableOpacity>
         ) : (
           <View style={[styles.actionButton, styles.completadoButton]}>
-            <Text style={styles.completadoText}>✅ Entregado</Text>
+            <Text style={styles.completadoText}>Entregado</Text>
           </View>
         )}
       </View>
@@ -297,9 +302,7 @@ export default function CocinaSection() {
   const renderComandaGroup = (comanda) => (
     <View key={comanda.comanda_id} style={styles.comandaGroup}>
       <View style={styles.comandaGroupHeader}>
-        <Text style={styles.comandaGroupTitle}>
-          Mesa {comanda.mesa} - {comanda.productos.length} producto(s)
-        </Text>
+        <Text style={styles.comandaGroupTitle}>Mesa {comanda.mesa}</Text>
         <Text style={styles.comandaGroupTime}>
           {new Date(comanda.fecha_comanda).toLocaleTimeString("es-MX")}
         </Text>
@@ -322,15 +325,33 @@ export default function CocinaSection() {
   return (
     <View style={styles.container}>
       <View style={styles.topHeader}>
-        <View style={styles.userInfo}>
-          <Text style={styles.userWelcome}>
-            👋 Hola, {user?.name || "Usuario"}
-          </Text>
-          <Text style={styles.userRole}>Rol: {user?.role || "cocina"}</Text>
+        <View style={styles.headerColumns}>
+          {/* Columna izquierda: saludo y rol */}
+          <View style={styles.leftColumn}>
+            <View style={styles.userGreeting}>
+              {/*   <Image
+                source={require("../../../../../assets/saludo.png")}
+                style={styles.welcomeIcon}
+              />
+               */}
+              <Text style={styles.userWelcome}>Hola, {user?.name}</Text>
+            </View>
+          </View>
+
+          {/* Columna derecha: división y botón de salir */}
+          <View style={styles.rightColumn}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Image
+                source={require("../../../../../assets/cerrarC.png")} // ← tu imagen personalizada
+                style={styles.logoutIcon}
+              />
+              <Text style={styles.logoutButtonText}>Salir</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>🚪 Salir</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -341,12 +362,7 @@ export default function CocinaSection() {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Cocina - Productos Pendientes</Text>
-          {categoriaAsignada && (
-            <Text style={styles.categoriaText}>
-              Categoría: {categoriaAsignada.nombre}
-            </Text>
-          )}
+          <Text style={styles.mainTitle}>Cocina</Text>
         </View>
 
         {/* Estadísticas */}
@@ -361,6 +377,15 @@ export default function CocinaSection() {
           </View>
         </View>
 
+        <View style={styles.header}>
+          <Text style={styles.subtext}>Productos Pendientes</Text>
+          {categoriaAsignada && (
+            <Text style={styles.categoriaText}>
+              Categoría: {categoriaAsignada.nombre}
+            </Text>
+          )}
+        </View>
+
         {comandas.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>🎉 No hay productos pendientes</Text>
@@ -372,54 +397,109 @@ export default function CocinaSection() {
           comandas.map((comanda) => renderComandaGroup(comanda))
         )}
       </ScrollView>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Detalles del Producto</Text>
+
+            {productoSeleccionado && (
+              <>
+                <Text style={styles.modalItem}>
+                  Nombre: {productoSeleccionado.nombre}
+                </Text>
+                <Text style={styles.modalItem}>
+                  Clave: #{productoSeleccionado.clave}
+                </Text>
+                <Text style={styles.modalItem}>
+                  Prioridad: {productoSeleccionado.prioridad}
+                </Text>
+              </>
+            )}
+
+            <TouchableOpacity
+              style={styles.cerrarButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.cerrarButtonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // HEADER SUPERIOR (Bienvenida y Logout)
+
   topHeader: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 40,
+    paddingBottom: 20,
+    paddingHorizontal: 15,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d1d1d2ff",
+  },
+  headerColumns: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
   },
-  userInfo: {
+  leftColumn: {
     flex: 1,
   },
-  userWelcome: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 2,
+  rightColumn: {
+    alignItems: "flex-end",
   },
-  userRole: {
-    fontSize: 12,
-    color: "#6c757d",
-    textTransform: "capitalize",
+  userGreeting: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  userInfo: {
+    flexDirection: "column",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  welcomeIcon: {
+    width: 30,
+    height: 25,
+    marginRight: 5,
+    resizeMode: "contain",
+  },
+  userWelcome: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "bold",
+    maxWidth: 180, //Ancho para que el texto se acomode
   },
   logoutButton: {
-    backgroundColor: "#dc3545",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: "#FEE2E2",
+    borderRadius: 8,
+  },
+  logoutIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 6,
   },
   logoutButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 12,
+    fontSize: 14,
+    color: "#333",
   },
+
+  // CONTENEDOR PRINCIPAL Y ESTRUCTURA BÁSICA
 
   container: {
     flex: 1,
@@ -433,24 +513,41 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+
+  // HEADER DEL TÍTULO Y CATEGORÍA
+
   header: {
+    paddingVertical: 2,
+    paddingHorizontal: 5,
     marginBottom: 20,
   },
-  title: {
-    fontSize: 24,
+  mainTitle: {
+    fontSize: 25,
     fontWeight: "bold",
-    color: "#212529",
+    textAlign: "center",
     marginBottom: 4,
   },
+  subtext: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "left",
+    alignSelf: "flex-start",
+    marginBottom: 6,
+  },
+
   categoriaText: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#6c757d",
     fontStyle: "italic",
+    fontWeight: "bold",
   },
+
+  // SECCIÓN DE ESTADÍSTICAS
+
   statsContainer: {
     flexDirection: "row",
     marginBottom: 20,
-    gap: 12,
+    gap: 10,
   },
   statCard: {
     flex: 1,
@@ -465,15 +562,18 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#007bff",
   },
   statLabel: {
     fontSize: 14,
     color: "#6c757d",
-    marginTop: 4,
+    marginTop: 1,
   },
+
+  // AGRUPACIÓN DE COMANDAS POR MESA
+
   comandaGroup: {
     marginBottom: 8,
   },
@@ -490,7 +590,7 @@ const styles = StyleSheet.create({
   },
   comandaGroupTitle: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
   },
   comandaGroupTime: {
@@ -498,6 +598,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
+
+  // TARJETA DE PRODUCTO INDIVIDUAL
+
   productoCard: {
     backgroundColor: "#fff",
     marginHorizontal: 16,
@@ -514,6 +617,9 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     backgroundColor: "#f8f9fa",
   },
+
+  // HEADER DEL PRODUCTO (Nombre, precio, estado)
+
   productoHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -545,24 +651,55 @@ const styles = StyleSheet.create({
   productoRightInfo: {
     alignItems: "flex-end",
   },
-  productoPrecio: {
-    fontSize: 16,
-    color: "#28a745",
-    fontWeight: "bold",
-    marginBottom: 6,
+  detallesButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#007AFF",
+    borderRadius: 10,
+    alignSelf: "flex-start",
+    minWidth: "70",
   },
-  prioridadBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    minWidth: 50,
+  detallesButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
     alignItems: "center",
   },
-  prioridadText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "bold",
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    width: "80%",
   },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalItem: {
+    fontSize: 16,
+    marginBottom: 6,
+  },
+  cerrarButton: {
+    marginTop: 20,
+    backgroundColor: "#FF3B30",
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  cerrarButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "500",
+  },
+
+  // BADGES DE PRIORIDAD Y ESTADO
+
   estadoBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -573,8 +710,11 @@ const styles = StyleSheet.create({
   estadoText: {
     color: "#fff",
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "bold",
   },
+
+  // INFORMACIÓN DE MESA Y TIEMPO
+
   mesaInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -608,12 +748,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mesaDetailText: {
-    fontSize: 14,
-    color: "#495057",
+    fontSize: 15,
+    color: "#574953ff",
     fontWeight: "600",
   },
   comensalText: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#6c757d",
     marginTop: 2,
   },
@@ -621,7 +761,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   tiempoLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: "#6c757d",
     textTransform: "uppercase",
     fontWeight: "500",
@@ -632,6 +772,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 1,
   },
+
+  // INFORMACIÓN DEL MESERO
+
   meseroInfo: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -642,6 +785,9 @@ const styles = StyleSheet.create({
     color: "#6c757d",
     fontWeight: "500",
   },
+
+  // BOTONES DE ACCIÓN (Entregar/Completado)
+
   productoActions: {
     padding: 16,
     paddingTop: 12,
@@ -675,6 +821,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+
+  // ESTADOS VACÍOS Y CARGANDO
+
   emptyState: {
     alignItems: "center",
     paddingVertical: 60,
@@ -694,7 +843,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   loadingText: {
-    fontSize: 18,
-    color: "#6c757d",
+    fontSize: 20,
+    color: "#000000ff",
   },
 });
