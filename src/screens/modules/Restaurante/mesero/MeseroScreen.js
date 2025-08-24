@@ -1,3 +1,5 @@
+// MeseroScreen
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -8,6 +10,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Image,
   TextInput,
 } from "react-native";
 import { API } from "../../../../services/api";
@@ -478,7 +481,7 @@ export default function ComandaSection() {
   const renderComandaCard = (comanda) => (
     <View key={comanda.id} style={styles.comandaCard}>
       <View style={styles.comandaHeader}>
-        <Text style={styles.comandaMesa}>Mesa: {comanda.mesa}</Text>
+        <Text style={styles.comandaMesa}>Mesa {comanda.mesa}</Text>
         <View
           style={[
             styles.statusBadge,
@@ -509,7 +512,13 @@ export default function ComandaSection() {
             style={[styles.actionButton, styles.editButton]}
             onPress={() => openEditModal(comanda)}
           >
-            <Text style={styles.actionButtonText}>✏️ Editar</Text>
+            <View style={styles.buttonContent}>
+              <Image
+                source={require("../../../../../assets/editarr.png")}
+                style={styles.iconImage}
+              />
+              <Text style={styles.actionButtonText}>Editar</Text>
+            </View>
           </TouchableOpacity>
         )}
 
@@ -654,16 +663,35 @@ export default function ComandaSection() {
   return (
     <View style={styles.container}>
       <View style={styles.topHeader}>
-        <View style={styles.userInfo}>
-          <Text style={styles.userWelcome}>👋 Hola, {user?.name}</Text>
-          <Text style={styles.userRole}>
-            Rol: {user?.role === "meseros_restaurant" ? "Mesero" : user?.role}
-          </Text>
+        <View style={styles.headerColumns}>
+          {/* Columna izquierda: saludo y rol */}
+          <View style={styles.leftColumn}>
+            <View style={styles.userGreeting}>
+              {/*   <Image
+                source={require("../../../../../assets/saludo.png")}
+                style={styles.welcomeIcon}
+              />
+               */}
+              <Text style={styles.userWelcome}>Hola, {user?.name}</Text>
+            </View>
+          </View>
+
+          {/* Columna derecha: división y botón de salir */}
+          <View style={styles.rightColumn}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Image
+                source={require("../../../../../assets/cerrarC.png")} // ← tu imagen personalizada
+                style={styles.logoutIcon}
+              />
+              <Text style={styles.logoutButtonText}>Salir</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>🚪 Salir</Text>
-        </TouchableOpacity>
       </View>
+
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -677,7 +705,13 @@ export default function ComandaSection() {
             style={styles.nuevaComandaButton}
             onPress={() => setModalVisible(true)}
           >
-            <Text style={styles.nuevaComandaButtonText}>➕ Nueva Comanda</Text>
+            <View style={styles.buttonContent}>
+              <Image
+                source={require("../../../../../assets/agreg.png")}
+                style={styles.iconImage}
+              />
+              <Text style={styles.nuevaComandaButtonText}>Nueva Comanda</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -703,7 +737,7 @@ export default function ComandaSection() {
               <ScrollView style={styles.formScrollView}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Mesa *"
+                  placeholder="Mesa"
                   value={nuevaComanda.mesa}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, mesa: value }))
@@ -712,7 +746,7 @@ export default function ComandaSection() {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Número de personas *"
+                  placeholder="Número de personas"
                   value={nuevaComanda.personas}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, personas: value }))
@@ -786,7 +820,7 @@ export default function ComandaSection() {
               <ScrollView style={styles.formScrollView}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Mesa *"
+                  placeholder="Mesa"
                   value={nuevaComanda.mesa}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, mesa: value }))
@@ -795,7 +829,7 @@ export default function ComandaSection() {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Número de personas *"
+                  placeholder="Número de personas"
                   value={nuevaComanda.personas}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, personas: value }))
@@ -830,7 +864,7 @@ export default function ComandaSection() {
                 {/* Separador visual */}
                 <View style={styles.separador}>
                   <Text style={styles.separadorTexto}>
-                    Agregar más productos
+                    Agregar más productos:
                   </Text>
                 </View>
 
@@ -996,49 +1030,66 @@ export default function ComandaSection() {
 }
 
 const styles = StyleSheet.create({
+  // ESTILOS DEL HEADER SUPERIOR
+
   topHeader: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 15,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d1d1d2ff",
+  },
+  headerColumns: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
   },
-  userInfo: {
+  leftColumn: {
     flex: 1,
   },
-  userWelcome: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 2,
+  rightColumn: {
+    alignItems: "flex-end",
   },
-  userRole: {
-    fontSize: 12,
-    color: "#6c757d",
-    textTransform: "capitalize",
+  userGreeting: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  welcomeIcon: {
+    width: 30,
+    height: 25,
+    marginRight: 5,
+    resizeMode: "contain",
+  },
+  userWelcome: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "bold",
+    maxWidth: 195, //Ancho para que el texto se acomode
   },
   logoutButton: {
-    backgroundColor: "#dc3545",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: "#FEE2E2",
+    borderRadius: 8,
+  },
+  logoutIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 6,
   },
   logoutButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 12,
+    fontSize: 14,
+    color: "#333",
   },
+
+  // ESTILOS DEL MODAL DE TICKET
 
   ticketModalContent: {
     backgroundColor: "#fff",
@@ -1139,7 +1190,6 @@ const styles = StyleSheet.create({
     marginTop: 25,
     flexDirection: "row",
   },
-
   closeTicketButton: {
     backgroundColor: "#ffc107",
     paddingVertical: 10,
@@ -1147,12 +1197,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-
   closeTicketButtonText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
   },
+
+  // ESTILOS DE CONTROLES DE CANTIDAD DE PRODUCTOS
 
   cantidadControls: {
     flexDirection: "row",
@@ -1186,6 +1237,9 @@ const styles = StyleSheet.create({
     minWidth: 30,
     textAlign: "center",
   },
+
+  // ESTILOS DE INFORMACIÓN DE PRODUCTOS
+
   productoInfo: {
     flex: 1,
     marginRight: 10,
@@ -1216,10 +1270,12 @@ const styles = StyleSheet.create({
     borderColor: "#dee2e6",
   },
   productoSelected: {
-    backgroundColor: "#e7f3ff",
-    borderColor: "#007bff",
+    backgroundColor: "#eef7ffff",
+    borderColor: "#1b89ffff",
   },
-  // Nuevos estilos para el modal de edición
+
+  // ESTILOS ESPECÍFICOS PARA MODAL DE EDICIÓN
+
   productoBusqueda: {
     backgroundColor: "#f0f8f0",
     borderColor: "#28a745",
@@ -1236,18 +1292,16 @@ const styles = StyleSheet.create({
   separadorTexto: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#007bff",
+    color: "#000000ff",
     paddingHorizontal: 20,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#007bff",
-    borderRadius: 20,
     paddingVertical: 8,
   },
   buscadorAgregar: {
     backgroundColor: "#f0f8f0",
     borderColor: "#28a745",
   },
+
+  // ESTILOS DEL CONTENEDOR PRINCIPAL
 
   container: {
     flex: 1,
@@ -1261,27 +1315,47 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+
+  // ESTILOS DEL HEADER DE LA PANTALLA PRINCIPAL
+
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
     alignItems: "center",
-    marginBottom: 20,
+    justifyContent: "space-between",
+    height: 130,
+    paddingVertical: 10,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
-    color: "#333",
+    textAlign: "center",
+    marginBottom: 10,
   },
   nuevaComandaButton: {
-    backgroundColor: "#007bff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: "#4CAF50",
+    paddingVertical: 12,
+    paddingHorizontal: 35,
     borderRadius: 8,
+    marginTop: "auto",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconImage: {
+    width: 26,
+    height: 25,
+    marginRight: 8,
   },
   nuevaComandaButtonText: {
-    color: "white",
+    color: "#fff",
+    fontSize: 15,
     fontWeight: "bold",
   },
+
+  // ESTILOS DEL ESTADO VACÍO Y CARGA
+
   emptyState: {
     alignItems: "center",
     marginTop: 100,
@@ -1290,19 +1364,22 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: "center",
     color: "#666",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "500",
     marginBottom: 8,
   },
   emptySubtext: {
     textAlign: "center",
     color: "#999",
-    fontSize: 14,
+    fontSize: 15,
   },
   loadingText: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: 20,
+    color: "#000000ff",
   },
+
+  // ESTILOS DE LAS TARJETAS DE COMANDA
+
   comandaCard: {
     backgroundColor: "white",
     borderRadius: 12,
@@ -1321,7 +1398,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   comandaMesa: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#333",
   },
@@ -1332,17 +1409,20 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: "white",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "bold",
   },
   comandaDetails: {
     marginBottom: 12,
   },
   comandaDetail: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#666",
     marginBottom: 4,
   },
+
+  // ESTILOS DE ACCIONES DE COMANDA
+
   comandaActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -1354,7 +1434,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   editButton: {
-    backgroundColor: "#28a745",
+    backgroundColor: "#f9ebc3ff",
   },
   ticketButton: {
     backgroundColor: "#17a2b8",
@@ -1363,10 +1443,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffc107",
   },
   actionButtonText: {
-    color: "white",
+    color: "#545454ff",
     fontSize: 12,
     fontWeight: "bold",
   },
+
+  // ESTILOS DE MODALES GENERALES
+
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -1388,6 +1471,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: "center",
   },
+
+  // ESTILOS DE FORMULARIOS EN MODALES
+
   formScrollView: {
     maxHeight: 400,
   },
@@ -1407,12 +1493,12 @@ const styles = StyleSheet.create({
   },
   buscadorInput: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#2D9966",
     borderRadius: 8,
     padding: 10,
     marginBottom: 12,
     fontSize: 14,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#ECFDF5",
   },
   noProductosText: {
     textAlign: "center",
@@ -1421,6 +1507,9 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     paddingVertical: 20,
   },
+
+  // ESTILOS DE ACCIONES DE MODALES
+
   modalActions: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1434,7 +1523,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#F44336",
   },
   saveButton: {
     backgroundColor: "#28a745",
@@ -1454,6 +1543,9 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
+
+  // ESTILOS DEL MODAL DE PAGO
+
   totalText: {
     fontSize: 18,
     fontWeight: "bold",
