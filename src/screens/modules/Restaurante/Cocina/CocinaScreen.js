@@ -170,45 +170,6 @@ export default function CocinaSection() {
     }
   };
 
-  const getEstadoColor = (estado) => {
-    switch (estado) {
-      case "pendiente":
-        return "#ffc107";
-      case "en preparación":
-        return "#fd7e14";
-      case "entregado":
-        return "#28a745";
-      default:
-        return "#6c757d";
-    }
-  };
-
-  const getEstadoText = (estado) => {
-    switch (estado) {
-      case "pendiente":
-        return "Pendiente";
-      case "en preparación":
-        return "En Preparación";
-      case "entregado":
-        return "Entregado";
-      default:
-        return estado;
-    }
-  };
-
-  const getPrioridadColor = (prioridad) => {
-    switch (prioridad) {
-      case "alta":
-        return "#dc3545";
-      case "media":
-        return "#fd7e14";
-      case "baja":
-        return "#28a745";
-      default:
-        return "#6c757d";
-    }
-  };
-
   const renderProductoItem = (producto, comanda) => (
     <View
       key={producto.comanda_producto_id}
@@ -222,29 +183,10 @@ export default function CocinaSection() {
         <View style={styles.productoMainInfo}>
           <View style={styles.productoTitleRow}>
             <Text style={styles.productoNombre}>{producto.nombre}</Text>
-            <View
-              style={[
-                styles.prioridadBadge,
-                { backgroundColor: getPrioridadColor(producto.prioridad) },
-              ]}
-            ></View>
           </View>
-          <Text style={styles.productoClave}>#{producto.clave}</Text>
         </View>
 
         <View style={styles.productoRightInfo}>
-          {/* Estado del producto */}
-          <View
-            style={[
-              styles.estadoBadge,
-              { backgroundColor: getEstadoColor(producto.estado) },
-            ]}
-          >
-            <Text style={styles.estadoText}>
-              {getEstadoText(producto.estado)}
-            </Text>
-          </View>
-
           {/* Botón de detalles */}
           <TouchableOpacity
             style={styles.detallesButton}
@@ -258,15 +200,9 @@ export default function CocinaSection() {
       {/* Información de la mesa y pedido */}
       <View style={styles.mesaInfo}>
         <View style={styles.mesaInfoLeft}>
-          <View style={styles.mesaNumber}>
-            <Text style={styles.mesaNumberText}>{comanda.mesa}</Text>
-          </View>
           <View style={styles.mesaDetails}>
-            <Text style={styles.mesaDetailText}>
-              Mesa {comanda.personas} pax
-            </Text>
             {comanda.comensal && (
-              <Text style={styles.comensalText}>{comanda.comensal}</Text>
+              <Text style={styles.comensalText}>Comensal: {comanda.comensal}</Text>
             )}
           </View>
         </View>
@@ -302,7 +238,7 @@ export default function CocinaSection() {
   const renderComandaGroup = (comanda) => (
     <View key={comanda.comanda_id} style={styles.comandaGroup}>
       <View style={styles.comandaGroupHeader}>
-        <Text style={styles.comandaGroupTitle}>Mesa {comanda.mesa}</Text>
+        <Text style={styles.comandaGroupTitle}>Mesa  No. {comanda.mesa}</Text>
         <Text style={styles.comandaGroupTime}>
           {new Date(comanda.fecha_comanda).toLocaleTimeString("es-MX")}
         </Text>
@@ -329,11 +265,10 @@ export default function CocinaSection() {
           {/* Columna izquierda: saludo y rol */}
           <View style={styles.leftColumn}>
             <View style={styles.userGreeting}>
-              {/*   <Image
+              <Image
                 source={require("../../../../../assets/saludo.png")}
                 style={styles.welcomeIcon}
               />
-               */}
               <Text style={styles.userWelcome}>Hola, {user?.name}</Text>
             </View>
           </View>
@@ -362,7 +297,11 @@ export default function CocinaSection() {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.mainTitle}>Cocina</Text>
+          {categoriaAsignada && (
+            <Text style={styles.categoriaText}>
+              Categoría: {categoriaAsignada.nombre}
+            </Text>
+          )}
         </View>
 
         {/* Estadísticas */}
@@ -378,12 +317,7 @@ export default function CocinaSection() {
         </View>
 
         <View style={styles.header}>
-          <Text style={styles.subtext}>Productos Pendientes</Text>
-          {categoriaAsignada && (
-            <Text style={styles.categoriaText}>
-              Categoría: {categoriaAsignada.nombre}
-            </Text>
-          )}
+          <Text style={styles.subtext}>Productos Pendientes: </Text>
         </View>
 
         {comandas.length === 0 ? (
@@ -521,24 +455,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     marginBottom: 20,
   },
-  mainTitle: {
-    fontSize: 25,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 4,
-  },
   subtext: {
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "left",
     alignSelf: "flex-start",
     marginBottom: 6,
-  },
-
-  categoriaText: {
-    fontSize: 15,
     color: "#6c757d",
-    fontStyle: "italic",
+  },
+  categoriaText: {
+    fontSize: 20,
+    color: "#000000ff",
+    textAlign: "center",
     fontWeight: "bold",
   },
 
@@ -635,6 +563,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
+    
   },
   productoNombre: {
     fontSize: 18,
@@ -642,27 +571,24 @@ const styles = StyleSheet.create({
     color: "#212529",
     flex: 1,
     marginRight: 8,
-  },
-  productoClave: {
-    fontSize: 14,
-    color: "#6c757d",
-    fontWeight: "500",
+    marginTop: 10,
+    textAlign: "center",
   },
   productoRightInfo: {
     alignItems: "flex-end",
   },
   detallesButton: {
-    marginTop: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    marginTop: 5,
+    paddingVertical: 15,
+    paddingHorizontal: 18,
     backgroundColor: "#007AFF",
     borderRadius: 10,
     alignSelf: "flex-start",
-    minWidth: "70",
+    minWidth: 70,
   },
   detallesButtonText: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "500",
   },
   modalOverlay: {
@@ -753,7 +679,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   comensalText: {
-    fontSize: 14,
+    fontSize: 17,
     color: "#6c757d",
     marginTop: 2,
   },
@@ -781,9 +707,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   meseroLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#6c757d",
-    fontWeight: "500",
+    fontWeight: "bold",
   },
 
   // BOTONES DE ACCIÓN (Entregar/Completado)
@@ -843,7 +769,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   loadingText: {
-    fontSize: 20,
+    fontSize: 15,
     color: "#000000ff",
   },
 });

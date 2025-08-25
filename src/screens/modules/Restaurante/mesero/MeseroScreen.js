@@ -528,7 +528,13 @@ export default function ComandaSection() {
             style={[styles.actionButton, styles.ticketButton]}
             onPress={() => generarTicket(comanda)}
           >
-            <Text style={styles.actionButtonText}>🎫 Ticket</Text>
+            <View style={styles.buttonContent}>
+              <Image
+                source={require("../../../../../assets/ticket.png")}
+                style={styles.iconImage}
+              />
+              <Text style={styles.actionButtonText}>Ticket</Text>
+            </View>
           </TouchableOpacity>
         )}
 
@@ -538,7 +544,13 @@ export default function ComandaSection() {
             style={[styles.actionButton, styles.pagoButton]}
             onPress={() => openPagoModal(comanda)}
           >
-            <Text style={styles.actionButtonText}>💳 Pagar</Text>
+            <View style={styles.buttonContent}>
+              <Image
+                source={require('../../../../../assets/card.png')}
+                style={styles.pagoIcon}
+              />
+              <Text style={styles.actionButtonText}>Pagar</Text>
+            </View>
           </TouchableOpacity>
         )}
       </View>
@@ -667,11 +679,11 @@ export default function ComandaSection() {
           {/* Columna izquierda: saludo y rol */}
           <View style={styles.leftColumn}>
             <View style={styles.userGreeting}>
-              {/*   <Image
+              <Image
                 source={require("../../../../../assets/saludo.png")}
                 style={styles.welcomeIcon}
               />
-               */}
+
               <Text style={styles.userWelcome}>Hola, {user?.name}</Text>
             </View>
           </View>
@@ -742,6 +754,7 @@ export default function ComandaSection() {
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, mesa: value }))
                   }
+                  keyboardType="numeric"
                 />
 
                 <TextInput
@@ -920,23 +933,30 @@ export default function ComandaSection() {
         <View style={styles.modalContainer}>
           <View style={styles.modalWrapper}>
             <View style={styles.ticketModalContent}>
-              <Text style={styles.ticketModalTitle}>🎫 Ticket de Cuenta</Text>
+              <View style={styles.ticketModalTitleContainer}>
+                <Image
+                  source={require('../../../../../assets/ticket.png')} // Ajusta la ruta según tu proyecto
+                  style={styles.ticketIcon}
+                />
+                <Text style={styles.ticketModalTitle}>Ticket de Cuenta</Text>
+              </View>
+
 
               {ticket && (
                 <ScrollView style={styles.ticketScrollView}>
                   <View style={styles.ticketHeader}>
                     <Text style={styles.ticketNegocio}>{ticket.negocio}</Text>
-                    <Text style={styles.ticketMesa}>Mesa: {ticket.mesa}</Text>
+                    <Text style={styles.ticketMesa}>Mesa  {ticket.mesa}</Text>
                     <Text style={styles.ticketFecha}>
                       {new Date(ticket.fecha).toLocaleString("es-MX")}
                     </Text>
-                    {ticket.comensal && (
-                      <Text style={styles.ticketComensal}>
-                        Comensal: {ticket.comensal}
-                      </Text>
-                    )}
                   </View>
 
+                  {ticket.comensal && (
+                    <Text style={styles.ticketComensal}>
+                      Comensal: {ticket.comensal}
+                    </Text>
+                  )}
                   <View style={styles.ticketDivider} />
 
                   <View style={styles.ticketProductos}>
@@ -1103,13 +1123,28 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 6,
   },
-  ticketModalTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    textAlign: "center",
+  ticketModalTitleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
-    color: "#2c3e50",
   },
+
+  ticketIcon: {
+    width: 45,
+    height: 40,
+    marginRight: 15,
+    resizeMode: 'contain',
+    marginTop: 2, // Ajuste fino para compensar altura visual
+  },
+
+  ticketModalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#2c3e50',
+    lineHeight: 40, // Igual que la altura de la imagen
+  },
+
   ticketScrollView: {
     maxHeight: 420,
   },
@@ -1120,14 +1155,14 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   ticketNegocio: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: "#2c3e50",
     textAlign: "center",
     marginBottom: 10,
   },
   ticketMesa: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#34495e",
     marginBottom: 5,
@@ -1191,7 +1226,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   closeTicketButton: {
-    backgroundColor: "#ffc107",
+    backgroundColor: "#ff3535ff",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -1332,7 +1367,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   nuevaComandaButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#3a90f4ff",
     paddingVertical: 12,
     paddingHorizontal: 35,
     borderRadius: 8,
@@ -1433,14 +1468,19 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
   },
+  pagoIcon: {
+    width: 26,
+    height: 25,
+    marginRight: 8,
+  },
   editButton: {
     backgroundColor: "#f9ebc3ff",
   },
   ticketButton: {
-    backgroundColor: "#17a2b8",
+    backgroundColor: "#a5eef9ff",
   },
   pagoButton: {
-    backgroundColor: "#ffc107",
+    backgroundColor: "#cbf3ffff",
   },
   actionButtonText: {
     color: "#545454ff",
@@ -1529,7 +1569,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#28a745",
   },
   pagarButton: {
-    backgroundColor: "#ffc107",
+    backgroundColor: "#4ec56bff",
   },
   cancelButtonText: {
     color: "white",
@@ -1569,14 +1609,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   label: {
-    width: 60,
+    minWidth: 50,           // Más espacio para palabras largas
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: 'bold',
   },
+
   metodoPagoContainer: {
-    flexDirection: "row",
-    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'left', // Centra cada línea horizontalmente
     gap: 8,
+    marginVertical: 12,
   },
   metodoPago: {
     paddingHorizontal: 12,
