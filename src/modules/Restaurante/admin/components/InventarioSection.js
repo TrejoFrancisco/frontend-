@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Image,
   Alert,
+  TextInput,
 } from "react-native";
 import { API } from "../../../../services/api";
 
@@ -22,6 +23,7 @@ export default function InventarioSection({ token, navigation }) {
   const [historialVisible, setHistorialVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [busquedaInventario, setBusquedaInventario] = useState(""); // Nueva state para la búsqueda
 
   useEffect(() => {
     fetchInventario();
@@ -51,6 +53,15 @@ export default function InventarioSection({ token, navigation }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Función para filtrar items por búsqueda
+  const getItemsFiltrados = (items) => {
+    if (!busquedaInventario.trim()) return items;
+
+    return items.filter(item =>
+      item.nombre.toLowerCase().includes(busquedaInventario.toLowerCase())
+    );
   };
 
   const onRefresh = async () => {
@@ -160,6 +171,10 @@ export default function InventarioSection({ token, navigation }) {
     );
   }
 
+  // Obtener items filtrados
+  const productosFiltrados = getItemsFiltrados(inventarioData.productos);
+  const materiasPrimasFiltradas = getItemsFiltrados(inventarioData.materias_primas);
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -171,6 +186,16 @@ export default function InventarioSection({ token, navigation }) {
       >
         <Text style={styles.title}>Inventario del Restaurante</Text>
 
+        {/* Buscador general de inventario */}
+        <View style={styles.buscadorContainer}>
+          <TextInput
+            style={[styles.buscadorInput, styles.buscadorInventario]}
+            placeholder="Buscar en Inventario ..."
+            value={busquedaInventario}
+            onChangeText={setBusquedaInventario}
+          />
+        </View>
+
         {/* Sección de Productos */}
         <View style={styles.section}>
           <View style={styles.sectionTitle}>
@@ -179,19 +204,23 @@ export default function InventarioSection({ token, navigation }) {
               style={styles.iconImage}
             />
             <Text style={styles.sectionTitle}>
-              Productos ({inventarioData.productos.length})
+              Productos ({productosFiltrados.length})
             </Text>
           </View>
 
-          {inventarioData.productos.length === 0 ? (
-            <Text style={styles.emptyText}>No hay productos en inventario</Text>
+          {productosFiltrados.length === 0 ? (
+            <Text style={styles.emptyText}>
+              {busquedaInventario.trim() !== ""
+                ? "No se encontraron productos que coincidan con la búsqueda"
+                : "No hay productos en inventario"
+              }
+            </Text>
           ) : (
-            inventarioData.productos.map((item) =>
+            productosFiltrados.map((item) =>
               renderInventarioItem(item, "productos")
             )
           )}
         </View>
-
 
         {/* Sección de Materias Primas */}
         <View style={styles.section}>
@@ -201,16 +230,19 @@ export default function InventarioSection({ token, navigation }) {
               style={styles.iconImage}
             />
             <Text style={styles.sectionTitle}>
-              Materias Primas ({inventarioData.materias_primas.length})
+              Materias Primas ({materiasPrimasFiltradas.length})
             </Text>
           </View>
 
-          {inventarioData.materias_primas.length === 0 ? (
+          {materiasPrimasFiltradas.length === 0 ? (
             <Text style={styles.emptyText}>
-              No hay materias primas en inventario
+              {busquedaInventario.trim() !== ""
+                ? "No se encontraron materias primas que coincidan con la búsqueda"
+                : "No hay materias primas en inventario"
+              }
             </Text>
           ) : (
-            inventarioData.materias_primas.map((item) =>
+            materiasPrimasFiltradas.map((item) =>
               renderInventarioItem(item, "materias_primas")
             )
           )}
@@ -257,6 +289,25 @@ export default function InventarioSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
+
+  buscadorContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  buscadorInput: {
+    borderWidth: 1,
+    borderColor: "#2D9966",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    fontSize: 16,
+    backgroundColor: "#ECFDF5",
+    width: '100%',
+  },
+  buscadorInventario: {
+    maxWidth: 400, // Limita el ancho en pantallas grandes
+  },
   container: {
     flex: 1,
   },
@@ -385,9 +436,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#6f42c1",
   },
   actionButtonContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-},
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 
 
   actionButtonText: {

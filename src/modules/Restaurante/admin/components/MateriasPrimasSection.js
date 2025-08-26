@@ -21,6 +21,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [materiasPrimas, setMateriasPrimas] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
+  const [busquedaMateria, setBusquedaMateria] = useState(""); // Nueva state para la búsqueda
 
   const [formData, setFormData] = useState({
     clave: "",
@@ -51,6 +52,17 @@ export default function MateriaPrimaSection({ token, navigation }) {
         navigation.navigate("Login");
       }
     }
+  };
+
+  // Función para filtrar materias primas por búsqueda
+  const getMateriasPrimasFiltradas = () => {
+    if (!busquedaMateria.trim()) return materiasPrimas;
+
+    return materiasPrimas.filter(
+      (materia) =>
+        materia.nombre.toLowerCase().includes(busquedaMateria.toLowerCase()) ||
+        materia.clave.toLowerCase().includes(busquedaMateria.toLowerCase())
+    );
   };
 
   const resetForm = () => {
@@ -185,6 +197,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
     setModalVisible(false);
     resetForm();
   };
+
   const [archivoCSV, setArchivoCSV] = useState(null);
 
   const handleSeleccionarArchivo = async () => {
@@ -270,6 +283,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
     }
   };
 
+  const materiasFiltradas = getMateriasPrimasFiltradas();
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gestión de Materias Primas</Text>
@@ -283,6 +298,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
           <Text style={styles.createButtonText}>Agregar Materia Prima</Text>
         </View>
       </TouchableOpacity>
+
       <TouchableOpacity
         style={styles.createButton}
         onPress={handleSeleccionarArchivo}
@@ -313,44 +329,87 @@ export default function MateriaPrimaSection({ token, navigation }) {
         </View>
       </TouchableOpacity>
 
-      <ScrollView>
-        {materiasPrimas.map((item) => (
-          <View key={item.id} style={styles.itemRow}>
-            <Text style={styles.itemText}>
-              #{item.id} - {item.clave} - {item.nombre}
-            </Text>
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => openEditModal(item)}
-              >
-                <Image
-                  source={require("../../../../../assets/editarr.png")}
-                  style={styles.icon}
-                  accessibilityLabel="Editar"
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDelete(item.id)}
-              >
-                <Image
-                  source={require("../../../../../assets/eliminar.png")}
-                  style={styles.icon}
-                  accessibilityLabel="Eliminar"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
+      <View style={styles.listContainer}>
+        {/* Buscador de materias primas */}
+        <TextInput
+          style={[styles.buscadorInput, styles.buscadorMateria]}
+          placeholder="Buscar por clave o nombre..."
+          value={busquedaMateria}
+          onChangeText={setBusquedaMateria}
+        />
 
-        {materiasPrimas.length === 0 && (
+        {/* Encabezado de la tabla */}
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.idColumn]}>
+            ID
+          </Text>
+          <Text style={[styles.tableHeaderText, styles.claveColumn]}>
+            Clave
+          </Text>
+          <Text style={[styles.tableHeaderText, styles.nombreColumn]}>
+            Nombre
+          </Text>
+          <Text style={[styles.tableHeaderText, styles.actionsColumn]}>
+            Acciones
+          </Text>
+        </View>
+
+        {/* Filas de la tabla */}
+        <ScrollView style={styles.tableBody}>
+          {materiasFiltradas.map((item) => (
+            <View key={item.id} style={styles.tableRow}>
+              <Text style={[styles.tableCellText, styles.idColumn]}>
+                {item.id}
+              </Text>
+              <Text style={[styles.tableCellText, styles.claveColumn]}>
+                {item.clave}
+              </Text>
+              <Text
+                style={[styles.tableCellText, styles.nombreColumn]}
+                numberOfLines={2}
+              >
+                {item.nombre}
+              </Text>
+              <View style={[styles.actionsColumn, styles.actionsContainer]}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openEditModal(item)}
+                >
+                  <Image
+                    source={require('../../../../../assets/editarr.png')}
+                    style={styles.icon}
+                    accessibilityLabel="Editar materia prima"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.id)}
+                >
+                  <Image
+                    source={require('../../../../../assets/eliminar.png')}
+                    style={styles.icon}
+                    accessibilityLabel="Eliminar materia prima"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+
+        {materiasFiltradas.length === 0 && busquedaMateria.trim() !== "" && (
+          <Text style={styles.emptyText}>
+            No se encontraron materias primas que coincidan con la búsqueda.
+          </Text>
+        )}
+
+        {materiasFiltradas.length === 0 && busquedaMateria.trim() === "" && (
           <Text style={styles.emptyText}>
             No hay materias primas registradas.
           </Text>
         )}
-      </ScrollView>
+      </View>
 
+      {/* Modal para crear/editar materia prima */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -359,66 +418,68 @@ export default function MateriaPrimaSection({ token, navigation }) {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {modalType === "crear" ? "Agregar" : "Editar"} Materia Prima
-            </Text>
+            <ScrollView>
+              <Text style={styles.modalTitle}>
+                {modalType === "crear" ? "Agregar" : "Editar"} Materia Prima
+              </Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Clave"
-              value={formData.clave}
-              onChangeText={(text) => handleInputChange("clave", text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre"
-              value={formData.nombre}
-              onChangeText={(text) => handleInputChange("nombre", text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Unidad (ej. kg, lts)"
-              value={formData.unidad}
-              onChangeText={(text) => handleInputChange("unidad", text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Costo unitario"
-              keyboardType="decimal-pad"
-              value={formData.costo_unitario}
-              onChangeText={(text) => handleInputChange("costo_unitario", text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Existencia"
-              keyboardType="decimal-pad"
-              value={formData.existencia}
-              onChangeText={(text) => handleInputChange("existencia", text)}
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Clave"
+                value={formData.clave}
+                onChangeText={(text) => handleInputChange("clave", text)}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Nombre"
+                value={formData.nombre}
+                onChangeText={(text) => handleInputChange("nombre", text)}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Unidad (ej. kg, lts)"
+                value={formData.unidad}
+                onChangeText={(text) => handleInputChange("unidad", text)}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Costo unitario"
+                keyboardType="decimal-pad"
+                value={formData.costo_unitario}
+                onChangeText={(text) => handleInputChange("costo_unitario", text)}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Existencia"
+                keyboardType="decimal-pad"
+                value={formData.existencia}
+                onChangeText={(text) => handleInputChange("existencia", text)}
+              />
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={closeModal}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.submitButton]}
-                onPress={handleSubmit}
-                disabled={isLoading}
-              >
-                <Text style={styles.submitButtonText}>
-                  {isLoading
-                    ? modalType === "crear"
-                      ? "Creando..."
-                      : "Actualizando..."
-                    : modalType === "crear"
-                    ? "Crear"
-                    : "Actualizar"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={closeModal}
+                >
+                  <Text style={styles.cancelButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.submitButton]}
+                  onPress={handleSubmit}
+                  disabled={isLoading}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {isLoading
+                      ? modalType === "crear"
+                        ? "Creando..."
+                        : "Actualizando..."
+                      : modalType === "crear"
+                        ? "Crear"
+                        : "Actualizar"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -427,10 +488,109 @@ export default function MateriaPrimaSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 20, 
-    backgroundColor: "#F5F5F5" 
+
+  buscadorInput: {
+    borderWidth: 1,
+    borderColor: "#2D9966",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 14,
+    backgroundColor: "#ECFDF5",
+  },
+  buscadorAgregar: {
+    backgroundColor: "#f0f8f0",
+    borderColor: "#28a745",
+  },
+
+
+  // Estilos para la tabla
+  listContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 2,
+    borderBottomColor: '#dee2e6',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  tableHeaderText: {
+    fontWeight: 'bold',
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#495057',
+  },
+  tableBody: {
+    flex: 1,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  tableCellText: {
+    fontSize: 11,
+    textAlign: 'center',
+    color: '#212529',
+  },
+
+  // Definición de columnas (ajusta los flex según tus necesidades)
+  idColumn: {
+    flex: 0.5,
+  },
+  claveColumn: {
+    flex: 2,
+  },
+  nombreColumn: {
+    flex: 1,
+    textAlign: 'left', // Para nombres largos, mejor alineado a la izquierda
+  },
+  actionsColumn: {
+    flex: 1.8,
+  },
+
+  // Contenedor de acciones
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  editButton: {
+    padding: 5,
+    borderRadius: 4,
+    backgroundColor: '#e3f2fd',
+  },
+  deleteButton: {
+    padding: 5,
+    borderRadius: 4,
+    backgroundColor: '#ffebee',
+  },
+  icon: {
+    width: 18,
+    height: 18,
+  },
+
+  // Texto cuando no hay datos
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 40,
+    fontSize: 16,
+    color: '#6c757d',
+    fontStyle: 'italic',
+  },
+
+  ///////////////
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#F5F5F5"
   },
   title: {
     fontSize: 25,

@@ -381,8 +381,8 @@ const DashboardContent = ({ token }) => {
       console.error("Error fetching dashboard data:", error);
       setError(
         error.response?.data?.error?.message ||
-          error.response?.data?.message ||
-          "Error de conexión. Verifica tu conexión a internet."
+        error.response?.data?.message ||
+        "Error de conexión. Verifica tu conexión a internet."
       );
     } finally {
       setLoading(false);
@@ -428,14 +428,15 @@ const DashboardContent = ({ token }) => {
       <View style={styles.titleContainer}>
         <Text style={styles.contentTitle}>Dashboard</Text>
 
-        <View style={styles.rowContainer}>
-          <Text style={styles.dateText}>Fecha: {dashboardData.fecha}</Text>
+        <View style={styles.columnContainer}>
           <TouchableOpacity
             style={styles.refreshButton}
             onPress={handleRefresh}
           >
             <Text style={styles.refreshButtonText}>Actualizar</Text>
           </TouchableOpacity>
+
+          <Text style={styles.dateText}>Fecha: {dashboardData.fecha}</Text>
         </View>
       </View>
 
@@ -461,7 +462,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Productos Más Vendidos</Text>
         {dashboardData.productos_mas_vendidos &&
-        dashboardData.productos_mas_vendidos.length > 0 ? (
+          dashboardData.productos_mas_vendidos.length > 0 ? (
           dashboardData.productos_mas_vendidos.map((item, index) => (
             <View key={item.producto_id} style={styles.productItem}>
               <View style={styles.rankBadge}>
@@ -485,7 +486,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Cancelaciones del día</Text>
         {dashboardData.productos_cancelados &&
-        dashboardData.productos_cancelados.length > 0 ? (
+          dashboardData.productos_cancelados.length > 0 ? (
           dashboardData.productos_cancelados.map((item, index) => (
             <View key={index} style={styles.canceledItem}>
               <View style={styles.canceledIcon}>
@@ -510,10 +511,6 @@ const DashboardContent = ({ token }) => {
           </Text>
         )}
       </View>
-
-      <Text style={styles.welcomeText}>
-        Panel de administración del restaurante
-      </Text>
     </View>
   );
 };
@@ -540,37 +537,43 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   titleContainer: {
-    alignItems: "center",
-    marginBottom: 20,
+    paddingVertical: 16,
   },
+
   contentTitle: {
-    fontSize: 25,
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 8,
     textAlign: "center",
+    marginBottom: 12,
   },
-  rowContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+
+  columnContainer: {
+    flexDirection: "column",
     alignItems: "center",
-    paddingTop: 20,
+    justifyContent: "center",
   },
-  dateText: {
-    flex: 1,
-    fontSize: 16,
-    color: "#2c2c2cff",
-  },
+
   refreshButton: {
-    flexShrink: 0,
-    backgroundColor: "#264072ff",
-    paddingVertical: 11,
-    paddingHorizontal: 12,
+    backgroundColor: "#033468ff",
+    paddingVertical: 8,
+    paddingHorizontal: 45,
     borderRadius: 10,
+    marginBottom: 16, // ← más espacio debajo del botón
   },
+
   refreshButtonText: {
     color: "#fff",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+
+  dateText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "bold",
+    color: "#333",
+    alignSelf: "flex-start",
+    marginLeft: 16,
+    marginTop: 4, // ← espacio extra arriba del texto
   },
   statsContainer: {
     flexDirection: "row",
@@ -700,13 +703,6 @@ const styles = StyleSheet.create({
     color: "#666",
     fontStyle: "italic",
     paddingVertical: 20,
-  },
-  welcomeText: {
-    fontSize: 15,
-    textAlign: "center",
-    color: "#666666",
-    fontStyle: "italic",
-    marginTop: 20,
   },
   loadingContainer: {
     alignItems: "center",

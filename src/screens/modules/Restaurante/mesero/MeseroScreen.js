@@ -29,6 +29,10 @@ export default function ComandaSection() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [ticket, setTicket] = useState(null);
+  const [detallesProductos, setDetallesProductos] = useState({});
+  const [modalDetalleVisible, setModalDetalleVisible] = useState(false);
+  const [productoParaDetalle, setProductoParaDetalle] = useState(null);
+  const [detalleTemp, setDetalleTemp] = useState("");
 
   const [nuevaComanda, setNuevaComanda] = useState({
     nombre: "",
@@ -37,6 +41,7 @@ export default function ComandaSection() {
     comensal: "",
     productos: [],
   });
+
   const [productosSeleccionados, setProductosSeleccionados] = useState({});
 
   const [pagos, setPagos] = useState([{ metodo: "efectivo", monto: "" }]);
@@ -108,40 +113,6 @@ export default function ComandaSection() {
     setRefreshing(false);
   };
 
-  const getStatusColor = (estado) => {
-    switch (estado) {
-      case "pendiente":
-        return "#ffc107";
-      case "en preparación":
-        return "#fd7e14";
-      case "entregado":
-        return "#28a745";
-      case "cerrada":
-        return "#6c757d";
-      case "pagada":
-        return "#198754";
-      default:
-        return "#6c757d";
-    }
-  };
-
-  const getStatusText = (estado) => {
-    switch (estado) {
-      case "pendiente":
-        return "Pendiente";
-      case "en preparación":
-        return "En Preparación";
-      case "entregado":
-        return "Entregado";
-      case "cerrada":
-        return "Cerrada";
-      case "pagada":
-        return "Pagada";
-      default:
-        return estado;
-    }
-  };
-
   const crearComanda = async () => {
     if (!token) return;
 
@@ -150,11 +121,27 @@ export default function ComandaSection() {
       return;
     }
 
+    // ✅ VERIFICAR que hay productos seleccionados
+    if (nuevaComanda.productos.length === 0) {
+      Alert.alert("Error", "Debe seleccionar al menos un producto");
+      return;
+    }
+
+    const productosConDetalle = nuevaComanda.productos.map(
+      (productoId, index) => {
+        const key = `${productoId}_${index}`;
+        return {
+          id: productoId,
+          detalle: detallesProductos[key] || null,
+        };
+      }
+    );
+
     const datos = {
       mesa: nuevaComanda.mesa,
       personas: parseInt(nuevaComanda.personas),
-      comensal: nuevaComanda.comensal,
-      productos: nuevaComanda.productos,
+      comensal: nuevaComanda.comensal || null,
+      productos: productosConDetalle,
     };
 
     try {
@@ -176,6 +163,8 @@ export default function ComandaSection() {
         navigation.navigate("Login");
       } else if (error.response?.data?.error) {
         Alert.alert("Error", error.response.data.error.message);
+      } else {
+        Alert.alert("Error", "Ocurrió un error al crear la comanda");
       }
     }
   };
@@ -188,11 +177,26 @@ export default function ComandaSection() {
       return;
     }
 
+    if (nuevaComanda.productos.length === 0) {
+      Alert.alert("Error", "Debe seleccionar al menos un producto");
+      return;
+    }
+
+    const productosConDetalle = nuevaComanda.productos.map(
+      (productoId, index) => {
+        const key = `${productoId}_${index}`;
+        return {
+          id: productoId,
+          detalle: detallesProductos[key] || null,
+        };
+      }
+    );
+
     const datos = {
       mesa: nuevaComanda.mesa,
       personas: parseInt(nuevaComanda.personas),
-      comensal: nuevaComanda.comensal,
-      productos: nuevaComanda.productos,
+      comensal: nuevaComanda.comensal || null,
+      productos: productosConDetalle,
     };
 
     try {
@@ -218,10 +222,11 @@ export default function ComandaSection() {
         navigation.navigate("Login");
       } else if (error.response?.data?.error) {
         Alert.alert("Error", error.response.data.error.message);
+      } else {
+        Alert.alert("Error", "Ocurrió un error al editar la comanda");
       }
     }
   };
-
   const generarTicket = async (comanda) => {
     if (!token) return;
 
@@ -348,24 +353,53 @@ export default function ComandaSection() {
     });
     setProductosSeleccionados({});
     setBusquedaProducto("");
+    setDetallesProductos({});
   };
 
   const openEditModal = (comanda) => {
     setSelectedComanda(comanda);
 
     const productosContados = {};
+    const detallesIniciales = {};
+    const contadorPorProducto = {};
+    const productosArray = []; // ✅ NUEVO: Array para mantener el orden
+
     comanda.productos?.forEach((producto) => {
+      // Contar productos
       productosContados[producto.id] =
         (productosContados[producto.id] || 0) + 1;
+
+      // Agregar al array en orden
+      productosArray.push(producto.id);
+
+      // Mapear detalles correctamente
+      if (!contadorPorProducto[producto.id]) {
+        contadorPorProducto[producto.id] = 0;
+      }
+
+      const indice = contadorPorProducto[producto.id];
+      const key = `${producto.id}_${indice}`;
+
+      // ✅ CORREGIDO: Guardar detalle si existe
+      if (producto.pivot?.detalle) {
+        detallesIniciales[key] = producto.pivot.detalle;
+      }
+
+      contadorPorProducto[producto.id]++;
     });
 
+    // ✅ IMPORTANTE: Establecer estados en el orden correcto
     setProductosSeleccionados(productosContados);
+    setDetallesProductos(detallesIniciales);
+    setBusquedaProducto("");
+
     setNuevaComanda({
       mesa: comanda.mesa || "",
       personas: comanda.personas?.toString() || "",
       comensal: comanda.comensal || "",
-      productos: comanda.productos?.map((p) => p.id) || [],
+      productos: productosArray, // ✅ USAR EL ARRAY ORDENADO
     });
+
     setEditModalVisible(true);
   };
 
@@ -397,28 +431,55 @@ export default function ComandaSection() {
       const nuevaCantidad = (prev[productoId] || 0) - 1;
       if (nuevaCantidad <= 0) {
         const { [productoId]: removed, ...rest } = prev;
+
+        // ✅ LIMPIAR DETALLES cuando se elimina completamente
+        setDetallesProductos((prevDetalles) => {
+          const nuevosDetalles = { ...prevDetalles };
+          Object.keys(nuevosDetalles).forEach((key) => {
+            if (key.startsWith(`${productoId}_`)) {
+              delete nuevosDetalles[key];
+            }
+          });
+          return nuevosDetalles;
+        });
+
         return rest;
+      } else {
+        // ✅ LIMPIAR SOLO EL ÚLTIMO DETALLE
+        setDetallesProductos((prevDetalles) => {
+          const nuevosDetalles = { ...prevDetalles };
+          const keyToRemove = `${productoId}_${nuevaCantidad}`;
+          if (nuevosDetalles[keyToRemove]) {
+            delete nuevosDetalles[keyToRemove];
+          }
+          return nuevosDetalles;
+        });
       }
+
       return {
         ...prev,
         [productoId]: nuevaCantidad,
       };
     });
-    actualizarProductosArray();
   };
 
   const actualizarProductosArray = () => {
-    const productosArray = [];
-    Object.entries(productosSeleccionados).forEach(([productoId, cantidad]) => {
-      for (let i = 0; i < cantidad; i++) {
-        productosArray.push(parseInt(productoId));
-      }
-    });
+    // ✅ ESPERAR A QUE SE ACTUALICE productosSeleccionados
+    setTimeout(() => {
+      const productosArray = [];
+      Object.entries(productosSeleccionados).forEach(
+        ([productoId, cantidad]) => {
+          for (let i = 0; i < cantidad; i++) {
+            productosArray.push(parseInt(productoId));
+          }
+        }
+      );
 
-    setNuevaComanda((prev) => ({
-      ...prev,
-      productos: productosArray,
-    }));
+      setNuevaComanda((prev) => ({
+        ...prev,
+        productos: productosArray,
+      }));
+    }, 0);
   };
 
   useEffect(() => {
@@ -478,18 +539,28 @@ export default function ComandaSection() {
     );
   };
 
+  const abrirModalDetalle = (productoId, indice) => {
+    const key = `${productoId}_${indice}`;
+    setProductoParaDetalle({ id: productoId, indice });
+    setDetalleTemp(detallesProductos[key] || "");
+    setModalDetalleVisible(true);
+  };
+
+  const guardarDetalle = () => {
+    const key = `${productoParaDetalle.id}_${productoParaDetalle.indice}`;
+    setDetallesProductos((prev) => ({
+      ...prev,
+      [key]: detalleTemp.trim() || null,
+    }));
+    setModalDetalleVisible(false);
+    setDetalleTemp("");
+    setProductoParaDetalle(null);
+  };
   const renderComandaCard = (comanda) => (
     <View key={comanda.id} style={styles.comandaCard}>
       <View style={styles.comandaHeader}>
         <Text style={styles.comandaMesa}>Mesa {comanda.mesa}</Text>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: getStatusColor(comanda.estado) },
-          ]}
-        >
-          <Text style={styles.statusText}>{getStatusText(comanda.estado)}</Text>
-        </View>
+
       </View>
 
       <View style={styles.comandaDetails}>
@@ -546,7 +617,7 @@ export default function ComandaSection() {
           >
             <View style={styles.buttonContent}>
               <Image
-                source={require('../../../../../assets/card.png')}
+                source={require("../../../../../assets/card.png")}
                 style={styles.pagoIcon}
               />
               <Text style={styles.actionButtonText}>Pagar</Text>
@@ -606,10 +677,45 @@ export default function ComandaSection() {
             <Text style={styles.cantidadButtonText}>+</Text>
           </TouchableOpacity>
         </View>
+
+        {/* ← AGREGAR ESTA SECCIÓN PARA MOSTRAR DETALLES */}
+        {isSelected && (
+          <View style={styles.detallesContainer}>
+            {Array.from({ length: cantidad }, (_, index) => {
+              const key = `${producto.id}_${index}`;
+              const detalleGuardado = detallesProductos[key];
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.detalleItem,
+                    styles.detalleItemConBorde,
+                    detalleGuardado && styles.detalleItemConDetalle,
+                  ]}
+                  onPress={() => abrirModalDetalle(producto.id, index)}
+                  activeOpacity={0.7}
+                >
+                  {detalleGuardado ? (
+                    <View style={styles.detalleContenido}>
+                      <Text style={styles.detalleTextoConFondo}>Editar</Text>
+                    </View>
+
+                  ) : (
+                    <Text style={styles.detalleTexto}>
+                      #{index + 1} Agregar detalle
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+              );
+            })}
+          </View>
+        )}
+
       </View>
     );
   };
-
   const productosFiltrados = productos.filter(
     (producto) =>
       producto.nombre.toLowerCase().includes(busquedaProducto.toLowerCase()) ||
@@ -806,6 +912,7 @@ export default function ComandaSection() {
                   onPress={() => {
                     setModalVisible(false);
                     resetNuevaComanda();
+                    setDetallesProductos({});
                   }}
                 >
                   <Text style={styles.cancelButtonText}>Cancelar</Text>
@@ -911,6 +1018,7 @@ export default function ComandaSection() {
                   onPress={() => {
                     setEditModalVisible(false);
                     resetNuevaComanda();
+                    setDetallesProductos({});
                   }}
                 >
                   <Text style={styles.cancelButtonText}>Cancelar</Text>
@@ -927,6 +1035,45 @@ export default function ComandaSection() {
           </View>
         </View>
       </Modal>
+      {/* Modal Detalle Producto */}
+      <Modal visible={modalDetalleVisible} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalWrapper}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Detalle del Producto</Text>
+
+              <TextInput
+                style={styles.detalleInput}
+                placeholder="Ejemplo: Con hielos, sin cebolla, etc."
+                value={detalleTemp}
+                onChangeText={setDetalleTemp}
+                multiline={true}
+                numberOfLines={3}
+              />
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    setModalDetalleVisible(false);
+                    setDetalleTemp("");
+                    setProductoParaDetalle(null);
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={guardarDetalle}
+                >
+                  <Text style={styles.saveButtonText}>Guardar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Modal Ticket */}
       <Modal visible={ticketModalVisible} animationType="slide" transparent>
@@ -935,18 +1082,17 @@ export default function ComandaSection() {
             <View style={styles.ticketModalContent}>
               <View style={styles.ticketModalTitleContainer}>
                 <Image
-                  source={require('../../../../../assets/ticket.png')} // Ajusta la ruta según tu proyecto
+                  source={require("../../../../../assets/ticket.png")} // Ajusta la ruta según tu proyecto
                   style={styles.ticketIcon}
                 />
                 <Text style={styles.ticketModalTitle}>Ticket de Cuenta</Text>
               </View>
 
-
               {ticket && (
                 <ScrollView style={styles.ticketScrollView}>
                   <View style={styles.ticketHeader}>
                     <Text style={styles.ticketNegocio}>{ticket.negocio}</Text>
-                    <Text style={styles.ticketMesa}>Mesa  {ticket.mesa}</Text>
+                    <Text style={styles.ticketMesa}>Mesa {ticket.mesa}</Text>
                     <Text style={styles.ticketFecha}>
                       {new Date(ticket.fecha).toLocaleString("es-MX")}
                     </Text>
@@ -1050,6 +1196,90 @@ export default function ComandaSection() {
 }
 
 const styles = StyleSheet.create({
+  detallesContainer: {
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopColor: "#e0e0e0",
+    // Remover flexDirection: "row" y flexWrap para que sea vertical por defecto
+  },
+
+  detalleImagen: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    marginTop: 6,
+  },
+
+
+  detalleNumero: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#666",
+    marginRight: 6,
+    minWidth: 18,
+    textAlign: "center",
+  },
+
+  detalleTexto: {
+    flex: 1, // Usar todo el espacio disponible
+    fontSize: 10,
+    color: "#888",
+    fontStyle: "italic",
+    // Remover maxWidth y numberOfLines para mostrar texto completo
+  },
+
+  detalleIcono: {
+    fontSize: 12,
+    marginLeft: 6,
+    color: "#007bff",
+    minWidth: 16,
+    textAlign: "center",
+  },
+
+  // Estados para cuando tiene detalle (mantener igual)
+  detalleItem: {
+    padding: 10,
+    marginVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#f9f9f9",
+    borderColor: "#cccccc",
+    borderWidth: 1,
+    alignItems: "center",       // Centra horizontalmente
+    justifyContent: "center",   // Centra verticalmente
+  },
+
+  detalleItemConBorde: {
+    borderTopColor: "#e0e0e0",
+    borderTopWidth: 1,
+  },
+
+  detalleItemConDetalle: {
+    backgroundColor: "#e8f5e9", // verde claro para indicar que ya tiene detalle
+  },
+  detalleContenido: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  detalleTextoConFondo: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  detalleInput: {
+    borderWidth: 1,
+    borderColor: "#326de3ff",
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 10,
+    fontSize: 16,
+    textAlignVertical: "top",
+    minHeight: 80,
+    backgroundColor: "#fff",
+    color: "#202124",
+  },
   // ESTILOS DEL HEADER SUPERIOR
 
   topHeader: {
@@ -1124,9 +1354,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   ticketModalTitleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
 
@@ -1134,14 +1364,14 @@ const styles = StyleSheet.create({
     width: 45,
     height: 40,
     marginRight: 15,
-    resizeMode: 'contain',
+    resizeMode: "contain",
     marginTop: 2, // Ajuste fino para compensar altura visual
   },
 
   ticketModalTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#2c3e50',
+    fontWeight: "700",
+    color: "#2c3e50",
     lineHeight: 40, // Igual que la altura de la imagen
   },
 
@@ -1245,7 +1475,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f8f9fa",
     borderRadius: 20,
-    paddingHorizontal: 8,
+    paddingHorizontal: 5,
     paddingVertical: 4,
   },
   cantidadButton: {
@@ -1266,7 +1496,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   cantidadText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
     color: "#333",
     minWidth: 30,
@@ -1280,12 +1510,12 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   productoClave: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#666",
     fontWeight: "bold",
   },
   productoNombre: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#333",
     marginVertical: 2,
   },
@@ -1609,15 +1839,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   label: {
-    minWidth: 50,           // Más espacio para palabras largas
+    minWidth: 50, // Más espacio para palabras largas
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 
   metodoPagoContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'left', // Centra cada línea horizontalmente
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "left", // Centra cada línea horizontalmente
     gap: 8,
     marginVertical: 12,
   },
@@ -1653,7 +1883,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   eliminarPagoText: {
-    fontSize: 16,
+    fontSize: 14,
   },
   agregarPagoButton: {
     padding: 12,
