@@ -202,7 +202,9 @@ export default function CocinaSection() {
         <View style={styles.mesaInfoLeft}>
           <View style={styles.mesaDetails}>
             {comanda.comensal && (
-              <Text style={styles.comensalText}>Comensal: {comanda.comensal}</Text>
+              <Text style={styles.comensalText}>
+                Comensal: {comanda.comensal}
+              </Text>
             )}
           </View>
         </View>
@@ -238,7 +240,7 @@ export default function CocinaSection() {
   const renderComandaGroup = (comanda) => (
     <View key={comanda.comanda_id} style={styles.comandaGroup}>
       <View style={styles.comandaGroupHeader}>
-        <Text style={styles.comandaGroupTitle}>Mesa  No. {comanda.mesa}</Text>
+        <Text style={styles.comandaGroupTitle}>Mesa No. {comanda.mesa}</Text>
         <Text style={styles.comandaGroupTime}>
           {new Date(comanda.fecha_comanda).toLocaleTimeString("es-MX")}
         </Text>
@@ -347,10 +349,10 @@ export default function CocinaSection() {
                   Nombre: {productoSeleccionado.nombre}
                 </Text>
                 <Text style={styles.modalItem}>
-                  Clave: #{productoSeleccionado.clave}
+                  Prioridad: {productoSeleccionado.prioridad}
                 </Text>
                 <Text style={styles.modalItem}>
-                  Prioridad: {productoSeleccionado.prioridad}
+                  Detalles: {productoSeleccionado.detalle}
                 </Text>
               </>
             )}
@@ -563,7 +565,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
-    
   },
   productoNombre: {
     fontSize: 18,
