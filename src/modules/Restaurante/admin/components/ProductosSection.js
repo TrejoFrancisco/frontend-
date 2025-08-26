@@ -20,6 +20,8 @@ export default function ProductosSection({ token, navigation }) {
   const [editMode, setEditMode] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [productos, setProductos] = useState([]);
+  const [productosFiltrados, setProductosFiltrados] = useState([]);
+  const [textoBusqueda, setTextoBusqueda] = useState("");
   const [recetas, setRecetas] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [loadingCosts, setLoadingCosts] = useState(false);
@@ -44,6 +46,19 @@ export default function ProductosSection({ token, navigation }) {
     fetchCategorias();
   }, []);
 
+  // Filtrar productos cuando cambia el texto de búsqueda
+  useEffect(() => {
+    if (textoBusqueda.trim() === "") {
+      setProductosFiltrados(productos);
+    } else {
+      const filtrados = productos.filter((producto) =>
+        producto.nombre.toLowerCase().includes(textoBusqueda.toLowerCase()) ||
+        producto.clave.toLowerCase().includes(textoBusqueda.toLowerCase())
+      );
+      setProductosFiltrados(filtrados);
+    }
+  }, [textoBusqueda, productos]);
+
   const fetchProductos = async () => {
     try {
       const response = await API.get("/restaurante/admin/productos", {
@@ -52,7 +67,9 @@ export default function ProductosSection({ token, navigation }) {
         },
       });
       if (response.data.success) {
-        setProductos(response.data.data.productos);
+        const productosData = response.data.data.productos;
+        setProductos(productosData);
+        setProductosFiltrados(productosData);
       }
     } catch (error) {
       console.error("Error al obtener productos:", error);
@@ -155,6 +172,10 @@ export default function ProductosSection({ token, navigation }) {
 
       return newData;
     });
+  };
+
+  const limpiarBusqueda = () => {
+    setTextoBusqueda("");
   };
 
   const resetForm = () => {
@@ -406,8 +427,41 @@ export default function ProductosSection({ token, navigation }) {
           </View>
         </TouchableOpacity>
 
+        {/* Buscador */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar por nombre o clave..."
+              value={textoBusqueda}
+              onChangeText={setTextoBusqueda}
+            />
+            {textoBusqueda.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={limpiarBusqueda}
+              >
+
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         <View style={styles.productsList}>
-          {productos.map((producto) => renderProductoItem(producto))}
+          {productosFiltrados.map((producto) => renderProductoItem(producto))}
+          
+          {productosFiltrados.length === 0 && textoBusqueda.length > 0 && (
+            <Text style={styles.emptyText}>
+              No se encontraron productos que coincidan con "{textoBusqueda}"
+            </Text>
+          )}
+          
+          {productos.length === 0 && (
+            <Text style={styles.emptyText}>
+              No hay productos registrados
+            </Text>
+          )}
         </View>
       </ScrollView>
 
@@ -685,6 +739,49 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 8,
   },
+
+
+  // Agregar estos estilos al StyleSheet existente de ProductosSection
+
+// Estilos para el buscador
+searchContainer: {
+  paddingHorizontal: 20,
+  marginVertical: 15,
+},
+searchIcon: {
+  width: 20,
+  height: 20,
+  marginRight: 10,
+  tintColor: '#6c757d',
+},
+searchInput: {
+    borderWidth: 1,
+    borderColor: "#2D9966",
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 14,
+    backgroundColor: "#ECFDF5",
+  },
+clearButton: {
+  padding: 5,
+  marginLeft: 5,
+},
+clearIcon: {
+  width: 16,
+  height: 16,
+  tintColor: '#6c757d',
+},
+emptyText: {
+  textAlign: 'center',
+  color: '#6c757d',
+  fontSize: 16,
+  fontStyle: 'italic',
+  marginTop: 30,
+  paddingHorizontal: 20,
+},
+
+//////
   productsList: {
     paddingBottom: 20,
   },

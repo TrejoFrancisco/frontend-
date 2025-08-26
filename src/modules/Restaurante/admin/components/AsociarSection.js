@@ -51,7 +51,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
         Alert.alert(
           "Error",
           error.response?.data?.error?.message ||
-            "Error al obtener los usuarios"
+          "Error al obtener los usuarios"
         );
       }
     } finally {
@@ -73,7 +73,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-          "Error al obtener las categorías"
+        "Error al obtener las categorías"
       );
     }
   };
@@ -174,7 +174,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                  "Error al eliminar la asociación"
+                "Error al eliminar la asociación"
               );
             }
           },
@@ -404,6 +404,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     marginBottom: 20,
+    gap: 4,
   },
   statCard: {
     backgroundColor: "#ffffff",
@@ -411,15 +412,16 @@ const styles = StyleSheet.create({
     padding: 15,
     alignItems: "center",
     minWidth: 80,
+    maxWidth: 120, // evita que se expanda demasiado
+    width: "30%",  // se adapte proporcionalmente
+    // sombra
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
   },
+
   statNumber: {
     fontSize: 24,
     fontWeight: "bold",
