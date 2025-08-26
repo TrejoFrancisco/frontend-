@@ -200,7 +200,9 @@ export default function BarSection() {
         <View style={styles.mesaInfoLeft}>
           <View style={styles.mesaDetails}>
             {comanda.comensal && (
-              <Text style={styles.comensalText}>Comensal: {comanda.comensal}</Text>
+              <Text style={styles.comensalText}>
+                Comensal: {comanda.comensal}
+              </Text>
             )}
           </View>
         </View>
@@ -222,9 +224,7 @@ export default function BarSection() {
             style={[styles.actionButton, styles.entregarButton]}
             onPress={() => marcarComoEntregado(producto.comanda_producto_id)}
           >
-            <Text style={styles.actionButtonText}>
-              Marcar como Entregado
-            </Text>
+            <Text style={styles.actionButtonText}>Marcar como Entregado</Text>
           </TouchableOpacity>
         ) : (
           <View style={[styles.actionButton, styles.completadoButton]}>
@@ -238,7 +238,7 @@ export default function BarSection() {
   const renderComandaGroup = (comanda) => (
     <View key={comanda.comanda_id} style={styles.comandaGroup}>
       <View style={styles.comandaGroupHeader}>
-        <Text style={styles.comandaGroupTitle}>Mesa  No. {comanda.mesa}</Text>
+        <Text style={styles.comandaGroupTitle}>Mesa No. {comanda.mesa}</Text>
         <Text style={styles.comandaGroupTime}>
           {new Date(comanda.fecha_comanda).toLocaleTimeString("es-MX")}
         </Text>
@@ -296,7 +296,6 @@ export default function BarSection() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-
         <View style={styles.header}>
           {categoriaAsignada && (
             <Text style={styles.categoriaText}>
@@ -348,10 +347,10 @@ export default function BarSection() {
                   Nombre: {productoSeleccionado.nombre}
                 </Text>
                 <Text style={styles.modalItem}>
-                  Clave: #{productoSeleccionado.clave}
+                  Prioridad: {productoSeleccionado.prioridad}
                 </Text>
                 <Text style={styles.modalItem}>
-                  Prioridad: {productoSeleccionado.prioridad}
+                  Detalles: {productoSeleccionado.detalle}
                 </Text>
               </>
             )}
@@ -564,7 +563,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
-
   },
   productoNombre: {
     fontSize: 18,
