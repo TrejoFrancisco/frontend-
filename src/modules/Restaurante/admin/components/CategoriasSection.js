@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tableCellText: {
-    fontSize: 10,
+    fontSize: 12,
     color: "#333333",
   },
   idColumn: {

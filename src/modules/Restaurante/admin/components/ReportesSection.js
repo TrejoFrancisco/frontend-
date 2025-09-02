@@ -165,8 +165,8 @@ const ReportesSection = ({ token }) => {
       console.error("Error generating deliveries report:", error);
       setError(
         error.response?.data?.error?.message ||
-          error.response?.data?.message ||
-          "Error al generar el reporte de entregas"
+        error.response?.data?.message ||
+        "Error al generar el reporte de entregas"
       );
     } finally {
       setLoading(false);
@@ -217,8 +217,8 @@ const ReportesSection = ({ token }) => {
       console.error("Error generating sales report:", error);
       setError(
         error.response?.data?.error?.message ||
-          error.response?.data?.message ||
-          "Error al generar el reporte de ventas"
+        error.response?.data?.message ||
+        "Error al generar el reporte de ventas"
       );
     } finally {
       setLoading(false);
@@ -270,8 +270,8 @@ const ReportesSection = ({ token }) => {
       console.error("Error generating inventory report:", error);
       setError(
         error.response?.data?.error?.message ||
-          error.response?.data?.message ||
-          "Error al generar el reporte de inventario"
+        error.response?.data?.message ||
+        "Error al generar el reporte de inventario"
       );
     } finally {
       setLoading(false);
@@ -433,9 +433,9 @@ const ReportesSection = ({ token }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={styles.title}>Reportes por Fechas</Text>
+        <Text style={styles.title}>Reportes</Text>
         <Text style={styles.subtitle}>
-          Genera reportes personalizados seleccionando un rango de fechas
+          Genera reportes seleccionando un rango de fechas
         </Text>
       </View>
 
@@ -546,56 +546,56 @@ const ReportesSection = ({ token }) => {
               >
                 {usuarios && usuarios.length > 0
                   ? usuarios.map((usuario) => (
-                      <TouchableOpacity
-                        key={usuario.id}
-                        style={[
-                          styles.userOption,
-                          selectedUserId === usuario.id &&
-                            styles.selectedUserOption,
-                        ]}
-                        onPress={() => setSelectedUserId(usuario.id)}
-                      >
-                        <View style={styles.userInfo}>
-                          <Text
-                            style={[
-                              styles.userName,
-                              selectedUserId === usuario.id &&
-                                styles.selectedUserText,
-                            ]}
-                          >
-                            {usuario.name}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.userRole,
-                              selectedUserId === usuario.id &&
-                                styles.selectedUserRole,
-                            ]}
-                          >
-                            {usuario.categoria_nombre} | {usuario.rol}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.userEmail,
-                              selectedUserId === usuario.id &&
-                                styles.selectedUserEmail,
-                            ]}
-                          >
-                            {usuario.email}
-                          </Text>
+                    <TouchableOpacity
+                      key={usuario.id}
+                      style={[
+                        styles.userOption,
+                        selectedUserId === usuario.id &&
+                        styles.selectedUserOption,
+                      ]}
+                      onPress={() => setSelectedUserId(usuario.id)}
+                    >
+                      <View style={styles.userInfo}>
+                        <Text
+                          style={[
+                            styles.userName,
+                            selectedUserId === usuario.id &&
+                            styles.selectedUserText,
+                          ]}
+                        >
+                          {usuario.name}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.userRole,
+                            selectedUserId === usuario.id &&
+                            styles.selectedUserRole,
+                          ]}
+                        >
+                          {usuario.categoria_nombre} | {usuario.rol}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.userEmail,
+                            selectedUserId === usuario.id &&
+                            styles.selectedUserEmail,
+                          ]}
+                        >
+                          {usuario.email}
+                        </Text>
+                      </View>
+                      {selectedUserId === usuario.id && (
+                        <View style={styles.selectedIndicator}>
+                          <Text style={styles.selectedIndicatorText}>✓</Text>
                         </View>
-                        {selectedUserId === usuario.id && (
-                          <View style={styles.selectedIndicator}>
-                            <Text style={styles.selectedIndicatorText}>✓</Text>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                    ))
+                      )}
+                    </TouchableOpacity>
+                  ))
                   : !loadingData && (
-                      <Text style={styles.noUsersText}>
-                        No hay usuarios disponibles
-                      </Text>
-                    )}
+                    <Text style={styles.noUsersText}>
+                      No hay usuarios disponibles
+                    </Text>
+                  )}
               </ScrollView>
             )}
           </View>
@@ -612,12 +612,12 @@ const ReportesSection = ({ token }) => {
               {loading
                 ? "Generando..."
                 : activeTab === "ventas"
-                ? "Ver Reporte de Ventas"
-                : activeTab === "inventario"
-                ? "Ver Reporte de Inventario"
-                : activeTab === "comandas"
-                ? "Ver Reporte de Comandas"
-                : "Ver Reporte de Entregas"}
+                  ? "Ver Reporte de Ventas"
+                  : activeTab === "inventario"
+                    ? "Ver Reporte de Inventario"
+                    : activeTab === "comandas"
+                      ? "Ver Reporte de Comandas"
+                      : "Ver Reporte de Entregas"}
             </Text>
           </TouchableOpacity>
 
@@ -721,7 +721,7 @@ const ReportesSection = ({ token }) => {
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>🏆 Productos Más Vendidos</Text>
             {reporteData.productos_mas_vendidos &&
-            reporteData.productos_mas_vendidos.length > 0 ? (
+              reporteData.productos_mas_vendidos.length > 0 ? (
               reporteData.productos_mas_vendidos.map((item, index) => (
                 <View key={item.producto_id} style={styles.productItem}>
                   <View style={styles.rankBadge}>
@@ -748,7 +748,7 @@ const ReportesSection = ({ token }) => {
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>❌ Productos Cancelados</Text>
             {reporteData.productos_cancelados &&
-            reporteData.productos_cancelados.length > 0 ? (
+              reporteData.productos_cancelados.length > 0 ? (
               reporteData.productos_cancelados.map((item, index) => (
                 <View key={index} style={styles.canceledItem}>
                   <View style={styles.canceledIcon}>
@@ -816,7 +816,7 @@ const ReportesSection = ({ token }) => {
               🍽️ Productos Sin Receta (Salidas)
             </Text>
             {inventarioData.productos_sin_receta &&
-            inventarioData.productos_sin_receta.length > 0 ? (
+              inventarioData.productos_sin_receta.length > 0 ? (
               inventarioData.productos_sin_receta.map((item, index) => (
                 <View key={item.producto_id} style={styles.inventoryItem}>
                   <View style={styles.inventoryIcon}>
@@ -851,7 +851,7 @@ const ReportesSection = ({ token }) => {
               🥕 Materias Primas (Salidas)
             </Text>
             {inventarioData.materias_primas &&
-            inventarioData.materias_primas.length > 0 ? (
+              inventarioData.materias_primas.length > 0 ? (
               inventarioData.materias_primas.map((item, index) => (
                 <View key={item.materia_prima_id} style={styles.inventoryItem}>
                   <View style={styles.inventoryIcon}>
@@ -1119,43 +1119,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  actionButtons: {
-    marginTop: 20,
-  },
-  generateButton: {
-    backgroundColor: "#1A1A2E",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    marginVertical: 5,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  generateButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  clearButton: {
-    backgroundColor: "#6C757D",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  clearButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
@@ -1256,34 +1219,42 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
+
+    paddingHorizontal: 20,
     marginTop: 20,
   },
+
   generateButton: {
     backgroundColor: "#1A1A2E",
-    paddingHorizontal: 25,
-    paddingVertical: 12,
-    borderRadius: 25,
-    flex: 1,
-    marginRight: 10,
+    width: 150,
+    height: 50,
+    borderRadius: 20,
+    marginRight: 15,
+    justifyContent: "center",
+    alignItems: "center",
   },
+
   generateButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
   },
+
   clearButton: {
-    backgroundColor: "#6c757d",
-    paddingHorizontal: 25,
-    paddingVertical: 12,
-    borderRadius: 25,
-    flex: 0.4,
+    backgroundColor: "#328edef5",
+    width: 150,
+    height: 50,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
+
   clearButtonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "bold",
     textAlign: "center",
   },
   loadingContainer: {

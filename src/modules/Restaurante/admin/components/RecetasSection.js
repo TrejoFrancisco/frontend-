@@ -22,6 +22,7 @@ export default function RecetasSection({ token, navigation }) {
   const [materiasPrimas, setMateriasPrimas] = useState([]);
   const [editingRecetas, setEditingRecetas] = useState(null);
   const [recetaDetalle, setRecetaDetalle] = useState(null);
+  const [busquedaReceta, setBusquedaReceta] = useState("");
 
   const [recetaData, setRecetaData] = useState({
     clave: "",
@@ -33,6 +34,7 @@ export default function RecetasSection({ token, navigation }) {
     fetchRecetas();
     fetchMateriasPrimas();
   }, []);
+
 
   const fetchRecetas = async () => {
     if (!token) return;
@@ -81,6 +83,19 @@ export default function RecetasSection({ token, navigation }) {
     }
     return null;
   };
+
+
+    // Función para filtrar recetas por búsqueda
+  const getRecetasFiltradas = () => {
+    if (!busquedaReceta.trim()) return recetas;
+
+    return recetas.filter(
+      (receta) =>
+        receta.nombre.toLowerCase().includes(busquedaReceta.toLowerCase()) ||
+        receta.clave.toLowerCase().includes(busquedaReceta.toLowerCase())
+    );
+  };
+
 
   const resetForm = () => {
     setRecetaData({
@@ -292,6 +307,7 @@ export default function RecetasSection({ token, navigation }) {
     resetForm();
   };
 
+  const recetasFiltradas = getRecetasFiltradas();
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gestión de Recetas</Text>
@@ -306,41 +322,80 @@ export default function RecetasSection({ token, navigation }) {
         </View>
       </TouchableOpacity>
 
-      <ScrollView>
-        {recetas.map((item) => (
-          <View key={item.id} style={styles.itemRow}>
-            <Text style={styles.itemText}>
-              #{item.id} - {item.clave} - {item.nombre}
-            </Text>
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => openEditModal(item)}
-              >
-                <Image
-                  source={require('../../../../../assets/editarr.png')}
-                  style={styles.icon}
-                  accessibilityLabel="Editar"
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDelete(item.id)}
-              >
-                <Image
-                  source={require('../../../../../assets/eliminar.png')}
-                  style={styles.icon}
-                  accessibilityLabel="Eliminar"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
+      <View style={styles.listContainer}>
+        {/* Buscador de materias primas */}
+        <TextInput
+          style={[styles.buscadorInput, styles.buscadorReceta]}
+          placeholder="Buscar por clave o nombre..."
+          value={busquedaReceta}
+          onChangeText={setBusquedaReceta}
+        />
+        {/* Encabezado de la tabla */}
+        <View style={styles.tableHeader1}>
+          <Text style={[styles.tableHeaderText1, styles.idColumn]}>
+            ID
+          </Text>
+          <Text style={[styles.tableHeaderText1, styles.claveColumn]}>
+            Clave
+          </Text>
+          <Text style={[styles.tableHeaderText1, styles.nombreColumn]}>
+            Nombre
+          </Text>
+          <Text style={[styles.tableHeaderText1, styles.actionsColumn1]}>
+            Acciones
+          </Text>
+        </View>
 
-        {recetas.length === 0 && (
+        {/* Filas de la tabla */}
+        <ScrollView style={styles.tableBody}>
+          {recetasFiltradas.map((item) => (
+            <View key={item.id} style={styles.tableRow1}>
+              <Text style={[styles.tableCellText1, styles.idColumn]}>
+                {item.id}
+              </Text>
+              <Text style={[styles.tableCellText1, styles.claveColumn]}>
+                {item.clave}
+              </Text>
+              <Text style={[styles.tableCellText1, styles.nombreColumn]}>
+                {item.nombre}
+              </Text>
+              <View style={[styles.actionsColumn1, styles.actionsContainer]}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openEditModal(item)}
+                >
+                  <Image
+                    source={require('../../../../../assets/editarr.png')}
+                    style={styles.iconI}
+                    accessibilityLabel="Editar receta"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.id)}
+                >
+                  <Image
+                    source={require('../../../../../assets/eliminar.png')}
+                    style={styles.iconI}
+                    accessibilityLabel="Eliminar receta"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+
+
+        {recetasFiltradas.length === 0 && busquedaReceta.trim() !== "" && (
+          <Text style={styles.emptyText}>
+            No se encontraron recetas que coincidan con la búsqueda.
+          </Text>
+        )}
+
+        {recetasFiltradas.length === 0 && busquedaReceta.trim() === "" && (
           <Text style={styles.emptyText}>No hay recetas registradas.</Text>
         )}
-      </ScrollView>
+      </View>
 
       <Modal
         animationType="slide"
@@ -507,6 +562,88 @@ export default function RecetasSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  buscadorInput: {
+    borderWidth: 1,
+    borderColor: "#2D9966",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 14,
+    backgroundColor: "#ECFDF5",
+  },
+  buscadorAgregar: {
+    backgroundColor: "#f0f8f0",
+    borderColor: "#28a745",
+  },
+
+  // Estilos para la tabla
+  listContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  tableHeader1: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 2,
+    borderBottomColor: '#dee2e6',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  tableHeaderText1: {
+    fontWeight: 'bold',
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#495057',
+  },
+  tableBody: {
+    flex: 1,
+  },
+  tableRow1: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  tableCellText1: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#212529',
+  },
+
+  // Columnas específicas 
+  idColumn: {
+    flex: 0.5,
+  },
+  claveColumn: {
+    flex: 1,
+  },
+  nombreColumn: {
+    flex: 1,
+    textAlign: 'left',
+  },
+  actionsColumn1: {
+    flex: 1,
+  },
+  // Contenedor de acciones
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+
+  // Texto cuando no hay datos
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+
+  ////////////////////////////////////
   container: {
     flex: 1,
     padding: 16,
@@ -542,31 +679,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 8,
   },
-  itemRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "white",
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    elevation: 2,
-  },
-  itemText: {
-    flex: 1,
-    fontSize: 12,
-  },
-  actions: {
-    flexDirection: "row",
-  },
   editButton: {
     padding: 8,
     borderRadius: 4,
-    marginRight: 5,
+    marginRight: 8,
   },
   deleteButton: {
     padding: 8,
-    borderRadius: 5,
+    borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -574,24 +694,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     resizeMode: 'contain',
-  },
-  emptyText: {
-    textAlign: "center",
-    color: "#666",
-    fontStyle: "italic",
-    marginTop: 32,
-  },
-  modalContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    margin: 20,
-    borderRadius: 8,
-    padding: 20,
-    maxHeight: "90%",
   },
   modalOverlay: {
     flex: 1,
