@@ -22,6 +22,7 @@ export default function RecetasSection({ token, navigation }) {
   const [materiasPrimas, setMateriasPrimas] = useState([]);
   const [editingRecetas, setEditingRecetas] = useState(null);
   const [recetaDetalle, setRecetaDetalle] = useState(null);
+  const [busquedaReceta, setBusquedaReceta] = useState("");
 
   const [recetaData, setRecetaData] = useState({
     clave: "",
@@ -80,6 +81,25 @@ export default function RecetasSection({ token, navigation }) {
       Alert.alert("Error", "No se pudo cargar el detalle de la receta");
     }
     return null;
+  };
+
+  // Función para obtener la unidad de una materia prima
+  const getUnidadMateriaPrima = (materiaPrimaId) => {
+    const materiaPrima = materiasPrimas.find(
+      (mp) => mp.id === parseInt(materiaPrimaId)
+    );
+    return materiaPrima ? materiaPrima.unidad : "";
+  };
+
+  // Función para filtrar recetas por búsqueda
+  const getRecetasFiltradas = () => {
+    if (!busquedaReceta.trim()) return recetas;
+
+    return recetas.filter(
+      (receta) =>
+        receta.nombre.toLowerCase().includes(busquedaReceta.toLowerCase()) ||
+        receta.clave.toLowerCase().includes(busquedaReceta.toLowerCase())
+    );
   };
 
   const resetForm = () => {
@@ -292,6 +312,7 @@ export default function RecetasSection({ token, navigation }) {
     resetForm();
   };
 
+  const recetasFiltradas = getRecetasFiltradas();
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gestión de Recetas</Text>
@@ -306,41 +327,77 @@ export default function RecetasSection({ token, navigation }) {
         </View>
       </TouchableOpacity>
 
-      <ScrollView>
-        {recetas.map((item) => (
-          <View key={item.id} style={styles.itemRow}>
-            <Text style={styles.itemText}>
-              #{item.id} - {item.clave} - {item.nombre}
-            </Text>
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => openEditModal(item)}
-              >
-                <Image
-                  source={require('../../../../../assets/editarr.png')}
-                  style={styles.icon}
-                  accessibilityLabel="Editar"
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDelete(item.id)}
-              >
-                <Image
-                  source={require('../../../../../assets/eliminar.png')}
-                  style={styles.icon}
-                  accessibilityLabel="Eliminar"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
+      <View style={styles.listContainer}>
+        {/* Buscador de materias primas */}
+        <TextInput
+          style={[styles.buscadorInput, styles.buscadorReceta]}
+          placeholder="Buscar por clave o nombre..."
+          value={busquedaReceta}
+          onChangeText={setBusquedaReceta}
+        />
+        {/* Encabezado de la tabla */}
+        <View style={styles.tableHeader1}>
+          <Text style={[styles.tableHeaderText1, styles.idColumn]}>ID</Text>
+          <Text style={[styles.tableHeaderText1, styles.claveColumn]}>
+            Clave
+          </Text>
+          <Text style={[styles.tableHeaderText1, styles.nombreColumn]}>
+            Nombre
+          </Text>
+          <Text style={[styles.tableHeaderText1, styles.actionsColumn1]}>
+            Acciones
+          </Text>
+        </View>
 
-        {recetas.length === 0 && (
+        {/* Filas de la tabla */}
+        <ScrollView style={styles.tableBody}>
+          {recetasFiltradas.map((item) => (
+            <View key={item.id} style={styles.tableRow1}>
+              <Text style={[styles.tableCellText1, styles.idColumn]}>
+                {item.id}
+              </Text>
+              <Text style={[styles.tableCellText1, styles.claveColumn]}>
+                {item.clave}
+              </Text>
+              <Text style={[styles.tableCellText1, styles.nombreColumn]}>
+                {item.nombre}
+              </Text>
+              <View style={[styles.actionsColumn1, styles.actionsContainer]}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openEditModal(item)}
+                >
+                  <Image
+                    source={require("../../../../../assets/editarr.png")}
+                    style={styles.iconI}
+                    accessibilityLabel="Editar receta"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.id)}
+                >
+                  <Image
+                    source={require("../../../../../assets/eliminar.png")}
+                    style={styles.iconI}
+                    accessibilityLabel="Eliminar receta"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+
+        {recetasFiltradas.length === 0 && busquedaReceta.trim() !== "" && (
+          <Text style={styles.emptyText}>
+            No se encontraron recetas que coincidan con la búsqueda.
+          </Text>
+        )}
+
+        {recetasFiltradas.length === 0 && busquedaReceta.trim() === "" && (
           <Text style={styles.emptyText}>No hay recetas registradas.</Text>
         )}
-      </ScrollView>
+      </View>
 
       <Modal
         animationType="slide"
@@ -373,11 +430,19 @@ export default function RecetasSection({ token, navigation }) {
                 recetaDetalle?.materias_primas &&
                 recetaDetalle.materias_primas.length > 0 && (
                   <>
-                    <Text style={styles.sectionTitle}>Materias Primas Actuales</Text>
+                    <Text style={styles.sectionTitle}>
+                      Materias Primas Actuales
+                    </Text>
                     <View style={styles.tableHeader}>
-                      <Text style={[styles.tableHeaderText, { flex: 2 }]}>Materia Prima</Text>
-                      <Text style={[styles.tableHeaderText, { flex: 1 }]}>Cantidad</Text>
-                      <Text style={[styles.tableHeaderText, { flex: 1 }]}>Acciones</Text>
+                      <Text style={[styles.tableHeaderText, { flex: 2 }]}>
+                        Materia Prima
+                      </Text>
+                      <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>
+                        Cantidad
+                      </Text>
+                      <Text style={[styles.tableHeaderText, { flex: 1 }]}>
+                        Acciones
+                      </Text>
                     </View>
                     <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
                       {recetaDetalle.materias_primas.map((mp) => (
@@ -385,14 +450,19 @@ export default function RecetasSection({ token, navigation }) {
                           <Text style={[styles.tableCellText, { flex: 2 }]}>
                             {mp.clave} - {mp.nombre}
                           </Text>
-                          <TextInput
-                            style={[styles.input, styles.tableInput, { flex: 1 }]}
-                            value={mp.pivot.cantidad}
-                            keyboardType="decimal-pad"
-                            onChangeText={(text) =>
-                              handleExistingMateriaPrimaChange(mp.id, text)
-                            }
-                          />
+                          <View style={[{ flex: 1.5 }]}>
+                            <View style={styles.cantidadContainer}>
+                              <TextInput
+                                style={[styles.input, styles.cantidadInput]}
+                                value={mp.pivot.cantidad}
+                                keyboardType="decimal-pad"
+                                onChangeText={(text) =>
+                                  handleExistingMateriaPrimaChange(mp.id, text)
+                                }
+                              />
+                              <Text style={styles.unidadText}>{mp.unidad}</Text>
+                            </View>
+                          </View>
                           <TouchableOpacity
                             style={[styles.deleteButton, { flex: 1 }]}
                             onPress={() => removeExistingMateriaPrima(mp.id)}
@@ -416,7 +486,10 @@ export default function RecetasSection({ token, navigation }) {
               </Text>
 
               <View style={{ maxHeight: 250 }}>
-                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true}>
+                <ScrollView
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator={true}
+                >
                   {recetaData.materias_primas.map((mp, index) => (
                     <View key={index} style={styles.tableRow}>
                       <View style={{ flex: 2 }}>
@@ -424,7 +497,11 @@ export default function RecetasSection({ token, navigation }) {
                         <Picker
                           selectedValue={mp.materia_prima_id}
                           onValueChange={(value) =>
-                            handleMateriaPrimaChange(index, "materia_prima_id", value)
+                            handleMateriaPrimaChange(
+                              index,
+                              "materia_prima_id",
+                              value
+                            )
                           }
                         >
                           <Picker.Item label="Selecciona" value="" />
@@ -438,17 +515,22 @@ export default function RecetasSection({ token, navigation }) {
                         </Picker>
                       </View>
 
-                      <View style={{ flex: 1 }}>
+                      <View style={{ flex: 1.5 }}>
                         <Text style={{ marginBottom: 4 }}>Cantidad</Text>
-                        <TextInput
-                          style={styles.input}
-                          placeholder="Cantidad"
-                          keyboardType="decimal-pad"
-                          value={mp.cantidad}
-                          onChangeText={(text) =>
-                            handleMateriaPrimaChange(index, "cantidad", text)
-                          }
-                        />
+                        <View style={styles.cantidadContainer}>
+                          <TextInput
+                            style={[styles.input, styles.cantidadInput]}
+                            placeholder="Cantidad"
+                            keyboardType="decimal-pad"
+                            value={mp.cantidad}
+                            onChangeText={(text) =>
+                              handleMateriaPrimaChange(index, "cantidad", text)
+                            }
+                          />
+                          <Text style={styles.unidadText}>
+                            {getUnidadMateriaPrima(mp.materia_prima_id)}
+                          </Text>
+                        </View>
                       </View>
 
                       <TouchableOpacity
@@ -466,7 +548,10 @@ export default function RecetasSection({ token, navigation }) {
                 </ScrollView>
               </View>
 
-              <TouchableOpacity style={styles.addButton} onPress={addMateriaPrima}>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={addMateriaPrima}
+              >
                 <Image
                   source={require("../../../../../assets/agreg.png")}
                   style={styles.iconI}
@@ -494,8 +579,8 @@ export default function RecetasSection({ token, navigation }) {
                       ? "Creando..."
                       : "Actualizando..."
                     : modalType === "crear"
-                      ? "Crear"
-                      : "Actualizar"}
+                    ? "Crear"
+                    : "Actualizar"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -507,6 +592,104 @@ export default function RecetasSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  cantidadContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cantidadInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  unidadText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "bold",
+    minWidth: 40,
+    textAlign: "center",
+  },
+
+  buscadorInput: {
+    borderWidth: 1,
+    borderColor: "#2D9966",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 14,
+    backgroundColor: "#ECFDF5",
+  },
+  buscadorAgregar: {
+    backgroundColor: "#f0f8f0",
+    borderColor: "#28a745",
+  },
+
+  // Estilos para la tabla
+  listContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  tableHeader1: {
+    flexDirection: "row",
+    backgroundColor: "#f8f9fa",
+    borderBottomWidth: 2,
+    borderBottomColor: "#dee2e6",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  tableHeaderText1: {
+    fontWeight: "bold",
+    fontSize: 12,
+    textAlign: "center",
+    color: "#495057",
+  },
+  tableBody: {
+    flex: 1,
+  },
+  tableRow1: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  tableCellText1: {
+    fontSize: 12,
+    textAlign: "center",
+    color: "#212529",
+  },
+
+  // Columnas específicas
+  idColumn: {
+    flex: 0.5,
+  },
+  claveColumn: {
+    flex: 1,
+  },
+  nombreColumn: {
+    flex: 1,
+    textAlign: "left",
+  },
+  actionsColumn1: {
+    flex: 1,
+  },
+  // Contenedor de acciones
+  actionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+  },
+
+  // Texto cuando no hay datos
+  emptyText: {
+    textAlign: "center",
+    marginTop: 50,
+    fontSize: 16,
+    color: "#666",
+    fontStyle: "italic",
+  },
+
+  ////////////////////////////////////
   container: {
     flex: 1,
     padding: 16,
@@ -533,7 +716,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 25,
     height: 25,
-    resizeMode: 'contain',
+    resizeMode: "contain",
     marginRight: 8,
   },
   createButtonText: {
@@ -542,71 +725,36 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 8,
   },
-  itemRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "white",
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    elevation: 2,
-  },
-  itemText: {
-    flex: 1,
-    fontSize: 12,
-  },
-  actions: {
-    flexDirection: "row",
-  },
   editButton: {
     padding: 8,
     borderRadius: 4,
-    marginRight: 5,
+    marginRight: 8,
   },
   deleteButton: {
     padding: 8,
-    borderRadius: 5,
+    borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
   },
   icon: {
     width: 30,
     height: 30,
-    resizeMode: 'contain',
-  },
-  emptyText: {
-    textAlign: "center",
-    color: "#666",
-    fontStyle: "italic",
-    marginTop: 32,
-  },
-  modalContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    margin: 20,
-    borderRadius: 8,
-    padding: 20,
-    maxHeight: "90%",
+    resizeMode: "contain",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   modalContainerFixed: {
-    backgroundColor: 'white',
-    width: '90%',
-    maxHeight: '90%',
+    backgroundColor: "white",
+    width: "90%",
+    maxHeight: "90%",
     borderRadius: 10,
     padding: 16,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
 
   modalTitle: {
@@ -636,20 +784,20 @@ const styles = StyleSheet.create({
   existingMateriasContainer: {
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
     padding: 10,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
   },
   tableHeader: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderBottomWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     paddingBottom: 5,
     marginBottom: 5,
   },
   tableHeaderText: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 14,
     textAlign: "center",
   },
@@ -666,7 +814,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 4,
   },
   materiaPrimaRow: {

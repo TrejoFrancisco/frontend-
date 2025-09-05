@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   tableCellText: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
     color: '#212529',
   },
