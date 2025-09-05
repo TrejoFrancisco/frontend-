@@ -54,6 +54,8 @@ export default function LoginScreen({ navigation }) {
         navigation.navigate("CocinaScreen");
       } else if (role === "bartender_restaurante") {
         navigation.navigate("BartenderScreen");
+      } else if (role === "chef") {
+        navigation.navigate("ChefScreen");
       } else {
         navigation.navigate("Home");
       }
@@ -162,7 +164,6 @@ export default function LoginScreen({ navigation }) {
                     styles.inputWrapperError,
                 ]}
               >
-                
                 <TextInput
                   placeholder="Ingresa tu contraseña"
                   placeholderTextColor="#9CA3AF"

@@ -6,19 +6,18 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  Modal,
-  modalVisible,
-  Image,
   Alert,
+  Modal,
+  Image,
 } from "react-native";
 import { API } from "../../../../services/api";
 import { useAuth } from "../../../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
 
-export default function BarSection() {
+export default function barSection() {
   const { token, logout, user } = useAuth();
   const navigation = useNavigation();
-  const [comandas, setComandas] = useState([]);
+  const [productos, setProductos] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [categoriaAsignada, setCategoriaAsignada] = useState(null);
@@ -28,6 +27,26 @@ export default function BarSection() {
   });
   const [modalVisible, setModalVisible] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+
+  // Estados para filtros y ordenamiento
+  const [ordenamiento, setOrdenamiento] = useState("fecha_asc");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const opcionesOrdenamiento = [
+    { label: "Fecha: más antigua primero ", value: "fecha_asc" },
+    { label: "Fecha: más reciente primero ", value: "fecha_desc" },
+    { label: "Mesa: (ascendente)", value: "mesa_asc" },
+    { label: "Mesa: (descendente)", value: "mesa_desc" },
+    {
+      label: "Prioridad: Alta → Media → Baja",
+      value: "prioridad_desc",
+    },
+    {
+      label: "Prioridad: Baja → Media → Alta",
+      value: "prioridad_asc",
+    },
+  ];
+
   const abrirVentanaDetalles = (producto) => {
     setProductoSeleccionado(producto);
     setModalVisible(true);
@@ -35,11 +54,11 @@ export default function BarSection() {
 
   useEffect(() => {
     if (token) {
-      fetchComandas();
+      fetchProductos();
     }
-  }, [token]);
+  }, [token, ordenamiento]);
 
-  const fetchComandas = async () => {
+  const fetchProductos = async () => {
     if (!token) {
       setLoading(false);
       return;
@@ -51,11 +70,14 @@ export default function BarSection() {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        params: {
+          ordenar_por: ordenamiento,
+        },
       });
 
       if (response.data.success) {
         const data = response.data.data;
-        setComandas(data.comandas || []);
+        setProductos(data.productos || []);
         setCategoriaAsignada(data.categoria_asignada);
         setStats({
           totalComandas: data.total_comandas || 0,
@@ -63,13 +85,13 @@ export default function BarSection() {
         });
       }
     } catch (error) {
-      console.log("Error al obtener comandas de Bar:", error);
+      console.log("Error al obtener productos de bar:", error);
       if (error.response?.status === 401) {
         navigation.navigate("Login");
       } else if (error.response?.data?.error) {
         Alert.alert("Error", error.response.data.error.message);
       }
-      setComandas([]);
+      setProductos([]);
     } finally {
       setLoading(false);
     }
@@ -77,8 +99,13 @@ export default function BarSection() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchComandas();
+    await fetchProductos();
     setRefreshing(false);
+  };
+
+  const handleOrdenamientoChange = (value) => {
+    setOrdenamiento(value);
+    setShowFilters(false);
   };
 
   const handleLogout = () => {
@@ -142,15 +169,12 @@ export default function BarSection() {
       if (response.data.success) {
         Alert.alert("Éxito", "Producto marcado como entregado");
 
-        setComandas((prevComandas) =>
-          prevComandas.map((comanda) => ({
-            ...comanda,
-            productos: comanda.productos.map((producto) =>
-              producto.comanda_producto_id === comandaProductoId
-                ? { ...producto, estado: "entregado" }
-                : producto
-            ),
-          }))
+        setProductos((prevProductos) =>
+          prevProductos.map((producto) =>
+            producto.comanda_producto_id === comandaProductoId
+              ? { ...producto, estado: "entregado" }
+              : producto
+          )
         );
 
         setStats((prev) => ({
@@ -168,7 +192,42 @@ export default function BarSection() {
     }
   };
 
-  const renderProductoItem = (producto, comanda) => (
+  const getPrioridadInfo = (prioridadNum, prioridadTexto) => {
+    // Si viene el texto, usarlo directamente
+    if (prioridadTexto) {
+      switch (prioridadTexto.toLowerCase()) {
+        case "alta":
+          return { color: "#ff4444", texto: "ALTA" };
+        case "media":
+          return { color: "#ffaa00", texto: "MEDIA" };
+        case "baja":
+          return { color: "#00aa44", texto: "BAJA" };
+        default:
+          return { color: "#999", texto: "N/A" };
+      }
+    }
+
+    // Si no, convertir desde número
+    switch (prioridadNum) {
+      case 1:
+        return { color: "#ff4444", texto: "ALTA" };
+      case 2:
+        return { color: "#ffaa00", texto: "MEDIA" };
+      case 3:
+        return { color: "#00aa44", texto: "BAJA" };
+      default:
+        return { color: "#999", texto: "N/A" };
+    }
+  };
+
+  const formatTime = (dateString) => {
+    return new Date(dateString).toLocaleTimeString("es-MX", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const renderProductoItem = (producto) => (
     <View
       key={producto.comanda_producto_id}
       style={[
@@ -176,45 +235,60 @@ export default function BarSection() {
         producto.estado === "entregado" && styles.productoEntregado,
       ]}
     >
-      {/* Header con información principal */}
+      {/* Header con mesa y tiempo */}
       <View style={styles.productoHeader}>
-        <View style={styles.productoMainInfo}>
-          <View style={styles.productoTitleRow}>
-            <Text style={styles.productoNombre}>{producto.nombre}</Text>
-          </View>
+        <View style={styles.mesaTimeInfo}>
+          <Text style={styles.mesaNumber}>Mesa {producto.mesa}</Text>
+          <Text style={styles.pedidoTime}>
+            Pedido: {formatTime(producto.fecha_pedido)}
+          </Text>
         </View>
 
-        <View style={styles.productoRightInfo}>
-          {/* Botón de detalles */}
-          <TouchableOpacity
-            style={styles.detallesButton}
-            onPress={() => abrirVentanaDetalles(producto)}
+        <View style={styles.headerRight}>
+          <View
+            style={[
+              styles.prioridadBadge,
+              {
+                backgroundColor: getPrioridadInfo(
+                  producto.prioridad,
+                  producto.prioridad_texto
+                ).color,
+              },
+            ]}
           >
-            <Text style={styles.detallesButtonText}>Detalles</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Información de la mesa y pedido */}
-      <View style={styles.mesaInfo}>
-        <View style={styles.mesaInfoLeft}>
-          <View style={styles.mesaDetails}>
-            {comanda.comensal && (
-              <Text style={styles.comensalText}>
-                Comensal: {comanda.comensal}
-              </Text>
-            )}
+            <Text style={styles.prioridadText}>
+              {
+                getPrioridadInfo(producto.prioridad, producto.prioridad_texto)
+                  .texto
+              }
+            </Text>
           </View>
         </View>
-
-        <View style={styles.tiempoInfo}>
-          <Text style={styles.tiempoLabel}>Pedido</Text>
-        </View>
       </View>
 
-      {/* Información del mesero */}
-      <View style={styles.meseroInfo}>
-        <Text style={styles.meseroLabel}>👤 {comanda.mesero_nombre}</Text>
+      {/* Información del producto */}
+      <View style={styles.productoMainInfo}>
+        <Text style={styles.productoNombre}>{producto.nombre}</Text>
+        <Text style={styles.productoClave}>#{producto.clave}</Text>
+      </View>
+
+      {/* Información adicional */}
+      <View style={styles.productoDetails}>
+        <View style={styles.leftDetails}>
+          {producto.comensal && (
+            <Text style={styles.comensalText}>👤 {producto.comensal}</Text>
+          )}
+          <Text style={styles.meseroText}>
+            Mesero: {producto.mesero_nombre}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.detallesButton}
+          onPress={() => abrirVentanaDetalles(producto)}
+        >
+          <Text style={styles.detallesButtonText}>Ver Detalles</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Botón de acción */}
@@ -224,29 +298,14 @@ export default function BarSection() {
             style={[styles.actionButton, styles.entregarButton]}
             onPress={() => marcarComoEntregado(producto.comanda_producto_id)}
           >
-            <Text style={styles.actionButtonText}>Marcar como Entregado</Text>
+            <Text style={styles.actionButtonText}>✓ Marcar como Entregado</Text>
           </TouchableOpacity>
         ) : (
           <View style={[styles.actionButton, styles.completadoButton]}>
-            <Text style={styles.completadoText}>Entregado</Text>
+            <Text style={styles.completadoText}>✓ Entregado</Text>
           </View>
         )}
       </View>
-    </View>
-  );
-
-  const renderComandaGroup = (comanda) => (
-    <View key={comanda.comanda_id} style={styles.comandaGroup}>
-      <View style={styles.comandaGroupHeader}>
-        <Text style={styles.comandaGroupTitle}>Mesa No. {comanda.mesa}</Text>
-        <Text style={styles.comandaGroupTime}>
-          {new Date(comanda.fecha_comanda).toLocaleTimeString("es-MX")}
-        </Text>
-      </View>
-
-      {comanda.productos.map((producto) =>
-        renderProductoItem(producto, comanda)
-      )}
     </View>
   );
 
@@ -262,7 +321,6 @@ export default function BarSection() {
     <View style={styles.container}>
       <View style={styles.topHeader}>
         <View style={styles.headerColumns}>
-          {/* Columna izquierda: saludo y rol */}
           <View style={styles.leftColumn}>
             <View style={styles.userGreeting}>
               <Image
@@ -273,14 +331,13 @@ export default function BarSection() {
             </View>
           </View>
 
-          {/* Columna derecha: división y botón de salir */}
           <View style={styles.rightColumn}>
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogout}
             >
               <Image
-                source={require("../../../../../assets/cerrarC.png")} // ← tu imagen personalizada
+                source={require("../../../../../assets/cerrarC.png")}
                 style={styles.logoutIcon}
               />
               <Text style={styles.logoutButtonText}>Salir</Text>
@@ -316,11 +373,59 @@ export default function BarSection() {
           </View>
         </View>
 
-        <View style={styles.header}>
-          <Text style={styles.subtext}>Productos Pendientes: </Text>
+        {/* Sección de filtros */}
+        <View style={styles.filtersContainer}>
+          <View style={styles.filtersHeader}>
+            <Text style={styles.filtersTitle}>Ordenar por:</Text>
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={() => setShowFilters(!showFilters)}
+            >
+              <Text style={styles.filterButtonText}>
+                {
+                  opcionesOrdenamiento.find((opt) => opt.value === ordenamiento)
+                    ?.label
+                }
+              </Text>
+              <Text style={styles.filterArrow}>{showFilters ? "▲" : "▼"}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {showFilters && (
+            <View style={styles.filtersDropdown}>
+              {opcionesOrdenamiento.map((opcion) => (
+                <TouchableOpacity
+                  key={opcion.value}
+                  style={[
+                    styles.filterOption,
+                    ordenamiento === opcion.value &&
+                      styles.filterOptionSelected,
+                  ]}
+                  onPress={() => handleOrdenamientoChange(opcion.value)}
+                >
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      ordenamiento === opcion.value &&
+                        styles.filterOptionTextSelected,
+                    ]}
+                  >
+                    {opcion.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
-        {comandas.length === 0 ? (
+        <View style={styles.header}>
+          <Text style={styles.subtext}>
+            Productos Pendientes (
+            {productos.filter((p) => p.estado !== "entregado").length}):
+          </Text>
+        </View>
+
+        {productos.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>🎉 No hay productos pendientes</Text>
             <Text style={styles.emptySubtext}>
@@ -328,9 +433,12 @@ export default function BarSection() {
             </Text>
           </View>
         ) : (
-          comandas.map((comanda) => renderComandaGroup(comanda))
+          <View style={styles.productosContainer}>
+            {productos.map((producto) => renderProductoItem(producto))}
+          </View>
         )}
       </ScrollView>
+
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -344,13 +452,13 @@ export default function BarSection() {
             {productoSeleccionado && (
               <>
                 <Text style={styles.modalItem}>
-                  Nombre: {productoSeleccionado.nombre}
+                  <Text style={styles.modalLabel}>Producto:</Text>{" "}
+                  {productoSeleccionado.nombre}
                 </Text>
+
                 <Text style={styles.modalItem}>
-                  Prioridad: {productoSeleccionado.prioridad}
-                </Text>
-                <Text style={styles.modalItem}>
-                  Detalles: {productoSeleccionado.detalle}
+                  <Text style={styles.modalLabel}>Detalles:</Text>{" "}
+                  {productoSeleccionado.detalle || "Sin detalles especiales"}
                 </Text>
               </>
             )}
@@ -369,18 +477,21 @@ export default function BarSection() {
 }
 
 const styles = StyleSheet.create({
-  // HEADER SUPERIOR (Bienvenida y Logout)
-
-  topHeader: {
-    flexDirection: "row",
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
+  centered: {
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 20,
-    paddingHorizontal: 15,
-    backgroundColor: "#FFFFFF",
+  },
+  topHeader: {
+    backgroundColor: "#fff",
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#d1d1d2ff",
+    borderBottomColor: "#e0e0e0",
   },
   headerColumns: {
     flexDirection: "row",
@@ -396,72 +507,41 @@ const styles = StyleSheet.create({
   userGreeting: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
-  },
-  userInfo: {
-    flexDirection: "column",
-    alignItems: "center",
-    paddingVertical: 12,
   },
   welcomeIcon: {
-    width: 30,
-    height: 25,
-    marginRight: 5,
-    resizeMode: "contain",
+    width: 24,
+    height: 24,
+    marginRight: 8,
   },
   userWelcome: {
-    fontSize: 14,
+    fontSize: 18,
+    fontWeight: "600",
     color: "#333",
-    fontWeight: "bold",
-    maxWidth: 180, //Ancho para que el texto se acomode
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 6,
+    backgroundColor: "#ff4444",
     paddingHorizontal: 12,
-    backgroundColor: "#FEE2E2",
+    paddingVertical: 8,
     borderRadius: 8,
   },
   logoutIcon: {
-    width: 20,
-    height: 20,
+    width: 16,
+    height: 16,
     marginRight: 6,
   },
   logoutButtonText: {
+    color: "#fff",
     fontSize: 14,
-    color: "#333",
-  },
-
-  // CONTENEDOR PRINCIPAL Y ESTRUCTURA BÁSICA
-
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-  },
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
+    fontWeight: "500",
   },
   scrollView: {
     flex: 1,
-    padding: 16,
   },
-
-  // HEADER DEL TÍTULO Y CATEGORÍA
-
   header: {
-    paddingVertical: 2,
-    paddingHorizontal: 5,
-    marginBottom: 20,
-  },
-  subtext: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "left",
-    alignSelf: "flex-start",
-    marginBottom: 6,
-    color: "#6c757d",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   categoriaText: {
     fontSize: 20,
@@ -469,112 +549,193 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
   },
-
-  // SECCIÓN DE ESTADÍSTICAS
-
+  subtext: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#666",
+  },
   statsContainer: {
     flexDirection: "row",
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     gap: 10,
   },
   statCard: {
     flex: 1,
     backgroundColor: "#fff",
-    padding: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 15,
     borderRadius: 12,
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#007AFF",
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  filtersContainer: {
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    marginVertical: 10,
+    borderRadius: 12,
+    padding: 15,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  filtersHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  filtersTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 200,
+    justifyContent: "space-between",
+  },
+  filterButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
+  },
+  filterArrow: {
+    color: "#fff",
+    fontSize: 12,
+    marginLeft: 8,
+  },
+  filtersDropdown: {
+    marginTop: 12,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+  },
+  filterOption: {
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  filterOptionSelected: {
+    backgroundColor: "#e3f2fd",
+  },
+  filterOptionText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  filterOptionTextSelected: {
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  productosContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  productoCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#007bff",
-  },
-  statLabel: {
-    fontSize: 14,
-    color: "#6c757d",
-    marginTop: 1,
-  },
-
-  // AGRUPACIÓN DE COMANDAS POR MESA
-
-  comandaGroup: {
-    marginBottom: 8,
-  },
-  comandaGroupHeader: {
-    backgroundColor: "#343a40",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginHorizontal: 16,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  comandaGroupTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  comandaGroupTime: {
-    color: "#adb5bd",
-    fontSize: 13,
-    fontWeight: "500",
-  },
-
-  // TARJETA DE PRODUCTO INDIVIDUAL
-
-  productoCard: {
-    backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 5,
-    overflow: "hidden",
+    borderLeftWidth: 4,
+    borderLeftColor: "#007AFF",
   },
   productoEntregado: {
-    opacity: 0.7,
     backgroundColor: "#f8f9fa",
+    borderLeftColor: "#28a745",
+    opacity: 0.8,
   },
-
-  // HEADER DEL PRODUCTO (Nombre, precio, estado)
-
   productoHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    padding: 16,
-    paddingBottom: 12,
-  },
-  productoMainInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  productoTitleRow: {
-    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 12,
   },
-  productoNombre: {
+  mesaTimeInfo: {
+    flex: 1,
+  },
+  mesaNumber: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#212529",
-    flex: 1,
-    marginRight: 8,
-    marginTop: 10,
-    textAlign: "center",
+    color: "#333",
   },
-  productoRightInfo: {
+  pedidoTime: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
+  },
+  headerRight: {
     alignItems: "flex-end",
+  },
+  prioridadBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  prioridadText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  productoMainInfo: {
+    marginBottom: 12,
+  },
+  productoNombre: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  productoClave: {
+    fontSize: 12,
+    color: "#999",
+  },
+  productoDetails: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  leftDetails: {
+    flex: 1,
+  },
+  comensalText: {
+    fontSize: 13,
+    color: "#555",
+    marginBottom: 4,
+  },
+  meseroText: {
+    fontSize: 13,
+    color: "#777",
   },
   detallesButton: {
     marginTop: 5,
@@ -590,6 +751,46 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
+  productoActions: {
+    marginTop: 8,
+  },
+  actionButton: {
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  entregarButton: {
+    backgroundColor: "#28a745",
+  },
+  completadoButton: {
+    backgroundColor: "#6c757d",
+  },
+  actionButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  completadoText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -598,177 +799,39 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "#fff",
+    borderRadius: 12,
     padding: 20,
-    borderRadius: 10,
-    width: "80%",
+    margin: 20,
+    maxWidth: 350,
+    width: "90%",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 15,
+    textAlign: "center",
   },
   modalItem: {
-    fontSize: 16,
-    marginBottom: 6,
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  modalLabel: {
+    fontWeight: "600",
+    color: "#555",
   },
   cerrarButton: {
-    marginTop: 20,
-    backgroundColor: "#FF3B30",
-    paddingVertical: 8,
+    backgroundColor: "#007AFF",
+    paddingVertical: 12,
     borderRadius: 8,
+    alignItems: "center",
+    marginTop: 15,
   },
   cerrarButtonText: {
     color: "#fff",
-    textAlign: "center",
-    fontWeight: "500",
-  },
-
-  // BADGES DE PRIORIDAD Y ESTADO
-
-  estadoBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    minWidth: 70,
-    alignItems: "center",
-  },
-  estadoText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-
-  // INFORMACIÓN DE MESA Y TIEMPO
-
-  mesaInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#f8f9fa",
-    borderTopWidth: 1,
-    borderTopColor: "#e9ecef",
-  },
-  mesaInfoLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  mesaNumber: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#007bff",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  mesaNumberText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  mesaDetails: {
-    flex: 1,
-  },
-  mesaDetailText: {
-    fontSize: 15,
-    color: "#574953ff",
-    fontWeight: "600",
-  },
-  comensalText: {
-    fontSize: 17,
-    color: "#6c757d",
-    marginTop: 2,
-  },
-  tiempoInfo: {
-    alignItems: "flex-end",
-  },
-  tiempoLabel: {
-    fontSize: 12,
-    color: "#6c757d",
-    textTransform: "uppercase",
-    fontWeight: "500",
-  },
-  tiempoText: {
-    fontSize: 16,
-    color: "#007bff",
-    fontWeight: "bold",
-    marginTop: 1,
-  },
-
-  // INFORMACIÓN DEL MESERO
-
-  meseroInfo: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: "#fff",
-  },
-  meseroLabel: {
     fontSize: 14,
-    color: "#6c757d",
-    fontWeight: "bold",
-  },
-
-  // BOTONES DE ACCIÓN (Entregar/Completado)
-
-  productoActions: {
-    padding: 16,
-    paddingTop: 12,
-  },
-  actionButton: {
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  entregarButton: {
-    backgroundColor: "#28a745",
-    shadowColor: "#28a745",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  completadoButton: {
-    backgroundColor: "#e9ecef",
-    borderWidth: 1,
-    borderColor: "#dee2e6",
-  },
-  actionButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  completadoText: {
-    color: "#6c757d",
-    fontSize: 16,
     fontWeight: "600",
-  },
-
-  // ESTADOS VACÍOS Y CARGANDO
-
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 32,
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#28a745",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 16,
-    color: "#6c757d",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  loadingText: {
-    fontSize: 15,
-    color: "#000000ff",
   },
 });
