@@ -14,7 +14,7 @@ import { API } from "../../../../services/api";
 import { useAuth } from "../../../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
 
-export default function barSection() {
+export default function BarSection() {
   const { token, logout, user } = useAuth();
   const navigation = useNavigation();
   const [productos, setProductos] = useState([]);
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ff4444",
+    backgroundColor: "#FEE2E2",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,

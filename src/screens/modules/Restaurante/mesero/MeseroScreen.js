@@ -930,7 +930,7 @@ export default function ComandaSection() {
         </View>
       </Modal>
 
-      {/* Modal Editar Comanda - MODIFICADO */}
+      {/* Modal Editar Comanda  */}
       <Modal visible={editModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalWrapper}>
@@ -1200,17 +1200,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     paddingTop: 6,
     borderTopColor: "#e0e0e0",
-    // Remover flexDirection: "row" y flexWrap para que sea vertical por defecto
   },
-
-  detalleImagen: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    marginTop: 6,
-  },
-
-
   detalleNumero: {
     fontSize: 10,
     fontWeight: "600",
@@ -1286,7 +1276,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 50,
+    paddingTop: 40,
     paddingBottom: 20,
     paddingHorizontal: 15,
     backgroundColor: "#FFFFFF",

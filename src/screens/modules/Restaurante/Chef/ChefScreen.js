@@ -7,6 +7,8 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
+  TouchableOpacity,
+  Image,
 } from "react-native";
 import { API } from "../../../../services/api";
 import { useAuth } from "../../../../AuthContext";
@@ -74,6 +76,48 @@ export default function ChefComandasSection() {
     setRefreshing(false);
   };
 
+  const handleLogout = () => {
+    Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas cerrar sesión?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Cerrar Sesión",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            if (token) {
+              try {
+                await API.post(
+                  "/logout",
+                  {},
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+              } catch (error) {
+                console.log("Error al hacer logout en servidor:", error);
+              }
+            }
+
+            await logout();
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          } catch (error) {
+            console.error("Error en logout:", error);
+            Alert.alert("Error", "Hubo un problema al cerrar sesión");
+          }
+        },
+      },
+    ]);
+  };
+
   const getProductoEstadoStyle = (estado) => {
     switch (estado) {
       case "pendiente":
@@ -134,6 +178,36 @@ export default function ChefComandasSection() {
 
   return (
     <View style={styles.container}>
+      {/* Header agregado  */}
+      <View style={styles.topHeader}>
+        <View style={styles.headerColumns}>
+          {/* Columna izquierda: saludo y rol */}
+          <View style={styles.leftColumn}>
+            <View style={styles.userGreeting}>
+              <Image
+                source={require("../../../../../assets/saludo.png")}
+                style={styles.welcomeIcon}
+              />
+              <Text style={styles.userWelcome}>Hola, {user?.name}</Text>
+            </View>
+          </View>
+
+          {/* Columna derecha: división y botón de salir */}
+          <View style={styles.rightColumn}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
+              <Image
+                source={require("../../../../../assets/cerrarC.png")}
+                style={styles.logoutIcon}
+              />
+              <Text style={styles.logoutButtonText}>Salir</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
       <Text style={styles.title}>Comandas de Cocina</Text>
 
       <ScrollView
@@ -160,9 +234,6 @@ export default function ChefComandasSection() {
                   <View style={styles.mesaInfo}>
                     <Text style={styles.personasText}>
                       {comanda.personas || 0} personas
-                    </Text>
-                    <Text style={styles.estadoComandaText}>
-                      Estado: {comanda.estado || "Sin estado"}
                     </Text>
                   </View>
                 </View>
@@ -203,9 +274,6 @@ export default function ChefComandasSection() {
                         )}
 
                         <View style={styles.productoFooter}>
-                          <Text style={styles.productoPrecio}>
-                            ${producto.precio}
-                          </Text>
                           <Text style={styles.productoEstado}>
                             {capitalizeEstado(producto.estado)}
                           </Text>
@@ -217,17 +285,19 @@ export default function ChefComandasSection() {
 
                 {/* Información del pie de comanda */}
                 <View style={styles.footerInfo}>
-                  <Text style={styles.fechaText}>
-                    Fecha: {fechaFormateada.fecha} {fechaFormateada.hora}
-                  </Text>
+                  <View style={styles.fechaContainer}>
+                    <Text style={styles.fechaText}>Fecha: {fechaFormateada.fecha}</Text>
+                    <Text style={styles.fechaText}>Hora: {fechaFormateada.hora}</Text>
+                  </View>
+
+
                   <Text style={styles.usuarioText}>
                     Mesero: {comanda.mesero?.nombre || "No asignado"}
                   </Text>
                   {comanda.ultimo_cambio &&
                     comanda.ultimo_cambio !== comanda.fecha && (
                       <Text style={styles.ultimoCambioText}>
-                        Último cambio:{" "}
-                        {formatFecha(comanda.ultimo_cambio).fecha}{" "}
+                        Último cambio: {" "}
                         {formatFecha(comanda.ultimo_cambio).hora}
                       </Text>
                     )}
@@ -245,10 +315,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-    padding: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
     color: "#333",
     textAlign: "center",
@@ -282,7 +351,8 @@ const styles = StyleSheet.create({
   comandaContainer: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 16,
+    marginHorizontal: 20,
+    padding: 10,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: {
@@ -313,6 +383,7 @@ const styles = StyleSheet.create({
   personasText: {
     fontSize: 14,
     color: "#666",
+    fontWeight: "bold",
   },
   estadoComandaText: {
     fontSize: 14,
@@ -320,7 +391,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   comensalText: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#333",
     marginBottom: 12,
     fontWeight: "500",
@@ -341,6 +412,78 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 2,
   },
+  // ESTILOS DEL HEADER SUPERIOR
+
+  topHeader: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 15,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d1d1d2ff",
+  },
+  headerColumns: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 40, // separa los elementos dentro del contenedor
+    paddingHorizontal: 16,
+  },
+
+  leftColumn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
+
+  rightColumn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+
+
+  userGreeting: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  welcomeIcon: {
+    width: 30,
+    height: 25,
+    marginRight: 5,
+    resizeMode: "contain",
+  },
+  userWelcome: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "bold",
+    maxWidth: 195, //Ancho para que el texto se acomode
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: "#FEE2E2",
+    borderRadius: 8,
+  },
+  logoutIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 6,
+  },
+  logoutButtonText: {
+    fontSize: 14,
+    color: "#333",
+  },
+
+
   // Estilos para productos pendientes (azul)
   productoPendiente: {
     backgroundColor: "#E3F2FD",
@@ -377,18 +520,14 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   productoFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  productoPrecio: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#4CAF50",
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: [{ translateY: -10 }],
   },
   productoEstado: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "bold",
     textAlign: "right",
   },
   footerInfo: {
@@ -396,6 +535,11 @@ const styles = StyleSheet.create({
     borderTopColor: "#e0e0e0",
     paddingTop: 8,
   },
+  fechaContainer: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+},
   fechaText: {
     fontSize: 12,
     color: "#666",
@@ -409,6 +553,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#999",
     marginTop: 2,
-    fontStyle: "italic",
+    fontWeight: "bold",
   },
 });
