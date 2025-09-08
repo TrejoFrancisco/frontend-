@@ -560,7 +560,6 @@ export default function ComandaSection() {
     <View key={comanda.id} style={styles.comandaCard}>
       <View style={styles.comandaHeader}>
         <Text style={styles.comandaMesa}>Mesa {comanda.mesa}</Text>
-
       </View>
 
       <View style={styles.comandaDetails}>
@@ -700,19 +699,16 @@ export default function ComandaSection() {
                     <View style={styles.detalleContenido}>
                       <Text style={styles.detalleTextoConFondo}>Editar</Text>
                     </View>
-
                   ) : (
                     <Text style={styles.detalleTexto}>
                       #{index + 1} Agregar detalle
                     </Text>
                   )}
                 </TouchableOpacity>
-
               );
             })}
           </View>
         )}
-
       </View>
     );
   };
@@ -1234,8 +1230,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9f9f9",
     borderColor: "#cccccc",
     borderWidth: 1,
-    alignItems: "center",       // Centra horizontalmente
-    justifyContent: "center",   // Centra verticalmente
+    alignItems: "center", // Centra horizontalmente
+    justifyContent: "center", // Centra verticalmente
   },
 
   detalleItemConBorde: {

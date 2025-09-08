@@ -457,9 +457,47 @@ export default function BarSection() {
                 </Text>
 
                 <Text style={styles.modalItem}>
-                  <Text style={styles.modalLabel}>Detalles:</Text>{" "}
-                  {productoSeleccionado.detalle || "Sin detalles especiales"}
+                  <Text style={styles.modalLabel}>Mesa:</Text>{" "}
+                  {productoSeleccionado.mesa}
                 </Text>
+
+                {productoSeleccionado.detalle && (
+                  <Text style={styles.modalItem}>
+                    <Text style={styles.modalLabel}>Detalles especiales:</Text>{" "}
+                    {productoSeleccionado.detalle}
+                  </Text>
+                )}
+
+                {/* Sección de ingredientes/materias primas */}
+                {productoSeleccionado.receta &&
+                productoSeleccionado.receta.materias_primas &&
+                productoSeleccionado.receta.materias_primas.length > 0 ? (
+                  <View style={styles.recetaSection}>
+                    <Text style={styles.recetaTitle}>
+                      🧾 Ingredientes necesarios:
+                    </Text>
+                    <View style={styles.ingredientesContainer}>
+                      {productoSeleccionado.receta.materias_primas.map(
+                        (ingrediente, index) => (
+                          <View key={index} style={styles.ingredienteItem}>
+                            <Text style={styles.ingredienteNombre}>
+                              • {ingrediente.nombre}
+                            </Text>
+                            <Text style={styles.ingredienteCantidad}>
+                              {ingrediente.cantidad} {ingrediente.unidad}
+                            </Text>
+                          </View>
+                        )
+                      )}
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.recetaSection}>
+                    <Text style={styles.sinRecetaText}>
+                      ℹ️ Este producto no requiere preparación específica
+                    </Text>
+                  </View>
+                )}
               </>
             )}
 
@@ -477,6 +515,79 @@ export default function BarSection() {
 }
 
 const styles = StyleSheet.create({
+  recetaSection: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+
+  recetaTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2c3e50",
+    marginBottom: 10,
+  },
+
+  ingredientesContainer: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    padding: 12,
+  },
+
+  ingredienteItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+
+  ingredienteNombre: {
+    flex: 1,
+    fontSize: 14,
+    color: "#495057",
+    fontWeight: "500",
+  },
+
+  ingredienteCantidad: {
+    fontSize: 14,
+    color: "#28a745",
+    fontWeight: "600",
+    backgroundColor: "#d4edda",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+
+  sinRecetaText: {
+    fontSize: 14,
+    color: "#6c757d",
+    fontStyle: "italic",
+    textAlign: "center",
+    padding: 15,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+  },
+
+  // También puedes actualizar el modalContent para que sea más grande si es necesario
+  modalContent: {
+    backgroundColor: "white",
+    margin: 20,
+    borderRadius: 15,
+    padding: 20,
+    maxHeight: "80%", // Agregar altura máxima
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
