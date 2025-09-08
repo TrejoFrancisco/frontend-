@@ -560,7 +560,6 @@ export default function ComandaSection() {
     <View key={comanda.id} style={styles.comandaCard}>
       <View style={styles.comandaHeader}>
         <Text style={styles.comandaMesa}>Mesa {comanda.mesa}</Text>
-
       </View>
 
       <View style={styles.comandaDetails}>
@@ -700,19 +699,16 @@ export default function ComandaSection() {
                     <View style={styles.detalleContenido}>
                       <Text style={styles.detalleTextoConFondo}>Editar</Text>
                     </View>
-
                   ) : (
                     <Text style={styles.detalleTexto}>
                       #{index + 1} Agregar detalle
                     </Text>
                   )}
                 </TouchableOpacity>
-
               );
             })}
           </View>
         )}
-
       </View>
     );
   };
@@ -930,7 +926,7 @@ export default function ComandaSection() {
         </View>
       </Modal>
 
-      {/* Modal Editar Comanda - MODIFICADO */}
+      {/* Modal Editar Comanda  */}
       <Modal visible={editModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalWrapper}>
@@ -1200,17 +1196,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     paddingTop: 6,
     borderTopColor: "#e0e0e0",
-    // Remover flexDirection: "row" y flexWrap para que sea vertical por defecto
   },
-
-  detalleImagen: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    marginTop: 6,
-  },
-
-
   detalleNumero: {
     fontSize: 10,
     fontWeight: "600",
@@ -1244,8 +1230,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9f9f9",
     borderColor: "#cccccc",
     borderWidth: 1,
-    alignItems: "center",       // Centra horizontalmente
-    justifyContent: "center",   // Centra verticalmente
+    alignItems: "center", // Centra horizontalmente
+    justifyContent: "center", // Centra verticalmente
   },
 
   detalleItemConBorde: {
@@ -1286,7 +1272,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 50,
+    paddingTop: 40,
     paddingBottom: 20,
     paddingHorizontal: 15,
     backgroundColor: "#FFFFFF",

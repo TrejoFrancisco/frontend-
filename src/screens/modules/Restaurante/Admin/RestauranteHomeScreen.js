@@ -25,6 +25,7 @@ import UsuariosSection from "../../../../modules/Restaurante/admin/components/Us
 import AsociarSection from "../../../../modules/Restaurante/admin/components/AsociarSection";
 import InventarioSection from "../../../../modules/Restaurante/admin/components/InventarioSection";
 import ReportesSection from "../../../../modules/Restaurante/admin/components/ReportesSection";
+import ComandasSection from "../../../../modules/Restaurante/admin/components/ComandasSection";
 import { API } from "../../../../services/api";
 
 // Componente principal envuelto con SafeAreaProvider
@@ -152,6 +153,18 @@ function HomeScreen() {
       color: "#F8BBD0",
       bgColor: "#FCE4EC",
     },
+    {
+      id: "comandas",
+      title: "comandas",
+      icon: (
+        <Image
+          source={require("../../../../../assets/reportes.png")}
+          style={styles.menuIco}
+        />
+      ),
+      color: "#2ef13bff",
+      bgColor: "#67d261ff",
+    },
   ];
 
   const handleMenuPress = (itemId) => {
@@ -183,6 +196,8 @@ function HomeScreen() {
         return <InventarioSection token={token} navigation={navigation} />;
       case "reportes":
         return <ReportesSection token={token} navigation={navigation} />;
+      case "comandas":
+        return <ComandasSection token={token} navigation={navigation} />;
       default:
         return <DashboardContent token={token} />;
     }
@@ -381,8 +396,8 @@ const DashboardContent = ({ token }) => {
       console.error("Error fetching dashboard data:", error);
       setError(
         error.response?.data?.error?.message ||
-        error.response?.data?.message ||
-        "Error de conexión. Verifica tu conexión a internet."
+          error.response?.data?.message ||
+          "Error de conexión. Verifica tu conexión a internet."
       );
     } finally {
       setLoading(false);
@@ -462,7 +477,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Productos Más Vendidos</Text>
         {dashboardData.productos_mas_vendidos &&
-          dashboardData.productos_mas_vendidos.length > 0 ? (
+        dashboardData.productos_mas_vendidos.length > 0 ? (
           dashboardData.productos_mas_vendidos.map((item, index) => (
             <View key={item.producto_id} style={styles.productItem}>
               <View style={styles.rankBadge}>
@@ -486,7 +501,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Cancelaciones del día</Text>
         {dashboardData.productos_cancelados &&
-          dashboardData.productos_cancelados.length > 0 ? (
+        dashboardData.productos_cancelados.length > 0 ? (
           dashboardData.productos_cancelados.map((item, index) => (
             <View key={index} style={styles.canceledItem}>
               <View style={styles.canceledIcon}>
