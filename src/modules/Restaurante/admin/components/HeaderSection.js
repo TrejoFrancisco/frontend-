@@ -27,7 +27,9 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
                     },
                   }
                 );
-              } catch (error) { }
+              } catch (error) { 
+                // Silently handle logout API error
+              }
             }
             await logout();
             navigation.reset({
@@ -44,47 +46,47 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
 
   return (
     <View style={styles.header}>
-      {/* Primera fila: menú, logo, botones */}
       <View style={styles.topRow}>
+        {/* Botón de menú */}
         <TouchableOpacity style={styles.menuButton} onPress={onOpenDrawer}>
           <View style={styles.iconContainer}>
             <Image
-              source={require('../../../../../assets/menu.png')} // Asegúrate que esta ruta sea correcta
+              source={require('../../../../../assets/menu.png')} 
               style={styles.iconImage}
               resizeMode="contain"
             />
-
           </View>
         </TouchableOpacity>
 
+        {/* Logo y nombre de la app */}
         <View style={styles.headerCenter}>
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../../../../assets/logo.png')} // Asegúrate de que la ruta sea correcta
+              source={require('../../../../../assets/logo.png')} 
               style={styles.logoImage}
               resizeMode="contain"
             />
-
           </View>
           <Text style={styles.appName}>Mi Restaurante</Text>
         </View>
 
+        {/* Botones de acción */}
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.actionButton} onPress={onRefresh}>
-            <View style={styles.iconContaine}>
+            <View style={styles.refreshIconContainer}>
               <Image
                 source={require('../../../../../assets/actualizaa.png')} 
-                style={styles.iconImag}
+                style={styles.actionIconImage}
                 resizeMode="contain"
               />
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleLogout}>
             <View style={styles.logoutIconContainer}>
               <Image
                 source={require('../../../../../assets/cerrarC.png')} 
-                style={styles.logoutIconImage}
+                style={styles.actionIconImage}
                 resizeMode="contain"
               />
             </View>
@@ -96,6 +98,7 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
 }
 
 const styles = StyleSheet.create({
+  // === CONTENEDOR PRINCIPAL ===
   header: {
     width: "100%",
     minHeight: 90,
@@ -104,25 +107,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     justifyContent: "center",
     borderBottomWidth: 1,
-    borderColor: "#d1d1d2ff",
+    borderColor: "#D1D1D2",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.15,
     shadowRadius: 9,
     elevation: 10,
   },
+
+  // === LAYOUT ===
   topRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
   },
-  bottomRow: {
+  headerCenter: {
+    flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
   },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  // === BOTONES ===
   menuButton: {
     padding: 4,
   },
+  actionButton: {
+    padding: 2,
+  },
+
+  // === CONTENEDORES DE ICONOS ===
   iconContainer: {
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
@@ -133,51 +153,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
-  iconImage: {
-    width: 30,
-    height: 28,
-  },
-  iconContaine: {
-    backgroundColor: "#c4d5f9ff",
+  refreshIconContainer: {
+    backgroundColor: "#C4D5F9",
     borderRadius: 12,
     width: 40,
     height: 40,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#5580d4ff",
-  },
-  iconImag: {
-    width: 25,
-    height: 28,
-  },
-  headerCenter: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-  logoImage: {
-    width: 30,
-    height: 26,
-
-  },
-  appName: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#1F2937",
-    letterSpacing: 0.2,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  actionButton: {
-    padding: 2,
-  },
-  logoutButton: {
-    padding: -2,
+    borderColor: "#5580D4",
   },
   logoutIconContainer: {
     backgroundColor: "#FEE2E2",
@@ -189,8 +173,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FECACA",
   },
-  logoutIconImage: {
+  logoContainer: {
+    marginRight: 8,
+  },
+
+  // === IMÁGENES ===
+  iconImage: {
+    width: 30,
+    height: 28,
+  },
+  actionIconImage: {
     width: 25,
     height: 28,
-  }
+  },
+  logoImage: {
+    width: 35,
+    height: 40,
+    justifyContent: 'center',
+  },
+
+  // === TEXTO ===
+  appName: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
 });

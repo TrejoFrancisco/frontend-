@@ -1010,16 +1010,40 @@ const ReportesSection = ({ token }) => {
                 const estadoComanda = formatearEstadoComanda(comanda.estado);
                 return (
                   <View key={comanda.comanda_id} style={styles.comandaCard}>
-                    {/* Header de la comanda */}
+                    {/* Header de la comanda  */}
                     <View style={styles.comandaHeader}>
+                      {/* Columna 1: Mesa */}
                       <View style={styles.comandaInfo}>
-                        <Text style={styles.comandaTitle}>
-                          Comanda #{comanda.comanda_id}
-                        </Text>
-                        <Text style={styles.comandaSubtitle}>
-                          Mesa {comanda.mesa} | {comanda.personas} personas
+                        <Text style={styles.comandaTitle}>Mesa {comanda.mesa}</Text>
+                      </View>
+
+                      {/* Columna 2: Mesero */}
+                      <View style={styles.comandaInfo}>
+                        <Text style={styles.comandaDetailText}>
+                          👤 {comanda.mesero || "No asignado"}
                         </Text>
                       </View>
+
+                      {/* Columna 3: Fecha */}
+                      <View style={styles.comandaInfo}>
+                        <Text style={styles.comandaDetailText}>
+                          {formatearFechaHora(comanda.fecha)}
+                        </Text>
+                        {comanda.fecha_cierre && (
+                          <Text style={styles.comandaDetailText}>
+                            Cerrada: {formatearFechaHora(comanda.fecha_cierre)}
+                          </Text>
+                        )}
+                      </View>
+
+                      {/* Columna 4: Total */}
+                      <View style={styles.comandaInfo}>
+                        <Text style={styles.comandaDetailText}>
+                          ${parseFloat(comanda.total || 0).toFixed(2)}
+                        </Text>
+                      </View>
+
+                      {/* Columna 5: Estado */}
                       <View style={styles.estadoContainer}>
                         <Text style={styles.estadoEmoji}>
                           {estadoComanda.emoji}
@@ -1030,55 +1054,41 @@ const ReportesSection = ({ token }) => {
                       </View>
                     </View>
 
-                    {/* Información de la comanda */}
-                    <View style={styles.comandaDetails}>
-                      <Text style={styles.comandaDetailText}>
-                        👤 Mesero: {comanda.mesero || "No asignado"}
-                      </Text>
-                      <Text style={styles.comandaDetailText}>
-                        🕐 Fecha: {formatearFechaHora(comanda.fecha)}
-                      </Text>
-                      {comanda.fecha_cierre && (
-                        <Text style={styles.comandaDetailText}>
-                          🕐 Cerrada: {formatearFechaHora(comanda.fecha_cierre)}
-                        </Text>
-                      )}
-                      <Text style={styles.comandaDetailText}>
-                        💰 Total: ${parseFloat(comanda.total || 0).toFixed(2)}
-                      </Text>
-                    </View>
-
                     {/* Lista de productos */}
                     <View style={styles.productosContainer}>
-                      <Text style={styles.productosTitle}>🍽️ Productos:</Text>
-                      {comanda.productos.map((producto, prodIndex) => {
-                        const estadoProducto = formatearEstadoProducto(
-                          producto.estado
-                        );
-                        return (
-                          <View key={prodIndex} style={styles.productoItem}>
-                            <View style={styles.productoInfo}>
-                              <Text style={styles.productoNombre}>
-                                {producto.nombre}
-                              </Text>
-                              <Text style={styles.productoPrecio}>
-                                $
-                                {parseFloat(producto.precio_venta || 0).toFixed(
-                                  2
-                                )}
-                              </Text>
+                      <Text style={styles.productosTitle}>
+                        🍽️ Productos ({comanda.productos.length}):
+                      </Text>
+                      <View style={styles.comandaDetails}>
+                        {comanda.productos.map((producto, prodIndex) => {
+                          const estadoProducto = formatearEstadoProducto(
+                            producto.estado
+                          );
+                          return (
+                            <View key={prodIndex} style={styles.productoItem}>
+                              <View style={styles.productoInfo}>
+                                <Text style={styles.productoNombre}>
+                                  {producto.nombre}
+                                </Text>
+                                <Text style={styles.productoPrecio}>
+                                  $
+                                  {parseFloat(producto.precio_venta || 0).toFixed(
+                                    2
+                                  )}
+                                </Text>
+                              </View>
+                              <View style={styles.productoEstado}>
+                                <Text style={styles.productoEstadoEmoji}>
+                                  {estadoProducto.emoji}
+                                </Text>
+                                <Text style={styles.productoEstadoText}>
+                                  {estadoProducto.texto}
+                                </Text>
+                              </View>
                             </View>
-                            <View style={styles.productoEstado}>
-                              <Text style={styles.productoEstadoEmoji}>
-                                {estadoProducto.emoji}
-                              </Text>
-                              <Text style={styles.productoEstadoText}>
-                                {estadoProducto.texto}
-                              </Text>
-                            </View>
-                          </View>
-                        );
-                      })}
+                          );
+                        })}
+                      </View>
                     </View>
                   </View>
                 );
@@ -1098,50 +1108,39 @@ const ReportesSection = ({ token }) => {
 export default ReportesSection;
 
 const styles = StyleSheet.create({
-  excelButton: {
-    backgroundColor: "#28A745",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    marginVertical: 5,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  excelButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  // ========================================
+  // CONTENEDOR PRINCIPAL
+  // ========================================
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
     padding: 20,
   },
+
+  // ========================================
+  // ENCABEZADO
+  // ========================================
   headerContainer: {
     alignItems: "center",
     marginBottom: 30,
   },
   title: {
-    fontSize: 25,
+    fontSize: 30,
     fontWeight: "bold",
     color: "#1A1A2E",
     textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 20,
     color: "#666",
     textAlign: "center",
     lineHeight: 22,
   },
-  // Nuevos estilos para pestañas 2x2
+
+  // ========================================
+  // PESTAÑAS (2x2)
+  // ========================================
   tabContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -1169,7 +1168,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A1A2E",
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "600",
     color: "#666",
     textAlign: "center",
@@ -1177,6 +1176,10 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: "#FFFFFF",
   },
+
+  // ========================================
+  // CONTENEDOR DE FECHAS Y CONTROLES
+  // ========================================
   dateContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -1189,7 +1192,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2.22,
   },
   dateLabel: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#1A1A2E",
     marginBottom: 15,
@@ -1199,7 +1202,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   dateInputLabel: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: "#333",
     marginBottom: 8,
@@ -1217,14 +1220,106 @@ const styles = StyleSheet.create({
     color: "#1A1A2E",
     fontWeight: "500",
   },
+
+  // ========================================
+  // SELECTOR DE USUARIO (ENTREGAS)
+  // ========================================
+  userSelectorContainer: {
+    marginBottom: 20,
+  },
+  userSelectorLabel: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 10,
+  },
+  loadingUserContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
+  loadingUserText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: "#666",
+  },
+  userScrollContainer: {
+    maxHeight: 250,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    backgroundColor: "#FFFFFF",
+  },
+  userOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+    backgroundColor: "#FFFFFF",
+    minHeight: 70,
+  },
+  selectedUserOption: {
+    backgroundColor: "#1A1A2E",
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  selectedUserText: {
+    color: "#FFFFFF",
+  },
+  userRole: {
+    fontSize: 17,
+    color: "#666",
+    marginTop: 2,
+  },
+  selectedUserRole: {
+    color: "#E8E8E8",
+  },
+  userEmail: {
+    fontSize: 17,
+    color: "#888",
+    marginTop: 1,
+  },
+  selectedUserEmail: {
+    color: "#C8C8C8",
+  },
+  selectedIndicator: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#28a745",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectedIndicatorText: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  noUsersText: {
+    textAlign: "center",
+    color: "#666",
+    fontStyle: "italic",
+    paddingVertical: 20,
+  },
+
+  // ========================================
+  // BOTONES DE ACCIÓN
+  // ========================================
   actionButtons: {
     flexDirection: "row",
     justifyContent: "center",
-
     paddingHorizontal: 20,
     marginTop: 20,
   },
-
   generateButton: {
     backgroundColor: "#1A1A2E",
     width: 150,
@@ -1234,14 +1329,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   generateButtonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
   },
-
   clearButton: {
     backgroundColor: "#328edef5",
     width: 150,
@@ -1250,13 +1343,37 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   clearButtonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
   },
+  excelButton: {
+    backgroundColor: "#28A745",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    marginVertical: 5,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  excelButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  // ========================================
+  // ESTADOS DE CARGA Y ERROR
+  // ========================================
   loadingContainer: {
     alignItems: "center",
     paddingVertical: 40,
@@ -1289,6 +1406,10 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
+
+  // ========================================
+  // CONTENEDORES DE REPORTES
+  // ========================================
   reportContainer: {
     marginTop: 20,
   },
@@ -1309,6 +1430,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#E8E8E8",
   },
+  reportUserInfo: {
+    fontSize: 17,
+    color: "#E8E8E8",
+    marginTop: 4,
+  },
+
+  // ========================================
+  // TARJETAS DE ESTADÍSTICAS
+  // ========================================
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -1316,29 +1446,39 @@ const styles = StyleSheet.create({
   },
   statCard: {
     backgroundColor: "#FFFFFF",
-    padding: 15,
-    borderRadius: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     alignItems: "center",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.22,
     shadowRadius: 2.22,
+    minWidth: 80,
     flex: 1,
     marginHorizontal: 5,
+    minHeight: 80,
+    justifyContent: "center",
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#1A1A2E",
     textAlign: "center",
+    flexWrap: "wrap",
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 20,
     color: "#666666",
     textAlign: "center",
     marginTop: 4,
+    flexWrap: "wrap",
   },
+
+  // ========================================
+  // SECCIONES DE CONTENIDO
+  // ========================================
   sectionContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -1351,11 +1491,22 @@ const styles = StyleSheet.create({
     shadowRadius: 2.22,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#1A1A2E",
     marginBottom: 15,
   },
+  emptyText: {
+    fontSize: 16,
+    textAlign: "center",
+    color: "#666",
+    fontStyle: "italic",
+    paddingVertical: 20,
+  },
+
+  // ========================================
+  // ITEMS DE PRODUCTOS (VENTAS)
+  // ========================================
   productItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1390,6 +1541,10 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 2,
   },
+
+  // ========================================
+  // ITEMS CANCELADOS
+  // ========================================
   canceledItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1431,6 +1586,10 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
+
+  // ========================================
+  // ITEMS DE INVENTARIO
+  // ========================================
   inventoryItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1472,97 +1631,10 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-  userSelectorContainer: {
-    marginBottom: 20,
-  },
-  userSelectorLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 10,
-  },
-  loadingUserContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 20,
-  },
-  loadingUserText: {
-    marginLeft: 10,
-    fontSize: 14,
-    color: "#666",
-  },
-  userScrollContainer: {
-    maxHeight: 250,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    backgroundColor: "#FFFFFF",
-  },
-  userOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-    backgroundColor: "#FFFFFF",
-    minHeight: 70,
-  },
-  selectedUserOption: {
-    backgroundColor: "#1A1A2E",
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  selectedUserText: {
-    color: "#FFFFFF",
-  },
-  userRole: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 2,
-  },
-  selectedUserRole: {
-    color: "#E8E8E8",
-  },
-  userEmail: {
-    fontSize: 11,
-    color: "#888",
-    marginTop: 1,
-  },
-  selectedUserEmail: {
-    color: "#C8C8C8",
-  },
-  selectedIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#28a745",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  selectedIndicatorText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  noUsersText: {
-    textAlign: "center",
-    color: "#666",
-    fontStyle: "italic",
-    paddingVertical: 20,
-  },
-  reportUserInfo: {
-    fontSize: 14,
-    color: "#E8E8E8",
-    marginTop: 4,
-  },
+
+  // ========================================
+  // ITEMS DE ENTREGAS
+  // ========================================
   deliveryItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1615,114 +1687,152 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-  emptyText: {
-    textAlign: "center",
-    color: "#666",
-    fontStyle: "italic",
-    paddingVertical: 20,
-  },
-  // Estilos para el reporte de comandas
+
+  // ========================================
+  // REPORTE DE COMANDAS
+  // ========================================
   comandaCard: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
     padding: 15,
     marginBottom: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: "#1A1A2E",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
+
+  // ===== HEADER DE COMANDA =====
   comandaHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 12,
   },
+
   comandaInfo: {
     flex: 1,
+    minWidth: 120,
   },
+
   comandaTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1A1A2E",
+    fontWeight: 'bold',
+    fontSize: 25,
+    color: '#000',
+    marginBottom: 2,
   },
+
   comandaSubtitle: {
     fontSize: 14,
-    color: "#666",
-    marginTop: 2,
+    color: '#6c757d',
+    fontWeight: 'normal',
   },
+
+  comandaDetailText: {
+    fontSize: 16,
+    fontWeight: 'normal',
+    color: '#000',
+  },
+
+  // ===== ESTADO DE COMANDA =====
   estadoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
     paddingVertical: 5,
     borderRadius: 15,
+    backgroundColor: '#e9ecef',
   },
+
   estadoEmoji: {
     fontSize: 16,
     marginRight: 5,
   },
+
   estadoText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#333",
-  },
-  comandaDetails: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  comandaDetailText: {
-    fontSize: 14,
-    color: "#333",
-    marginBottom: 4,
-  },
-  productosContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
-  },
-  productosTitle: {
-    fontSize: 16,
+    color: "#2c3e50",
+    fontSize: 15,
     fontWeight: "bold",
-    color: "#1A1A2E",
-    marginBottom: 10,
   },
+
+  // ===== PRODUCTOS =====
+  productosContainer: {
+    marginBottom: 18,
+    backgroundColor: "#f8f9fa",
+    padding: 10,
+    borderRadius: 8,
+  },
+
+  productosTitle: {
+    fontSize: 19,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#2c3e50",
+  },
+
+  comandaDetails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+
   productoItem: {
+    width: 180,
+    marginRight: 12,
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: "#007bff",
+  },
+
+  productoInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  productoInfo: {
-    flex: 1,
-  },
+
   productoNombre: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-  },
-  productoPrecio: {
-    fontSize: 13,
-    color: "#28a745",
+    fontSize: 20,
     fontWeight: "bold",
-    marginTop: 2,
+    color: "#2c3e50",
+    flex: 1,
+    marginRight: 8,
   },
+
+  productoPrecio: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#28a745",
+  },
+
   productoEstado: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    backgroundColor: '#e9ecef',
+    marginTop: 4,
   },
+
   productoEstadoEmoji: {
     fontSize: 14,
     marginRight: 4,
   },
+
   productoEstadoText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#666",
+    color: "#2c3e50",
+    fontSize: 13,
+    fontWeight: "bold",
   },
 });

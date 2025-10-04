@@ -196,14 +196,18 @@ export default function UsuariosSection({ token, navigation }) {
 
         {usuarios.map((u) => (
           <View key={u.id} style={styles.itemRow}>
-            <View style={styles.itemTextContainer}>
+            <View style={[styles.column, styles.leftSpacing]}>
               <Text style={styles.label}>Nombre:</Text>
               <Text style={styles.itemText}>{u.name}</Text>
+            </View>
+
+            <View style={styles.column}>
               <Text style={styles.label}>Email:</Text>
               <Text style={styles.itemText}>{u.email}</Text>
             </View>
+
             <TouchableOpacity
-              style={styles.editButton}
+              style={[styles.column, styles.editButton]}
               onPress={() => abrirModal(u)}
             >
               <Image
@@ -262,17 +266,20 @@ export default function UsuariosSection({ token, navigation }) {
               </>
             )}
 
-            <Text style={styles.label}>Rol</Text>
-            <Picker
-              selectedValue={selectedRole}
-              onValueChange={setSelectedRole}
-              style={styles.picker}
-            >
-              <Picker.Item label="Selecciona un rol" value="" />
-              {roles.map((rol) => (
-                <Picker.Item key={rol.id} label={rol.name} value={rol.id} />
-              ))}
-            </Picker>
+            <View style={styles.row}>
+              <Text style={styles.labelR}>Rol</Text>
+              <Picker
+                selectedValue={selectedRole}
+                onValueChange={setSelectedRole}
+                style={styles.picker}
+              >
+                <Picker.Item label="Selecciona un rol" value="" />
+                {roles.map((rol) => (
+                  <Picker.Item key={rol.id} label={rol.name} value={rol.id} />
+                ))}
+              </Picker>
+            </View>
+
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -299,45 +306,86 @@ export default function UsuariosSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // ======== CONTENEDORES PRINCIPALES ========
   container: {
     flex: 1,
     backgroundColor: "#f9f9f9",
-    padding: 16,
-  },
-  title: {
-    fontSize: 25,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
+    padding: 10,
   },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 20,
+    marginBottom: 30,
   },
-  statCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-    minWidth: 80,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+  itemRow: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+    marginBottom: 8,
+    elevation: 1,
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#007bff",
+  column: {
+    flexBasis: '30%',
+    minWidth: 100,
+    paddingHorizontal: 5,
+    marginBottom: 10,
   },
-  statLabel: {
-    fontSize: 12,
-    color: "#6c757d",
-    textAlign: "center",
+  leftSpacing: { 
+    paddingLeft: 15
   },
 
+  // ======== TEXTOS Y TÍTULOS ========
+  title: {
+    fontSize: 30,
+    fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  statCard: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    minWidth: 80,
+    flex: 1,
+    marginHorizontal: 5,
+    minHeight: 80,
+    justifyContent: "center",
+  },
+  statNumber: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#007bff",
+    textAlign: "center",
+  },
+  statLabel: {
+    fontSize: 20,
+    color: "#666666",
+    textAlign: "center",
+    marginTop: 4,
+  },
+  label: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 2,
+    color: "#444",
+  },
+  itemText: {
+    fontSize: 18,
+    color: '#333',
+  },
+
+  // ======== BOTONES ========
   createButton: {
     backgroundColor: "#4CAF50",
     borderRadius: 10,
@@ -347,57 +395,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
   },
-  createButtonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-  itemTextContainer: {
-    flex: 1,
-  },
-
-  label: {
-    fontWeight: "bold",
-    fontSize: 14,
-    color: "#444",
-    marginTop: 4,
-  },
-
-  itemText: {
-    fontSize: 16,
-    color: "#333",
-  },
-
-  icon: {
-    width: 30,
-    height: 30,
-  },
   inlineContent: {
     flexDirection: "row",
     alignItems: "center",
   },
-  itemRow: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    elevation: 1,
+  icon: {
+    width: 30,
+    height: 30,
   },
-  itemText: {
-    fontSize: 15,
-    color: "#333",
-  },
-  actions: {
-    flexDirection: "row",
+  createButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginLeft: 8,
   },
   editButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    alignSelf: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   editIcon: {
     width: 35,
@@ -405,6 +420,7 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
 
+  // ======== MODAL ========
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -419,29 +435,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-  },
-  picker: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  label: {
-    fontWeight: "bold",
-    fontSize: 14,
-    marginBottom: 4,
-    color: "#444",
   },
   modalButtons: {
     flexDirection: "row",
@@ -456,18 +453,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: "#F44336",
-    marginRight: 10,
+  backgroundColor: "#F44336" 
   },
-  submitButton: {
-    backgroundColor: "#28a745",
-  },
-  cancelButton: {
-    backgroundColor: "#F44336",
-    marginRight: 10,
-  },
-  submitButton: {
-    backgroundColor: "#28a745",
+  submitButton: { 
+  backgroundColor: "#28a745" 
   },
   cancelButtonText: {
     color: "white",
@@ -479,4 +468,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+
+  // ======== FORMULARIO ========
+  input: {
+    fontSize: 17,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 20,
+  },
+  picker: {
+    height: 60, // asegura que se vea el campo
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingHorizontal: 120,
+  },
+  labelR: {
+    fontWeight: "bold",
+    fontSize: 18,
+    color: "#444",
+  },
 });
+

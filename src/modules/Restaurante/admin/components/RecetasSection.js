@@ -328,55 +328,40 @@ export default function RecetasSection({ token, navigation }) {
       </TouchableOpacity>
 
       <View style={styles.listContainer}>
-        {/* Buscador de materias primas */}
+        {/* Buscador de recetas */}
         <TextInput
           style={[styles.buscadorInput, styles.buscadorReceta]}
           placeholder="Buscar por clave o nombre..."
           value={busquedaReceta}
           onChangeText={setBusquedaReceta}
         />
+
         {/* Encabezado de la tabla */}
         <View style={styles.tableHeader1}>
           <Text style={[styles.tableHeaderText1, styles.idColumn]}>ID</Text>
-          <Text style={[styles.tableHeaderText1, styles.claveColumn]}>
-            Clave
-          </Text>
-          <Text style={[styles.tableHeaderText1, styles.nombreColumn]}>
-            Nombre
-          </Text>
-          <Text style={[styles.tableHeaderText1, styles.actionsColumn1]}>
-            Acciones
-          </Text>
+          <Text style={[styles.tableHeaderText1, styles.claveColumn]}>Clave</Text>
+          <Text style={[styles.tableHeaderText1, styles.nombreColumn]}>Nombre</Text>
+          <View style={[styles.actionsColumn1, styles.headerActionsContainer]}>
+            <Text style={styles.tableHeaderText1} numberOfLines={2}>Acciones</Text>
+          </View>
         </View>
 
         {/* Filas de la tabla */}
         <ScrollView style={styles.tableBody}>
           {recetasFiltradas.map((item) => (
             <View key={item.id} style={styles.tableRow1}>
-              <Text style={[styles.tableCellText1, styles.idColumn]}>
-                {item.id}
-              </Text>
-              <Text style={[styles.tableCellText1, styles.claveColumn]}>
-                {item.clave}
-              </Text>
-              <Text style={[styles.tableCellText1, styles.nombreColumn]}>
-                {item.nombre}
-              </Text>
+              <Text style={[styles.tableCellText1, styles.idColumn]}>{item.id}</Text>
+              <Text style={[styles.tableCellText1, styles.claveColumn]}>{item.clave}</Text>
+              <Text style={[styles.tableCellText1, styles.nombreColumn]}>{item.nombre}</Text>
               <View style={[styles.actionsColumn1, styles.actionsContainer]}>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => openEditModal(item)}
-                >
+                <TouchableOpacity style={styles.editButton} onPress={() => openEditModal(item)}>
                   <Image
                     source={require("../../../../../assets/editarr.png")}
                     style={styles.iconI}
                     accessibilityLabel="Editar receta"
                   />
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDelete(item.id)}
-                >
+                <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
                   <Image
                     source={require("../../../../../assets/eliminar.png")}
                     style={styles.iconI}
@@ -388,12 +373,10 @@ export default function RecetasSection({ token, navigation }) {
           ))}
         </ScrollView>
 
+        {/* Mensajes si no hay resultados */}
         {recetasFiltradas.length === 0 && busquedaReceta.trim() !== "" && (
-          <Text style={styles.emptyText}>
-            No se encontraron recetas que coincidan con la búsqueda.
-          </Text>
+          <Text style={styles.emptyText}>No se encontraron recetas que coincidan con la búsqueda.</Text>
         )}
-
         {recetasFiltradas.length === 0 && busquedaReceta.trim() === "" && (
           <Text style={styles.emptyText}>No hay recetas registradas.</Text>
         )}
@@ -440,17 +423,18 @@ export default function RecetasSection({ token, navigation }) {
                       <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>
                         Cantidad
                       </Text>
-                      <Text style={[styles.tableHeaderText, { flex: 1 }]}>
+                      <Text style={[styles.tableHeaderText, { flex: 2 }]}>
                         Acciones
                       </Text>
                     </View>
+
                     <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
                       {recetaDetalle.materias_primas.map((mp) => (
                         <View key={mp.id} style={styles.tableRow}>
                           <Text style={[styles.tableCellText, { flex: 2 }]}>
                             {mp.clave} - {mp.nombre}
                           </Text>
-                          <View style={[{ flex: 1.5 }]}>
+                          <View style={[{ flex: 2 }]}>
                             <View style={styles.cantidadContainer}>
                               <TextInput
                                 style={[styles.input, styles.cantidadInput]}
@@ -486,40 +470,37 @@ export default function RecetasSection({ token, navigation }) {
               </Text>
 
               <View style={{ maxHeight: 250 }}>
-                <ScrollView
-                  nestedScrollEnabled
-                  showsVerticalScrollIndicator={true}
-                >
+                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true}>
                   {recetaData.materias_primas.map((mp, index) => (
-                    <View key={index} style={styles.tableRow}>
-                      <View style={{ flex: 2 }}>
-                        <Text style={{ marginBottom: 4 }}>Materia Prima</Text>
-                        <Picker
-                          selectedValue={mp.materia_prima_id}
-                          onValueChange={(value) =>
-                            handleMateriaPrimaChange(
-                              index,
-                              "materia_prima_id",
-                              value
-                            )
-                          }
-                        >
-                          <Picker.Item label="Selecciona" value="" />
-                          {materiasPrimas.map((mp) => (
-                            <Picker.Item
-                              key={mp.id}
-                              label={`${mp.clave} - ${mp.nombre}`}
-                              value={mp.id}
-                            />
-                          ))}
-                        </Picker>
+                    <View key={index} style={styles.newRowContainer}>
+                      <View style={styles.newRowLabels}>
+                        <Text style={{ fontWeight: "bold", flex: 2 }}>Materia Prima</Text>
+                        <Text style={{ fontWeight: "bold", flex: 1.5 }}>Cantidad</Text>
                       </View>
 
-                      <View style={{ flex: 1.5 }}>
-                        <Text style={{ marginBottom: 4 }}>Cantidad</Text>
-                        <View style={styles.cantidadContainer}>
+                      <View style={styles.newRowControls}>
+                        <View style={styles.newPicker}>
+                          <Picker
+                            selectedValue={mp.materia_prima_id}
+                            onValueChange={(value) =>
+                              handleMateriaPrimaChange(index, "materia_prima_id", value)
+                            }
+                            style={styles.picker} // ← Este es el cambio clave
+                          >
+                            <Picker.Item label="Selecciona" value="" />
+                            {materiasPrimas.map((item) => (
+                              <Picker.Item
+                                key={item.id}
+                                label={`${item.clave} - ${item.nombre}`}
+                                value={item.id}
+                              />
+                            ))}
+                          </Picker>
+                        </View>
+
+                        <View style={styles.newCantidadWrapper}>
                           <TextInput
-                            style={[styles.input, styles.cantidadInput]}
+                            style={styles.newCantidadInput}
                             placeholder="Cantidad"
                             keyboardType="decimal-pad"
                             value={mp.cantidad}
@@ -527,22 +508,19 @@ export default function RecetasSection({ token, navigation }) {
                               handleMateriaPrimaChange(index, "cantidad", text)
                             }
                           />
-                          <Text style={styles.unidadText}>
+                          <Text style={styles.newUnidadText}>
                             {getUnidadMateriaPrima(mp.materia_prima_id)}
                           </Text>
                         </View>
-                      </View>
 
-                      <TouchableOpacity
-                        onPress={() => removeMateriaPrima(index)}
-                        style={styles.deleteButton}
-                      >
-                        <Image
-                          source={require("../../../../../assets/eliminar.png")}
-                          style={styles.icon}
-                          resizeMode="contain"
-                        />
-                      </TouchableOpacity>
+                        <TouchableOpacity onPress={() => removeMateriaPrima(index)} style={styles.newDeleteButton}>
+                          <Image
+                            source={require("../../../../../assets/eliminar.png")}
+                            style={styles.icon}
+                            resizeMode="contain"
+                          />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ))}
                 </ScrollView>
@@ -579,8 +557,8 @@ export default function RecetasSection({ token, navigation }) {
                       ? "Creando..."
                       : "Actualizando..."
                     : modalType === "crear"
-                    ? "Crear"
-                    : "Actualizar"}
+                      ? "Crear"
+                      : "Actualizar"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -592,111 +570,20 @@ export default function RecetasSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  cantidadContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  cantidadInput: {
-    flex: 1,
-    marginRight: 8,
-  },
-  unidadText: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "bold",
-    minWidth: 40,
-    textAlign: "center",
-  },
-
-  buscadorInput: {
-    borderWidth: 1,
-    borderColor: "#2D9966",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    fontSize: 14,
-    backgroundColor: "#ECFDF5",
-  },
-  buscadorAgregar: {
-    backgroundColor: "#f0f8f0",
-    borderColor: "#28a745",
-  },
-
-  // Estilos para la tabla
-  listContainer: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  tableHeader1: {
-    flexDirection: "row",
-    backgroundColor: "#f8f9fa",
-    borderBottomWidth: 2,
-    borderBottomColor: "#dee2e6",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  tableHeaderText1: {
-    fontWeight: "bold",
-    fontSize: 12,
-    textAlign: "center",
-    color: "#495057",
-  },
-  tableBody: {
-    flex: 1,
-  },
-  tableRow1: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  tableCellText1: {
-    fontSize: 12,
-    textAlign: "center",
-    color: "#212529",
-  },
-
-  // Columnas específicas
-  idColumn: {
-    flex: 0.5,
-  },
-  claveColumn: {
-    flex: 1,
-  },
-  nombreColumn: {
-    flex: 1,
-    textAlign: "left",
-  },
-  actionsColumn1: {
-    flex: 1,
-  },
-  // Contenedor de acciones
-  actionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
-
-  // Texto cuando no hay datos
-  emptyText: {
-    textAlign: "center",
-    marginTop: 50,
-    fontSize: 16,
-    color: "#666",
-    fontStyle: "italic",
-  },
-
-  ////////////////////////////////////
+  // ========================================
+  // CONTENEDOR PRINCIPAL
+  // ========================================
   container: {
     flex: 1,
     padding: 16,
     backgroundColor: "#f5f5f5",
   },
+
+  // ========================================
+  // TÍTULO Y BOTÓN PRINCIPAL
+  // ========================================
   title: {
-    fontSize: 25,
+    fontSize: 30,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
@@ -712,18 +599,109 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconI: {
-    alignItems: "center",
-    width: 25,
-    height: 25,
-    resizeMode: "contain",
-    marginRight: 8,
-  },
   createButtonText: {
     color: "#fff",
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "bold",
     marginLeft: 8,
+  },
+
+  // ========================================
+  // CONTENEDOR DE LISTA Y TABLA
+  // ========================================
+  listContainer: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: '#fff',
+  },
+
+  // ========================================
+  // BUSCADOR
+  // ========================================
+  buscadorInput: {
+    borderWidth: 1,
+    borderColor: "#2D9966",
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 18,
+    backgroundColor: "#ECFDF5",
+  },
+  buscadorReceta: {
+    backgroundColor: "#f0f8f0",
+    borderColor: "#28a745",
+  },
+
+  // ========================================
+  // TABLA DE RECETAS
+  // ========================================
+  // Encabezado
+  tableHeader1: {
+    flexDirection: "row",
+    backgroundColor: "#F0F0F0",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: "#CCCCCC",
+  },
+  tableHeaderText1: {
+    fontWeight: "bold",
+    fontSize: 19,
+    color: "#333333",
+    flexWrap: "wrap",
+  },
+  headerActionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+
+  // Cuerpo de la tabla
+  tableBody: {
+    maxHeight: '80%',
+  },
+  tableRow1: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    alignItems: 'center',
+      
+  },
+  tableCellText1: {
+    fontSize: 17,
+    color: '#444',
+    flexWrap: 'wrap',
+  },
+
+  // Columnas específicas
+  idColumn: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  claveColumn: {
+    flex: 2,
+    paddingHorizontal: 4,
+  },
+  nombreColumn: {
+    flex: 2,
+    paddingHorizontal: 4,
+  },
+  actionsColumn1: {
+    flex: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ========================================
+  // BOTONES DE ACCIÓN
+  // ========================================
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
   },
   editButton: {
     padding: 8,
@@ -736,18 +714,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  icon: {
-    width: 30,
-    height: 30,
-    resizeMode: "contain",
-  },
+
+  // ========================================
+  // MODAL
+  // ========================================
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
-
   modalContainerFixed: {
     backgroundColor: "white",
     width: "90%",
@@ -756,9 +732,8 @@ const styles = StyleSheet.create({
     padding: 16,
     justifyContent: "space-between",
   },
-
   modalTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "bold",
     marginBottom: 8,
     textAlign: "center",
@@ -767,7 +742,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     marginBottom: 16,
   },
+
+  // ========================================
+  // INPUTS Y FORMULARIOS
+  // ========================================
   input: {
+    fontSize: 18,
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 5,
@@ -775,12 +755,26 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "white",
   },
+  picker: {
+    borderColor: "#ccc",
+    borderRadius: 8,
+    flex: 1,
+    height: 60,
+  },
+
+  // ========================================
+  // SECCIONES DEL MODAL
+  // ========================================
   sectionTitle: {
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 18,
     marginBottom: 8,
     marginTop: 16,
   },
+
+  // ========================================
+  // MATERIAS PRIMAS EXISTENTES (MODAL EDITAR)
+  // ========================================
   existingMateriasContainer: {
     marginBottom: 20,
     borderWidth: 1,
@@ -810,19 +804,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
-  tableInput: {
-    paddingVertical: 4,
+  cantidadContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cantidadInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  unidadText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "bold",
+    minWidth: 40,
+    textAlign: "center",
+  },
+
+  // ========================================
+  // NUEVAS MATERIAS PRIMAS (MODAL)
+  // ========================================
+  newRowContainer: {
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderColor: "#ddd",
+  },
+  newRowLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  newRowControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+  },
+  newPicker: {
+    flex: 2,
+    marginRight: 12,
+    borderRadius: 8,
+  },
+  newCantidadWrapper: {
+    flex: 1.5,
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  newCantidadInput: {
+    flex: 1,
     paddingHorizontal: 8,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 4,
+    borderRadius: 6,
+    backgroundColor: "#fff",
+    fontSize: 14,
   },
-  materiaPrimaRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    marginBottom: 12,
-    gap: 8,
+  newUnidadText: {
+    marginLeft: 6,
+    fontSize: 14,
+    color: "#555",
   },
+  newDeleteButton: {
+    padding: 6,
+  },
+
+  // ========================================
+  // BOTÓN AGREGAR MATERIA PRIMA
+  // ========================================
   addButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -833,10 +884,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   addButtonText: {
+    fontSize: 17,
     color: "#ffffffff",
     textAlign: "center",
     fontWeight: "bold",
   },
+
+  // ========================================
+  // BOTONES DEL MODAL
+  // ========================================
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -856,13 +912,6 @@ const styles = StyleSheet.create({
   submitButton: {
     backgroundColor: "#28a745",
   },
-  cancelButton: {
-    backgroundColor: "#F44336",
-    marginRight: 10,
-  },
-  submitButton: {
-    backgroundColor: "#28a745",
-  },
   cancelButtonText: {
     color: "white",
     fontSize: 16,
@@ -872,5 +921,31 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+
+  // ========================================
+  // ICONOS
+  // ========================================
+  icon: {
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
+  },
+  iconI: {
+    alignItems: "center",
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
+    marginRight: 2,
+  },
+
+  // ========================================
+  // MENSAJES Y TEXTOS
+  // ========================================
+  emptyText: {
+    marginTop: 20,
+    textAlign: 'center',
+    color: '#888',
+    fontStyle: 'italic',
   },
 });

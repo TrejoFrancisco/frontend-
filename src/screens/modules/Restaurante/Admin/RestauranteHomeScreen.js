@@ -155,15 +155,15 @@ function HomeScreen() {
     },
     {
       id: "comandas",
-      title: "comandas",
+      title: "Comandas",
       icon: (
         <Image
-          source={require("../../../../../assets/reportes.png")}
+          source={require("../../../../../assets/comandas.png")}
           style={styles.menuIco}
         />
       ),
-      color: "#2ef13bff",
-      bgColor: "#67d261ff",
+      color: "#F4A8FF",
+      bgColor: "#FAE8FF",
     },
   ];
 
@@ -225,7 +225,7 @@ function HomeScreen() {
         <ScrollView style={styles.content}>{renderContent()}</ScrollView>
 
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={drawerVisible}
           onRequestClose={() => setDrawerVisible(false)}
@@ -364,7 +364,6 @@ function HomeScreen() {
   );
 }
 
-// El código DashboardContent permanece igual...
 const DashboardContent = ({ token }) => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
@@ -396,8 +395,8 @@ const DashboardContent = ({ token }) => {
       console.error("Error fetching dashboard data:", error);
       setError(
         error.response?.data?.error?.message ||
-          error.response?.data?.message ||
-          "Error de conexión. Verifica tu conexión a internet."
+        error.response?.data?.message ||
+        "Error de conexión. Verifica tu conexión a internet."
       );
     } finally {
       setLoading(false);
@@ -441,18 +440,18 @@ const DashboardContent = ({ token }) => {
   return (
     <View style={styles.contentContainer}>
       <View style={styles.titleContainer}>
-        <Text style={styles.contentTitle}>Dashboard</Text>
+        <View style={styles.rowWrap}>
+          <Text style={styles.contentTitle}>Dashboard</Text>
 
-        <View style={styles.columnContainer}>
           <TouchableOpacity
             style={styles.refreshButton}
             onPress={handleRefresh}
           >
             <Text style={styles.refreshButtonText}>Actualizar</Text>
           </TouchableOpacity>
-
-          <Text style={styles.dateText}>Fecha: {dashboardData.fecha}</Text>
         </View>
+
+        <Text style={styles.dateText}>Fecha: {dashboardData.fecha}</Text>
       </View>
 
       <View style={styles.statsContainer}>
@@ -477,7 +476,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Productos Más Vendidos</Text>
         {dashboardData.productos_mas_vendidos &&
-        dashboardData.productos_mas_vendidos.length > 0 ? (
+          dashboardData.productos_mas_vendidos.length > 0 ? (
           dashboardData.productos_mas_vendidos.map((item, index) => (
             <View key={item.producto_id} style={styles.productItem}>
               <View style={styles.rankBadge}>
@@ -501,7 +500,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Cancelaciones del día</Text>
         {dashboardData.productos_cancelados &&
-        dashboardData.productos_cancelados.length > 0 ? (
+          dashboardData.productos_cancelados.length > 0 ? (
           dashboardData.productos_cancelados.map((item, index) => (
             <View key={index} style={styles.canceledItem}>
               <View style={styles.canceledIcon}>
@@ -526,16 +525,12 @@ const DashboardContent = ({ token }) => {
           </Text>
         )}
       </View>
-    </View>
+    </View >
   );
 };
 
 const styles = StyleSheet.create({
-  menuIco: {
-    width: 50,
-    height: 30,
-    resizeMode: "contain",
-  },
+  // ===== CONTENEDOR PRINCIPAL =====
   container: {
     flex: 1,
     backgroundColor: "#1e3151ff",
@@ -548,48 +543,67 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F5F5F5",
   },
+
+  // ===== CONTENIDO PRINCIPAL =====
   contentContainer: {
     padding: 20,
   },
   titleContainer: {
-    paddingVertical: 16,
+    paddingVertical: 25,
   },
-
+  rowWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   contentTitle: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 12,
   },
-
-  columnContainer: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  refreshButton: {
-    backgroundColor: "#033468ff",
-    paddingVertical: 8,
-    paddingHorizontal: 45,
-    borderRadius: 10,
-    marginBottom: 16, // ← más espacio debajo del botón
-  },
-
-  refreshButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-
   dateText: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "bold",
     color: "#333",
     alignSelf: "flex-start",
-    marginLeft: 16,
-    marginTop: 4, // ← espacio extra arriba del texto
+    marginLeft: 10,
+    marginTop: 4,
   },
+
+  // ===== BOTONES =====
+  refreshButton: {
+    backgroundColor: "#033468ff",
+    flexShrink: 1,
+    flexGrow: 0,
+    minWidth: 150,
+    maxWidth: "100%",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+  },
+  refreshButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "500",
+  },
+  retryButton: {
+    backgroundColor: "#1A1A2E",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+
+  // ===== ESTADÍSTICAS =====
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -597,8 +611,9 @@ const styles = StyleSheet.create({
   },
   statCard: {
     backgroundColor: "#FFFFFF",
-    padding: 15,
-    borderRadius: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     alignItems: "center",
     elevation: 2,
     shadowColor: "#000",
@@ -608,19 +623,25 @@ const styles = StyleSheet.create({
     minWidth: 80,
     flex: 1,
     marginHorizontal: 5,
+    minHeight: 80,
+    justifyContent: "center",
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#1A1A2E",
     textAlign: "center",
+    flexWrap: "wrap",
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 20,
     color: "#666666",
     textAlign: "center",
     marginTop: 4,
+    flexWrap: "wrap",
   },
+
+  // ===== SECCIONES =====
   sectionContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -633,11 +654,13 @@ const styles = StyleSheet.create({
     shadowRadius: 2.22,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#1A1A2E",
     marginBottom: 15,
   },
+
+  // ===== PRODUCTOS MÁS VENDIDOS =====
   productItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -672,6 +695,8 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 2,
   },
+
+  // ===== PRODUCTOS CANCELADOS =====
   canceledItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -709,16 +734,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   canceledText: {
-    fontSize: 10,
+    fontSize: 15,
     color: "#fff",
     fontWeight: "bold",
   },
-  emptyText: {
-    textAlign: "center",
-    color: "#666",
-    fontStyle: "italic",
-    paddingVertical: 20,
-  },
+
+  // ===== ESTADOS DE CARGA Y ERROR =====
   loadingContainer: {
     alignItems: "center",
     paddingVertical: 50,
@@ -738,18 +759,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 15,
   },
-  retryButton: {
-    backgroundColor: "#1A1A2E",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontWeight: "600",
+  emptyText: {
+    fontSize: 20,
+    textAlign: "center",
+    color: "#666",
+    fontStyle: "italic",
+    paddingVertical: 20,
   },
 
-  // Nuevos estilos para el Drawer mejorado
+  // ===== DRAWER - OVERLAY =====
   drawerOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
@@ -769,6 +787,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 10,
   },
+
+  // ===== DRAWER - HEADER =====
   drawerHeader: {
     backgroundColor: "#1A1A2E",
     borderTopRightRadius: 24,
@@ -814,16 +834,20 @@ const styles = StyleSheet.create({
     height: 40,
   },
   drawerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 4,
+    fontSize: 22,
+    color: "#c8c8c8ff",
+    fontWeight: 'bold',
+    textAlign: 'center',
+    flexWrap: 'wrap',
   },
   drawerSubtitle: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
-    marginBottom: 20,
+    fontSize: 18,
+    color: '#b8b8b8ff',
+    textAlign: 'center',
+    flexWrap: 'wrap',
   },
+
+  // ===== DRAWER - USUARIO =====
   userInfoContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -851,15 +875,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    marginBottom: 2,
+    fontSize: 18,
+    color: "#d8d8d8ff",
+    fontWeight: '600',
+    flexWrap: 'wrap',
   },
   userRoleText: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 16,
+    color: '#c0c0c0ff',
+    flexWrap: 'wrap',
   },
+
+  // ===== DRAWER - CONTENIDO =====
   drawerContent: {
     flex: 1,
     paddingTop: 20,
@@ -869,7 +896,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   menuSectionTitle: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "700",
     color: "#9CA3AF",
     textTransform: "uppercase",
@@ -877,6 +904,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 4,
   },
+
+  // ===== DRAWER - MENU ITEMS =====
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -907,15 +936,17 @@ const styles = StyleSheet.create({
   },
   menuItemContent: {
     flex: 1,
+    paddingHorizontal: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   menuText: {
-    fontSize: 17,
-    color: "#000000ff",
-    fontWeight: "500",
-    flex: 1,
+    fontSize: 18,
+    flexShrink: 1,
+    flexWrap: 'wrap',
+    width: '80%',
+    color: '#333333',
   },
   activeIndicator: {
     marginLeft: 8,
@@ -933,6 +964,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 2,
     borderBottomRightRadius: 2,
   },
+
+  // ===== DRAWER - FOOTER =====
   drawerFooter: {
     paddingHorizontal: 20,
     paddingVertical: 3,
@@ -941,8 +974,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   footerText: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "700",
+    color: '#7d7d7dff',
+    textAlign: 'center',
+    flexWrap: 'wrap',
+  },
+
+  // ===== ICONOS DEL MENÚ =====
+  menuIco: {
+    width: 50,
+    height: 30,
+    resizeMode: "contain",
   },
 });

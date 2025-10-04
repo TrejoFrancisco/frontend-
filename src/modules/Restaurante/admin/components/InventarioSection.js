@@ -23,7 +23,7 @@ export default function InventarioSection({ token, navigation }) {
   const [historialVisible, setHistorialVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [busquedaInventario, setBusquedaInventario] = useState(""); // Nueva state para la búsqueda
+  const [busquedaInventario, setBusquedaInventario] = useState("");
 
   useEffect(() => {
     fetchInventario();
@@ -55,7 +55,6 @@ export default function InventarioSection({ token, navigation }) {
     }
   };
 
-  // Función para filtrar items por búsqueda
   const getItemsFiltrados = (items) => {
     if (!busquedaInventario.trim()) return items;
 
@@ -76,9 +75,9 @@ export default function InventarioSection({ token, navigation }) {
   };
 
   const getStatusColor = (existencia) => {
-    if (existencia <= 0) return "#dc3545";
-    if (existencia <= 10) return "#ffc107";
-    return "#28a745";
+    if (existencia <= 0) return "#DC3545";
+    if (existencia <= 10) return "#FFC107";
+    return "#28A745";
   };
 
   const getStatusText = (existencia) => {
@@ -89,44 +88,62 @@ export default function InventarioSection({ token, navigation }) {
 
   const renderInventarioItem = (item, tipo) => (
     <View key={`${tipo}-${item.id}`} style={styles.inventarioCard}>
-      <View style={styles.inventarioHeader}>
-        <Text style={styles.inventarioName}>{item.nombre}</Text>
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: getStatusColor(item.existencia) },
-          ]}
-        >
-          <Text style={styles.statusText}>
-            {getStatusText(item.existencia)}
+      <View style={styles.inventarioRow}>
+        {/* Nombre */}
+        <View style={styles.columnItem}>
+          <Text style={styles.itemName}>{item.nombre}</Text>
+        </View>
+
+        {/* Existencia */}
+        <View style={styles.columnItem}>
+          <Text style={styles.itemLabel}>Existencia:</Text>
+          <Text style={styles.itemValue}>{item.existencia}</Text>
+        </View>
+
+        {/* Unidad */}
+        <View style={styles.columnItem}>
+          <Text style={styles.itemLabel}>Unidad:</Text>
+          <Text style={styles.itemValue}>{item.unidad}</Text>
+        </View>
+
+        {/* Tipo */}
+        <View style={styles.columnItem}>
+          <Text style={styles.itemLabel}>Tipo:</Text>
+          <Text style={styles.itemValue}>
+            {tipo === "productos" ? "Producto" : "Materia Prima"}
           </Text>
         </View>
-      </View>
 
-      <View style={styles.inventarioDetails}>
-        <Text style={styles.inventarioDetail}>
-          Existencia: {item.existencia}
-        </Text>
-        <Text style={styles.inventarioDetail}>Unidad: {item.unidad}</Text>
-        <Text style={styles.inventarioDetail}>
-          Tipo: {tipo === "productos" ? "Producto" : "Materia Prima"}
-        </Text>
-      </View>
+        {/* Estado */}
+        <View style={styles.columnItem}>
+          <TouchableOpacity
+            style={[
+              styles.statusButton,
+              { backgroundColor: getStatusColor(item.existencia) },
+            ]}
+            disabled
+          >
+            <Text style={styles.statusButtonText}>
+              {getStatusText(item.existencia)}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.inventarioActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.historialButton]}
-          onPress={() => verHistorial(item)}
-        >
-          <View style={styles.actionButtonContainer}>
-            <Image
-              source={require('../../../../../assets/historial.png')}
-              style={styles.icon}
-            />
-            <Text style={styles.actionButtonText}>Ver Historial</Text>
-          </View>
-
-        </TouchableOpacity>
+        {/* Acción */}
+        <View style={styles.columnItem}>
+          <TouchableOpacity
+            style={styles.historialButton}
+            onPress={() => verHistorial(item)}
+          >
+            <View style={styles.buttonContent}>
+              <Image
+                source={require('../../../../../assets/historial.png')}
+                style={styles.buttonIcon}
+              />
+              <Text style={styles.historialButtonText}>Ver Historial</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -137,7 +154,7 @@ export default function InventarioSection({ token, navigation }) {
         <Text
           style={[
             styles.historialTipo,
-            { color: item.tipo === "entrada" ? "#28a745" : "#dc3545" },
+            { color: item.tipo === "entrada" ? "#28A745" : "#DC3545" },
           ]}
         >
           {item.tipo === "entrada" ? "📈 Entrada" : "📉 Salida"}
@@ -171,7 +188,6 @@ export default function InventarioSection({ token, navigation }) {
     );
   }
 
-  // Obtener items filtrados
   const productosFiltrados = getItemsFiltrados(inventarioData.productos);
   const materiasPrimasFiltradas = getItemsFiltrados(inventarioData.materias_primas);
 
@@ -184,13 +200,13 @@ export default function InventarioSection({ token, navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Text style={styles.title}>Inventario del Restaurante</Text>
+        <Text style={styles.mainTitle}>Inventario del Restaurante</Text>
 
-        {/* Buscador general de inventario */}
-        <View style={styles.buscadorContainer}>
+        {/* Buscador */}
+        <View style={styles.searchContainer}>
           <TextInput
-            style={[styles.buscadorInput, styles.buscadorInventario]}
-            placeholder="Buscar en Inventario ..."
+            style={styles.searchInput}
+            placeholder="Buscar en Inventario..."
             value={busquedaInventario}
             onChangeText={setBusquedaInventario}
           />
@@ -198,10 +214,10 @@ export default function InventarioSection({ token, navigation }) {
 
         {/* Sección de Productos */}
         <View style={styles.section}>
-          <View style={styles.sectionTitle}>
+          <View style={styles.sectionHeader}>
             <Image
               source={require('../../../../../assets/gestionP.png')}
-              style={styles.iconImage}
+              style={styles.sectionIcon}
             />
             <Text style={styles.sectionTitle}>
               Productos ({productosFiltrados.length})
@@ -224,10 +240,10 @@ export default function InventarioSection({ token, navigation }) {
 
         {/* Sección de Materias Primas */}
         <View style={styles.section}>
-          <View style={styles.sectionTitle}>
+          <View style={styles.sectionHeader}>
             <Image
               source={require('../../../../../assets/gestionMP.png')}
-              style={styles.iconImage}
+              style={styles.sectionIcon}
             />
             <Text style={styles.sectionTitle}>
               Materias Primas ({materiasPrimasFiltradas.length})
@@ -251,7 +267,7 @@ export default function InventarioSection({ token, navigation }) {
 
       {/* Modal de Historial */}
       <Modal visible={historialVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
+        <View style={styles.modalOverlay}>
           <View style={styles.modalWrapper}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>
@@ -289,25 +305,7 @@ export default function InventarioSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
-
-  buscadorContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
-  buscadorInput: {
-    borderWidth: 1,
-    borderColor: "#2D9966",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    fontSize: 16,
-    backgroundColor: "#ECFDF5",
-    width: '100%',
-  },
-  buscadorInventario: {
-    maxWidth: 400, // Limita el ancho en pantallas grandes
-  },
+  // === CONTENEDOR PRINCIPAL ===
   container: {
     flex: 1,
   },
@@ -319,136 +317,146 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  title: {
-    fontSize: 25,
+
+  // === TÍTULOS ===
+  mainTitle: {
+    fontSize: 30,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
+    color: "#1F2937",
   },
   loadingText: {
     fontSize: 18,
-    color: "#6c757d",
+    color: "#6C757D",
   },
-  refreshButton: {
-    backgroundColor: "#17a2b8",
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  inlineContent: {
-    flexDirection: "row",
+
+  // === BUSCADOR ===
+  searchContainer: {
     alignItems: "center",
-    justifyContent: "center",
+    marginBottom: 20,
+    paddingHorizontal: 20,
   },
-  icon: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
+  searchInput: {
+    width: "100%",
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: "#2D9966",
+    borderRadius: 20,
+    padding: 12,
+    fontSize: 18,
+    backgroundColor: "#ECFDF5",
   },
-  refreshButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+
+  // === SECCIONES ===
   section: {
     marginBottom: 20,
   },
-  sectionTitle: {
+  sectionHeader: {
     flexDirection: "row",
-    fontSize: 15,
-    fontWeight: "bold",
+    alignItems: "center",
     marginBottom: 15,
-    color: "#495057",
-    borderBottomWidth: 2,
-    borderBottomColor: "#e9ecef",
     paddingBottom: 5,
+    borderBottomWidth: 2,
+    borderBottomColor: "#E9ECEF",
   },
-  iconImage: {
+  sectionIcon: {
     width: 40,
     height: 40,
-    marginRight: 8,
+    marginRight: 6,
   },
-
+  sectionTitle: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#495057",
+  },
   emptyText: {
     textAlign: "center",
     fontSize: 16,
-    color: "#6c757d",
+    color: "#6C757D",
     fontStyle: "italic",
     marginVertical: 20,
   },
+
+  // === TARJETAS DE INVENTARIO ===
   inventarioCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#e9ecef",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  inventarioHeader: {
+  inventarioRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    flexWrap: "wrap",
+    gap: 8,
   },
-  inventarioName: {
-    fontSize: 18,
-    fontWeight: "bold",
+  columnItem: {
     flex: 1,
-    color: "#2c3e50",
+    minWidth: 150,
   },
-  statusBadge: {
+  itemName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1F2937",
+  },
+  itemLabel: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#555555",
+    marginBottom: 2,
+  },
+  itemValue: {
+    fontSize: 17,
+    color: "#374151",
+  },
+
+  // === BOTONES DE ESTADO ===
+  statusButton: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 15,
+    borderRadius: 20,
+    alignSelf: "flex-start",
   },
-  statusText: {
-    color: "white",
-    fontSize: 12,
+  statusButtonText: {
+    color: "#FFFFFF",
     fontWeight: "bold",
+    fontSize: 15,
   },
-  inventarioDetails: {
-    marginBottom: 15,
-  },
-  inventarioDetail: {
-    fontSize: 14,
-    marginBottom: 5,
-    color: "#495057",
-  },
-  inventarioActions: {
-    alignItems: "center",
-  },
-  actionButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 6,
-    minWidth: 150,
-    alignItems: "center",
-  },
+
+  // === BOTONES DE ACCIÓN ===
   historialButton: {
-    backgroundColor: "#6f42c1",
+    backgroundColor: "#4048B5",
+    padding: 7,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  actionButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-
-
-  actionButtonText: {
-    color: "white",
-    fontSize: 12,
+  buttonIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 6,
+  },
+  historialButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
     fontWeight: "bold",
   },
-  modalContainer: {
+
+  // === MODAL ===
+  modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalWrapper: {
     flex: 1,
@@ -456,7 +464,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: "white",
+    backgroundColor: "#FFFFFF",
     borderRadius: 10,
     padding: 20,
     maxHeight: "80%",
@@ -466,19 +474,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
-    color: "#2c3e50",
+    color: "#2C3E50",
   },
+
+  // === HISTORIAL ===
   historialScrollView: {
     maxHeight: 400,
     marginBottom: 20,
   },
   historialItem: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#F8F9FA",
     borderRadius: 8,
     padding: 12,
     marginBottom: 10,
     borderLeftWidth: 4,
-    borderLeftColor: "#17a2b8",
+    borderLeftColor: "#17A2B8",
   },
   historialHeader: {
     flexDirection: "row",
@@ -492,7 +502,7 @@ const styles = StyleSheet.create({
   },
   historialFecha: {
     fontSize: 12,
-    color: "#6c757d",
+    color: "#6C757D",
   },
   historialCantidad: {
     fontSize: 14,
@@ -501,16 +511,18 @@ const styles = StyleSheet.create({
   },
   historialDescripcion: {
     fontSize: 12,
-    color: "#6c757d",
+    color: "#6C757D",
     fontStyle: "italic",
   },
   emptyHistorialText: {
     textAlign: "center",
     fontSize: 16,
-    color: "#6c757d",
+    color: "#6C757D",
     fontStyle: "italic",
     marginVertical: 20,
   },
+
+  // === BOTÓN CERRAR ===
   closeButton: {
     backgroundColor: "#F44336",
     padding: 15,
@@ -518,7 +530,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   closeButtonText: {
-    color: "white",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
   },

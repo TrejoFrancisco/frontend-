@@ -235,16 +235,23 @@ export default function BarSection() {
         producto.estado === "entregado" && styles.productoEntregado,
       ]}
     >
-      {/* Header con mesa y tiempo */}
-      <View style={styles.productoHeader}>
-        <View style={styles.mesaTimeInfo}>
+      {/* Container principal para el contenido del header */}
+      <View style={styles.productoContainer}>
+        {/* Fila única: Mesa + Producto + Comensal + Mesero + Prioridad */}
+        <View style={styles.productoHeaderRow}>
           <Text style={styles.mesaNumber}>Mesa {producto.mesa}</Text>
-          <Text style={styles.pedidoTime}>
-            Pedido: {formatTime(producto.fecha_pedido)}
-          </Text>
-        </View>
 
-        <View style={styles.headerRight}>
+          <Text style={styles.productoNombre}>
+            {producto.nombre}
+          </Text>
+
+          {producto.comensal && (
+            <Text style={styles.comensalDetail}>Comensal: {producto.comensal}</Text>
+          )}
+
+          <Text style={styles.meseroDetail}>Mesero: {producto.mesero_nombre}</Text>
+
+          {/* Badge Prioridad */}
           <View
             style={[
               styles.prioridadBadge,
@@ -266,43 +273,25 @@ export default function BarSection() {
         </View>
       </View>
 
-      {/* Información del producto */}
-      <View style={styles.productoMainInfo}>
-        <Text style={styles.productoNombre}>{producto.nombre}</Text>
-        <Text style={styles.productoClave}>#{producto.clave}</Text>
-      </View>
-
-      {/* Información adicional */}
-      <View style={styles.productoDetails}>
-        <View style={styles.leftDetails}>
-          {producto.comensal && (
-            <Text style={styles.comensalText}>👤 {producto.comensal}</Text>
-          )}
-          <Text style={styles.meseroText}>
-            Mesero: {producto.mesero_nombre}
-          </Text>
-        </View>
-
+      {/* Fila de botones con espaciado */}
+      <View style={styles.productoBotonesFila}>
         <TouchableOpacity
-          style={styles.detallesButton}
+          style={[styles.botonAccion, styles.botonVerDetalles]}
           onPress={() => abrirVentanaDetalles(producto)}
         >
-          <Text style={styles.detallesButtonText}>Ver Detalles</Text>
+          <Text style={styles.botonAccionTexto}>Ver Detalles</Text>
         </TouchableOpacity>
-      </View>
 
-      {/* Botón de acción */}
-      <View style={styles.productoActions}>
         {producto.estado !== "entregado" ? (
           <TouchableOpacity
-            style={[styles.actionButton, styles.entregarButton]}
+            style={[styles.botonAccion, styles.botonEntregar]}
             onPress={() => marcarComoEntregado(producto.comanda_producto_id)}
           >
-            <Text style={styles.actionButtonText}>✓ Marcar como Entregado</Text>
+            <Text style={styles.botonAccionTexto}>✓ Marcar como Entregado</Text>
           </TouchableOpacity>
         ) : (
-          <View style={[styles.actionButton, styles.completadoButton]}>
-            <Text style={styles.completadoText}>✓ Entregado</Text>
+          <View style={[styles.botonAccion, styles.botonCompletado]}>
+            <Text style={styles.botonAccionTexto}>✓ Entregado</Text>
           </View>
         )}
       </View>
@@ -381,7 +370,11 @@ export default function BarSection() {
               style={styles.filterButton}
               onPress={() => setShowFilters(!showFilters)}
             >
-              <Text style={styles.filterButtonText}>
+              <Text
+                style={styles.filterButtonText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {
                   opcionesOrdenamiento.find((opt) => opt.value === ordenamiento)
                     ?.label
@@ -399,7 +392,7 @@ export default function BarSection() {
                   style={[
                     styles.filterOption,
                     ordenamiento === opcion.value &&
-                      styles.filterOptionSelected,
+                    styles.filterOptionSelected,
                   ]}
                   onPress={() => handleOrdenamientoChange(opcion.value)}
                 >
@@ -407,8 +400,10 @@ export default function BarSection() {
                     style={[
                       styles.filterOptionText,
                       ordenamiento === opcion.value &&
-                        styles.filterOptionTextSelected,
+                      styles.filterOptionTextSelected,
                     ]}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
                   >
                     {opcion.label}
                   </Text>
@@ -470,8 +465,8 @@ export default function BarSection() {
 
                 {/* Sección de ingredientes/materias primas */}
                 {productoSeleccionado.receta &&
-                productoSeleccionado.receta.materias_primas &&
-                productoSeleccionado.receta.materias_primas.length > 0 ? (
+                  productoSeleccionado.receta.materias_primas &&
+                  productoSeleccionado.receta.materias_primas.length > 0 ? (
                   <View style={styles.recetaSection}>
                     <Text style={styles.recetaTitle}>
                       🧾 Ingredientes necesarios:
@@ -515,79 +510,7 @@ export default function BarSection() {
 }
 
 const styles = StyleSheet.create({
-  recetaSection: {
-    marginTop: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-  },
-
-  recetaTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2c3e50",
-    marginBottom: 10,
-  },
-
-  ingredientesContainer: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    padding: 12,
-  },
-
-  ingredienteItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
-  },
-
-  ingredienteNombre: {
-    flex: 1,
-    fontSize: 14,
-    color: "#495057",
-    fontWeight: "500",
-  },
-
-  ingredienteCantidad: {
-    fontSize: 14,
-    color: "#28a745",
-    fontWeight: "600",
-    backgroundColor: "#d4edda",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-
-  sinRecetaText: {
-    fontSize: 14,
-    color: "#6c757d",
-    fontStyle: "italic",
-    textAlign: "center",
-    padding: 15,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-  },
-
-  // También puedes actualizar el modalContent para que sea más grande si es necesario
-  modalContent: {
-    backgroundColor: "white",
-    margin: 20,
-    borderRadius: 15,
-    padding: 20,
-    maxHeight: "80%", // Agregar altura máxima
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-
+  // ===== CONTENEDOR PRINCIPAL =====
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -596,9 +519,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  scrollView: {
+    flex: 1,
+  },
+
+  // ===== HEADER SUPERIOR =====
   topHeader: {
     backgroundColor: "#fff",
-    paddingTop: 50,
+    paddingTop: 40,
     paddingHorizontal: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
@@ -615,6 +543,8 @@ const styles = StyleSheet.create({
   rightColumn: {
     alignItems: "flex-end",
   },
+
+  // ===== SALUDO DE USUARIO =====
   userGreeting: {
     flexDirection: "row",
     alignItems: "center",
@@ -622,46 +552,50 @@ const styles = StyleSheet.create({
   welcomeIcon: {
     width: 24,
     height: 24,
-    marginRight: 8,
+    marginRight: 8, // Espacio entre icono y texto
   },
+
   userWelcome: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 25,
     color: "#333",
+    fontWeight: "bold",
+    maxWidth: 195,
+    flexWrap: "wrap",
   },
+
+  // ===== BOTÓN LOGOUT =====
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FEE2E2",
-    paddingHorizontal: 12,
+    paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 8,
   },
   logoutIcon: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     marginRight: 6,
   },
   logoutButtonText: {
-    color: "#fff",
-    fontSize: 14,
+    color: "#000000ff",
+    fontSize: 22,
     fontWeight: "500",
   },
-  scrollView: {
-    flex: 1,
-  },
+
+  // ===== HEADER DE CONTENIDO =====
   header: {
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
   categoriaText: {
-    fontSize: 20,
+    fontSize: 30,
     color: "#000000ff",
     textAlign: "center",
     fontWeight: "bold",
   },
   subtext: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "600",
     color: "#333",
   },
@@ -669,38 +603,53 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
   },
+
+  // ===== ESTADÍSTICAS =====
   statsContainer: {
     flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    gap: 10,
+    justifyContent: "space-around", // Distribución equitativa
+    marginBottom: 30,
   },
+
   statCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     alignItems: "center",
+    // Sombra para Android
     elevation: 2,
+    // Sombra para iOS
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    minWidth: 80,
+    flex: 1,
+    marginHorizontal: 5,
+    minHeight: 80,
+    justifyContent: "center",
   },
+
   statNumber: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
-    color: "#007AFF",
+    color: "#007bff",
+    textAlign: "center",
+    flexWrap: "wrap",
   },
+
   statLabel: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 20,
+    color: "#666666",
+    textAlign: "center",
     marginTop: 4,
+    flexWrap: "wrap",
   },
+  // ===== FILTROS =====
   filtersContainer: {
     backgroundColor: "#fff",
-    marginHorizontal: 20,
+    marginHorizontal: 16, // ✅ Reducido de 20 a 16
     marginVertical: 10,
     borderRadius: 12,
     padding: 15,
@@ -710,16 +659,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },
+
   filtersHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 12, // ✅ AGREGADO: Espacio entre título y botón
   },
+
   filtersTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: "#333",
+    flexShrink: 0,
   },
+
+  // Botón principal del filtro
   filterButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -727,187 +682,216 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    minWidth: 200,
+    flex: 1,
+    maxWidth: '20%',
     justifyContent: "space-between",
   },
+
   filterButtonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "500",
     flex: 1,
+
   },
+
   filterArrow: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: 14,
     marginLeft: 8,
+    flexShrink: 0,
   },
+
+  // Dropdown de opciones de filtro
   filtersDropdown: {
     marginTop: 12,
     backgroundColor: "#f8f9fa",
     borderRadius: 8,
   },
+
   filterOption: {
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#e9ecef",
   },
+
   filterOptionSelected: {
     backgroundColor: "#e3f2fd",
   },
+
   filterOptionText: {
     fontSize: 14,
     color: "#333",
   },
+
   filterOptionTextSelected: {
     color: "#007AFF",
     fontWeight: "600",
   },
+
+  // =============================================================================
+  // TARJETAS DE PRODUCTOS
+  // =============================================================================
+
   productosContainer: {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
+
+  // Tarjeta individual de cada producto
   productoCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: "#007AFF",
+    elevation: 3,
+
+
+    borderLeftWidth: 3,
+    borderLeftColor: "#007bff",
   },
-  productoEntregado: {
-    backgroundColor: "#f8f9fa",
-    borderLeftColor: "#28a745",
-    opacity: 0.8,
-  },
-  productoHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  mesaTimeInfo: {
+
+  // Container principal
+  productoContainer: {
     flex: 1,
+    marginBottom: 6,
   },
+
+  productoHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+
   mesaNumber: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    fontSize: 25,
   },
-  pedidoTime: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 2,
+
+  productoNombre: {
+    fontSize: 20,
+    fontWeight: '500',
   },
-  headerRight: {
-    alignItems: "flex-end",
+
+  comensalDetail: {
+    fontSize: 17,
   },
+
+  meseroDetail: {
+    fontSize: 17,
+  },
+
+  // Badge de prioridad
   prioridadBadge: {
+    backgroundColor: '#eee',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
+
   prioridadText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  productoMainInfo: {
-    marginBottom: 12,
-  },
-  productoNombre: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
-  },
-  productoClave: {
+    fontWeight: 'bold',
     fontSize: 12,
-    color: "#999",
+    color: 'white',
   },
-  productoDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
+
+  // =============================================================================
+  // BOTONES DE ACCIÓN EN PRODUCTOS
+  // =============================================================================
+
+
+  // Fila que contiene los botones de acción
+  productoBotonesFila: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 7,
+    marginTop: 10,
+    gap: 12,
+    flexWrap: 'wrap',
   },
-  leftDetails: {
-    flex: 1,
-  },
-  comensalText: {
-    fontSize: 13,
-    color: "#555",
-    marginBottom: 4,
-  },
-  meseroText: {
-    fontSize: 13,
-    color: "#777",
-  },
-  detallesButton: {
-    marginTop: 5,
-    paddingVertical: 15,
-    paddingHorizontal: 18,
-    backgroundColor: "#007AFF",
-    borderRadius: 10,
-    alignSelf: "flex-start",
-    minWidth: 70,
-  },
-  detallesButtonText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  productoActions: {
-    marginTop: 8,
-  },
-  actionButton: {
-    paddingVertical: 12,
+
+  // Estilo base para todos los botones de acción
+  botonAccion: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginHorizontal: 5,
+    minWidth: 0,
   },
-  entregarButton: {
+
+  // Botón azul para ver detalles
+  botonVerDetalles: {
+    backgroundColor: "#007AFF",
+  },
+
+  // Botón verde para entregar
+  botonEntregar: {
     backgroundColor: "#28a745",
   },
-  completadoButton: {
+
+  // Botón gris para productos ya completados
+  botonCompletado: {
     backgroundColor: "#6c757d",
   },
-  actionButtonText: {
+
+  // Texto de los botones de acción
+  botonAccionTexto: {
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
+    textAlign: "center",
   },
-  completadoText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
+
+  // =============================================================================
+  // ESTADO VACÍO (SIN PRODUCTOS)
+  // =============================================================================
+
   emptyState: {
     alignItems: "center",
     paddingVertical: 40,
     paddingHorizontal: 20,
   },
+
   emptyText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "600",
     color: "#333",
     marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#666",
+    flexWrap: "wrap",
     textAlign: "center",
   },
+
+  emptySubtext: {
+    fontSize: 17,
+    color: "#666",
+    textAlign: "center",
+    flexWrap: "wrap",
+  },
+
+  // =============================================================================
+  // MODAL DE DETALLES DEL PRODUCTO
+  // =============================================================================
+
+  // Overlay oscuro del modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.5)", // Fondo semi-transparente
     justifyContent: "center",
     alignItems: "center",
   },
+
+  // Contenedor principal del modal
   modalContent: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -915,34 +899,126 @@ const styles = StyleSheet.create({
     margin: 20,
     maxWidth: 350,
     width: "90%",
+    maxHeight: "80%", // Altura máxima para evitar desbordamiento
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
+
+  // Título del modal
   modalTitle: {
-    fontSize: 18,
+    fontSize: 25,
     fontWeight: "600",
     color: "#333",
     marginBottom: 15,
     textAlign: "center",
+    flexWrap: "wrap",
   },
+
+  // Elementos de información en el modal
   modalItem: {
-    fontSize: 14,
+    fontSize: 18,
     color: "#333",
     marginBottom: 8,
     lineHeight: 20,
+    flexWrap: "wrap",
   },
+
+  // Etiquetas en el modal (Producto:, Mesa:, etc.)
   modalLabel: {
     fontWeight: "600",
     color: "#555",
   },
+
+  // Botón para cerrar el modal
   cerrarButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#F44336", // Rojo
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 15,
   },
+
   cerrarButtonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "600",
+  },
+
+  // =============================================================================
+  // SECCIÓN DE RECETA E INGREDIENTES EN EL MODAL
+  // =============================================================================
+
+  // Sección que contiene la información de la receta
+  recetaSection: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#eee", // Línea separadora
+  },
+
+  // Título de la sección de ingredientes
+  recetaTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#2c3e50",
+    marginBottom: 10,
+  },
+
+  // Contenedor de todos los ingredientes
+  ingredientesContainer: {
+    backgroundColor: "#f8f9fa", // Fondo gris muy claro
+    borderRadius: 8,
+    padding: 12,
+  },
+
+  // Cada ingrediente individual
+  ingredienteItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+    flexWrap: "wrap", // Permite que los textos bajen si no caben
+  },
+
+  // Nombre del ingrediente
+  ingredienteNombre: {
+    flex: 1,
+    fontSize: 18,
+    color: "#495057",
+    fontWeight: "500",
+    flexWrap: "wrap",
+  },
+
+  // Cantidad y unidad del ingrediente
+  ingredienteCantidad: {
+    fontSize: 17,
+    color: "#28a745", // Verde
+    fontWeight: "600",
+    backgroundColor: "#d4edda", // Fondo verde claro
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    flexShrink: 1,
+    textAlign: "center",
+  },
+
+  // Texto cuando no hay receta disponible
+  sinRecetaText: {
+    fontSize: 18,
+    color: "#6c757d", // Gris
+    fontStyle: "italic",
+    textAlign: "center",
+    padding: 15,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    flexWrap: "wrap",
   },
 });

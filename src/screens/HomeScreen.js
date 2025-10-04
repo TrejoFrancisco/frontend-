@@ -395,233 +395,175 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ======== LAYOUT GENERAL ========
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f9f9f9",
   },
   header: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#2c3e50",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  menuButton: {
-    padding: 8,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: "#fff",
+    backgroundColor: "#007bff",
+    padding: 10,
   },
   headerTitle: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  appName: {
+    color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
-    color: "#fff",
   },
-  userRole: {
-    fontSize: 14,
-    color: "#bdc3c7",
+
+  // ======== DRAWER (MENÚ LATERAL) ========
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
-  logoutButton: {
-    padding: 8,
+  drawerContainer: {
+    flex: 1,
+    flexDirection: "row",
   },
-  logoutIcon: {
+  drawer: {
+    width: "75%",
+    backgroundColor: "#fff",
+    paddingTop: 40,
+  },
+  drawerTitle: {
     fontSize: 20,
-    color: "#fff",
+    fontWeight: "bold",
+    marginBottom: 20,
+    marginLeft: 10,
   },
+    drawerSubtitle: {
+    fontSize: 10,
+    fontWeight: "bold",
+    marginBottom: 20,
+    marginLeft: 10,
+  },
+  drawerItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+  },
+  activeDrawerItem: {
+    backgroundColor: "#e0e0e0",
+  },
+  drawerItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
+
+  // ======== CONTENIDO PRINCIPAL ========
   content: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
-  contentContainer: {
-    flex: 1,
-  },
-  contentTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 10,
-  },
-  contentSubtitle: {
-    fontSize: 16,
-    color: "#7f8c8d",
-    marginBottom: 20,
-  },
-  statsContainer: {
+  dashboardContainer: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 30,
   },
   statCard: {
     backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 12,
-    flex: 1,
-    marginHorizontal: 4,
+    flexBasis: "48%",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     alignItems: "center",
+    marginBottom: 16,
     elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#3498db",
+    color: "#007bff",
   },
   statLabel: {
-    fontSize: 12,
-    color: "#7f8c8d",
-    textAlign: "center",
+    fontSize: 16,
+    color: "#666",
     marginTop: 4,
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: "#7f8c8d",
     textAlign: "center",
-    marginTop: 20,
   },
-  drawerOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-start",
-  },
-  drawerContainer: {
-    backgroundColor: "#fff",
-    width: "75%",
-    height: "100%",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-  },
-  drawerHeader: {
-    backgroundColor: "#2c3e50",
-    padding: 20,
-    paddingTop: 40,
-    position: "relative",
-  },
-  drawerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  drawerSubtitle: {
-    fontSize: 16,
-    color: "#bdc3c7",
-    marginTop: 4,
-  },
-  closeButton: {
-    position: "absolute",
-    top: 40,
-    right: 20,
-    padding: 8,
-  },
-  closeIcon: {
-    fontSize: 20,
-    color: "#fff",
-  },
-  drawerContent: {
-    flex: 1,
-    paddingTop: 20,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ecf0f1",
-  },
-  activeMenuItem: {
-    backgroundColor: "#e8f4f8",
-    borderRightWidth: 4,
-    borderRightColor: "#3498db",
-  },
-  menuText: {
-    fontSize: 16,
-    color: "#2c3e50",
-    marginLeft: 16,
-  },
-  activeMenuText: {
-    color: "#3498db",
-    fontWeight: "600",
-  },
+
+  // ======== MODAL ========
   modalContainer: {
     flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
+    width: "90%",
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 20,
-    width: "90%",
-    maxHeight: "80%",
     elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: "center",
-    color: "#2c3e50",
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 12,
-    color: "#2c3e50",
-  },
+
+  // ======== FORMULARIO ========
   input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 14,
-    borderRadius: 8,
-    marginBottom: 12,
     fontSize: 16,
-    backgroundColor: "#f9f9f9",
-  },
-  moduloItem: {
-    padding: 14,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#ccc",
     borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: "#f9f9f9",
+    padding: 10,
+    marginBottom: 12,
   },
-  moduloItemSelected: {
-    backgroundColor: "#e8f4f8",
-    borderColor: "#3498db",
+  label: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 4,
+    color: "#444",
+  },
+  modulosContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginVertical: 8,
+  },
+  moduloButton: {
+    flexBasis: "48%",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+    alignItems: "center",
   },
   moduloText: {
-    fontSize: 16,
-    color: "#2c3e50",
+    fontSize: 14,
+    color: "#333",
   },
-  moduloTextSelected: {
-    color: "#3498db",
-    fontWeight: "600",
-  },
+
+  // ======== BOTONES MODAL ========
   modalButtons: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginTop: 25,
+    justifyContent: "space-between",
+    marginTop: 16,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: "#F44336"
+  },
+  submitButton: {
+    backgroundColor: "#28a745"
+  },
+  cancelButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  submitButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

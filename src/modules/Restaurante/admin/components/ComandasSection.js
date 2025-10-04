@@ -45,7 +45,7 @@ export default function ComandasPendientesSection({ token, navigation }) {
         Alert.alert(
           "Error",
           error.response?.data?.error?.message ||
-            "Error al obtener las comandas pendientes"
+          "Error al obtener las comandas pendientes"
         );
       }
     } finally {
@@ -86,7 +86,7 @@ export default function ComandasPendientesSection({ token, navigation }) {
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-          "Error al marcar la comanda como pendiente"
+        "Error al marcar la comanda como pendiente"
       );
     }
   };
@@ -126,9 +126,7 @@ export default function ComandasPendientesSection({ token, navigation }) {
     return date.toLocaleDateString("es-MX", {
       day: "2-digit",
       month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      year: "numeric"
     });
   };
 
@@ -138,33 +136,40 @@ export default function ComandasPendientesSection({ token, navigation }) {
 
     return (
       <View key={comanda.id} style={styles.comandaCard}>
-        <View style={styles.comandaHeader}>
-          <Text style={styles.comandaTitle}>Mesa {comanda.mesa}</Text>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getEstadoColor(comanda.estado) },
-            ]}
-          >
-            <Text style={styles.statusText}>
-              {getEstadoTexto(comanda.estado)}
-            </Text>
+        <View style={styles.comandaHeaderRow}>
+          {/* Columna 1: Mesa */}
+          <View style={styles.colItem}>
+            <Text style={styles.comandaLabel}>Mesa: <Text style={styles.comandaTitle}>{comanda.mesa}</Text></Text>
           </View>
-        </View>
 
-        <View style={styles.comandaDetails}>
-          <Text style={styles.comandaDetail}>
-            <Text style={styles.detailLabel}>Mesero: </Text>
-            {comanda.mesero?.name || "Sin asignar"}
-          </Text>
-          <Text style={styles.comandaDetail}>
-            <Text style={styles.detailLabel}>Fecha: </Text>
-            {formatearFecha(comanda.created_at)}
-          </Text>
-          <Text style={styles.comandaDetail}>
-            <Text style={styles.detailLabel}>Total: </Text>$
-            {comanda.total_calculado?.toFixed(2) || "0.00"}
-          </Text>
+          {/* Columna 2: Mesero */}
+          <View style={styles.colItem}>
+            <Text style={styles.comandaLabel}>Mesero: <Text style={styles.comandaDetail}>{comanda.mesero?.name || "Sin asignar"}</Text></Text>
+          </View>
+
+          {/* Columna 3: Fecha */}
+          <View style={styles.colItem}>
+            <Text style={styles.comandaLabel}>Fecha: <Text style={styles.comandaDetail}>{formatearFecha(comanda.created_at)}</Text></Text>
+          </View>
+
+          {/* Columna 4: Total */}
+          <View style={styles.colItem}>
+            <Text style={styles.comandaLabel}>Total: <Text style={styles.comandaDetail}>${comanda.total_calculado?.toFixed(2) || "0.00"}</Text></Text>
+          </View>
+
+          {/* Columna 5: Estado */}
+          <View style={styles.colItem}>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getEstadoColor(comanda.estado) },
+              ]}
+            >
+              <Text style={styles.statusText}>
+                {getEstadoTexto(comanda.estado)}
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Productos de la comanda */}
@@ -172,34 +177,36 @@ export default function ComandasPendientesSection({ token, navigation }) {
           <Text style={styles.productosTitle}>
             Productos ({comanda.productos?.length || 0}):
           </Text>
-          {comanda.productos &&
-            comanda.productos.map((producto, index) => (
-              <View key={`${producto.id}-${index}`} style={styles.productoItem}>
-                <Text style={styles.productoNombre}>{producto.nombre}</Text>
-                <View style={styles.productoDetails}>
-                  <Text style={styles.productoPrice}>
-                    ${producto.precio_venta}
-                  </Text>
-                  <View
-                    style={[
-                      styles.productoStatus,
-                      {
-                        backgroundColor: getEstadoColor(producto.pivot.estado),
-                      },
-                    ]}
-                  >
-                    <Text style={styles.productoStatusText}>
-                      {getEstadoTexto(producto.pivot.estado)}
+          <View style={styles.productosRow}>
+            {comanda.productos &&
+              comanda.productos.map((producto, index) => (
+                <View key={`${producto.id}-${index}`} style={styles.productoItem}>
+                  <Text style={styles.productoNombre}>{producto.nombre}</Text>
+                  <View style={styles.productoDetails}>
+                    <Text style={styles.productoPrice}>
+                      ${producto.precio_venta}
                     </Text>
+                    <View
+                      style={[
+                        styles.productoStatus,
+                        {
+                          backgroundColor: getEstadoColor(producto.pivot.estado),
+                        },
+                      ]}
+                    >
+                      <Text style={styles.productoStatusText}>
+                        {getEstadoTexto(producto.pivot.estado)}
+                      </Text>
+                    </View>
                   </View>
+                  {producto.pivot.detalle && (
+                    <Text style={styles.productoDetalle}>
+                      Detalle: {producto.pivot.detalle}
+                    </Text>
+                  )}
                 </View>
-                {producto.pivot.detalle && (
-                  <Text style={styles.productoDetalle}>
-                    Detalle: {producto.pivot.detalle}
-                  </Text>
-                )}
-              </View>
-            ))}
+              ))}
+          </View>
         </View>
 
         {/* Acciones */}
@@ -249,10 +256,6 @@ export default function ComandasPendientesSection({ token, navigation }) {
 
         {/* Estadísticas */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{comandas.length}</Text>
-            <Text style={styles.statLabel}>Total Comandas</Text>
-          </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
               {comandas.filter((c) => c.estado === "pendiente").length}
@@ -333,6 +336,7 @@ export default function ComandasPendientesSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // ===== CONTENEDOR PRINCIPAL =====
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
@@ -345,15 +349,17 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+
+  // ===== TÍTULOS Y TEXTO =====
   title: {
-    fontSize: 25,
+    fontSize: 30,
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 10,
     textAlign: "center",
     color: "#2c3e50",
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 20,
     marginBottom: 16,
     textAlign: "center",
     color: "#6c757d",
@@ -362,42 +368,53 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#6c757d",
   },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-    gap: 4,
-  },
-  statCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-    minWidth: 80,
-    width: "23%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#007bff",
-  },
-  statLabel: {
-    fontSize: 10,
-    color: "#6c757d",
-    textAlign: "center",
-  },
   emptyText: {
     textAlign: "center",
-    fontSize: 16,
+    fontSize: 17,
     color: "#6c757d",
     fontStyle: "italic",
     marginVertical: 20,
   },
+
+  // ===== ESTADÍSTICAS =====
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 30,
+  },
+  statCard: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    minWidth: 80,
+    flex: 1,
+    marginHorizontal: 5,
+    minHeight: 80,
+    justifyContent: "center",
+  },
+  statNumber: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#007bff",
+    textAlign: "center",
+    flexWrap: "wrap",
+  },
+  statLabel: {
+    fontSize: 20,
+    color: "#666666",
+    textAlign: "center",
+    marginTop: 4,
+    flexWrap: "wrap",
+  },
+
+  // ===== LISTA DE COMANDAS =====
   comandasList: {
     paddingBottom: 20,
   },
@@ -417,18 +434,17 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  comandaHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
+
+  // ===== HEADER DE COMANDA =====
+  comandaHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
   },
-  comandaTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    flex: 1,
-    color: "#2c3e50",
-  },
+
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -436,162 +452,187 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: "white",
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: "bold",
   },
-  comandaDetails: {
-    marginBottom: 15,
+
+  // ===== DETALLES DE COMANDA =====
+
+  comandaTitle: {
+    fontWeight: 'bold',
+    fontSize: 25,
+    color: '#000', // o el color que prefieras
   },
   comandaDetail: {
-    fontSize: 14,
-    marginBottom: 3,
-    color: "#495057",
+    fontSize: 18,
+    fontWeight: 'normal',
+    color: '#000', // o el color que prefieras
   },
-  detailLabel: {
-    fontWeight: "bold",
-    color: "#2c3e50",
+
+  comandaLabel: {
+    fontSize: 19,
+    fontWeight: '600',
+    color: '#555',
   },
+
+
+  // ===== PRODUCTOS =====
   productosContainer: {
-    marginBottom: 15,
+    marginBottom: 18,
     backgroundColor: "#f8f9fa",
     padding: 10,
     borderRadius: 8,
   },
   productosTitle: {
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: "bold",
     marginBottom: 8,
     color: "#2c3e50",
   },
+  productosRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap', // Permite que los elementos pasen a la siguiente línea
+  },
   productoItem: {
-    backgroundColor: "white",
-    padding: 8,
-    borderRadius: 6,
-    marginBottom: 6,
-    borderLeftWidth: 3,
-    borderLeftColor: "#007bff",
-  },
-  productoNombre: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 4,
-  },
-  productoDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  productoPrice: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#28a745",
-  },
-  productoStatus: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  productoStatusText: {
-    color: "white",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  productoDetalle: {
-    fontSize: 12,
-    color: "#6c757d",
-    fontStyle: "italic",
-  },
-  comandaActions: {
-    alignItems: "center",
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 8,
-  },
-  pendienteButton: {
-    backgroundColor: "#ffc107",
-  },
-  actionButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-  iconImage: {
-    width: 20,
-    height: 20,
-  },
-  noActionText: {
-    fontSize: 14,
-    color: "#6c757d",
-    fontStyle: "italic",
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalWrapper: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
-    color: "#2c3e50",
-  },
-  modalSubtitle: {
-    fontSize: 16,
-    marginBottom: 15,
-    textAlign: "center",
-    color: "#495057",
-  },
-  comandaResumen: {
-    backgroundColor: "#f8f9fa",
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  resumenText: {
-    fontSize: 14,
-    marginBottom: 5,
-    color: "#495057",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  button: {
-    padding: 15,
-    borderRadius: 8,
-    minWidth: 120,
-    alignItems: "center",
-  },
-  cancelButton: {
-    backgroundColor: "#dc3545",
-  },
-  submitButton: {
-    backgroundColor: "#ffc107",
-  },
-  cancelButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  submitButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
+      width: 180, // Ajusta según necesites
+      marginRight: 12,
+      marginBottom: 12,
+      padding: 12,
+      backgroundColor: '#f5f5f5',
+      borderRadius: 8,
+
+      borderLeftWidth: 3,
+      borderLeftColor: "#007bff",
+    },
+    productoNombre: {
+      fontSize: 17,
+      fontWeight: "bold",
+      color: "#2c3e50",
+      marginBottom: 4,
+    },
+    productoDetails: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    productoPrice: {
+      fontSize: 15,
+      fontWeight: "bold",
+      color: "#28a745",
+    },
+    productoStatus: {
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+    },
+    productoStatusText: {
+      color: "white",
+      fontSize: 13,
+      fontWeight: "bold",
+    },
+    productoDetalle: {
+      fontSize: 15,
+      color: "#6c757d",
+      fontStyle: "italic",
+    },
+
+    // ===== ACCIONES DE COMANDA =====
+    comandaActions: {
+      alignItems: "center",
+    },
+    actionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 12,
+      borderRadius: 8,
+    },
+    pendienteButton: {
+      backgroundColor: "#349f39ff",
+    },
+    actionButtonText: {
+      color: "white",
+      fontSize: 16,
+      fontWeight: "bold",
+      marginLeft: 8,
+    },
+    iconImage: {
+      width: 20,
+      height: 20,
+    },
+    noActionText: {
+      fontSize: 14,
+      color: "#6c757d",
+      fontStyle: "italic",
+    },
+
+    // ===== MODAL =====
+    modalContainer: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+    },
+    modalWrapper: {
+      flex: 1,
+      justifyContent: "center",
+      padding: 20,
+    },
+    modalContent: {
+      backgroundColor: "white",
+      borderRadius: 10,
+      padding: 20,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "bold",
+      marginBottom: 10,
+      textAlign: "center",
+      color: "#2c3e50",
+    },
+    modalSubtitle: {
+      fontSize: 16,
+      marginBottom: 15,
+      textAlign: "center",
+      color: "#495057",
+    },
+
+    // ===== RESUMEN EN MODAL =====
+    comandaResumen: {
+      backgroundColor: "#f8f9fa",
+      padding: 15,
+      borderRadius: 8,
+      marginBottom: 20,
+    },
+    resumenText: {
+      fontSize: 14,
+      marginBottom: 5,
+      color: "#495057",
+    },
+
+    // ===== BOTONES DEL MODAL =====
+    modalButtons: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+    },
+    button: {
+      padding: 15,
+      borderRadius: 8,
+      minWidth: 120,
+      alignItems: "center",
+    },
+    cancelButton: {
+      backgroundColor: "#dc3545",
+    },
+    submitButton: {
+      backgroundColor: "#ffc107",
+    },
+    cancelButtonText: {
+      color: "white",
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+    submitButtonText: {
+      color: "white",
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+  });
