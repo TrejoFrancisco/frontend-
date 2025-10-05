@@ -219,17 +219,14 @@ export default function CategoriasScreen({ token, navigation }) {
       <View style={styles.listContainer}>
         {/* Encabezado de la tabla */}
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.idColumn]}>
-            ID</Text>
-          <Text style={[styles.tableHeaderText, styles.nameColumn]}>
-            Nombre
-          </Text>
-          <Text style={[styles.tableHeaderText, styles.descriptionColumn]}>
-            Descripción
-          </Text>
-          <Text style={[styles.tableHeaderText, styles.actionsColumn]}>
-            Acciones
-          </Text>
+          <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
+          <Text style={[styles.tableHeaderText, styles.nameColumn]}>Nombre</Text>
+          <Text style={[styles.tableHeaderText, styles.descriptionColumn]}>Descripción</Text>
+          <View style={[styles.actionsColumn, styles.headerActionsContainer]}>
+            <Text style={styles.tableHeaderText} numberOfLines={2}>
+              Acciones
+            </Text>
+          </View>
         </View>
 
         {/* Filas de la tabla */}
@@ -239,14 +236,11 @@ export default function CategoriasScreen({ token, navigation }) {
               <Text style={[styles.tableCellText, styles.idColumn]}>
                 {categoria.id}
               </Text>
-              <Text style={[styles.tableCellText, styles.nameColumn]}>
+              <Text style={[styles.tableCellText, styles.nameColumn]} numberOfLines={2}>
                 {categoria.nombre}
               </Text>
-              <Text
-                style={[styles.tableCellText, styles.descriptionColumn]}
-                numberOfLines={2}
-              >
-                {categoria.descripcion}
+              <Text style={[styles.tableCellText, styles.descriptionColumn]} numberOfLines={2}>
+                {categoria.descripcion || 'Sin descripción'}
               </Text>
               <View style={[styles.actionsColumn, styles.actionsContainer]}>
                 <TouchableOpacity
@@ -274,6 +268,7 @@ export default function CategoriasScreen({ token, navigation }) {
           ))}
         </ScrollView>
 
+        {/* Mensaje si no hay categorías */}
         {categorias.length === 0 && (
           <Text style={styles.emptyText}>No hay categorías disponibles</Text>
         )}
@@ -344,17 +339,22 @@ export default function CategoriasScreen({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // ===== CONTENEDOR PRINCIPAL =====
   container: {
     flex: 1,
     padding: 20,
     backgroundColor: "#F5F5F5",
   },
+
+  // ===== TÍTULOS =====
   title: {
-    fontSize: 25,
+    fontSize: 30,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
   },
+
+  // ===== BOTÓN CREAR =====
   createButton: {
     backgroundColor: "#4CAF50",
     paddingVertical: 15,
@@ -373,91 +373,112 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  createButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginLeft: 8,
+    flexShrink: 1,
+    flexWrap: "wrap",
+  },
+
+  // ===== TABLA - CONTENEDOR =====
+  listContainer: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+  },
+
+  // ===== TABLA - ENCABEZADO =====
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#F0F0F0",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: "#CCCCCC",
+  },
+  tableHeaderText: {
+    fontWeight: "bold",
+    fontSize: 19,
+    color: "#333333",
+    flexWrap: "wrap",
+  },
+  headerActionsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4
+  },
+
+  // ===== TABLA - CUERPO =====
+  tableBody: {
+    maxHeight: '80%',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    alignItems: 'center',
+      
+  },
+  tableCellText: {
+    fontSize: 17,
+    color: '#444',
+    flexWrap: 'wrap',
+  },
+
+  // ===== TABLA - COLUMNAS =====
+  idColumn: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  nameColumn: {
+    flex: 2,
+    paddingHorizontal: 4,
+  },
+  descriptionColumn: {
+    flex: 3,
+    paddingHorizontal: 4,
+  },
+  actionsColumn: {
+    flex: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ===== TABLA - BOTONES DE ACCIÓN =====
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+  },
+  editButton: {
+    padding: 5,
+  },
+  deleteButton: {
+    padding: 5,
+  },
+
+  // ===== ICONOS =====
   icon: {
     width: 30,
     height: 30,
     resizeMode: 'contain',
   },
-  createButtonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-  listContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    flex: 1,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#F0F0F0",
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginBottom: 8,
 
-  },
-  tableHeaderText: {
-    fontWeight: "bold",
-    color: "#1A1A2E",
-    fontSize: 12,
-  },
-  tableBody: {
-    flex: 1,
-  },
-  tableRow: {
-    flexDirection: "row",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: "#F0F0F0",
-    alignItems: "center",
-  },
-  tableCellText: {
-    fontSize: 12,
-    color: "#333333",
-  },
-  idColumn: {
-    width: 25,
-    alignItems: "center",
-  },
-  nameColumn: {
-    flex: 2,
-    marginRight: 5,
-  },
-  descriptionColumn: {
-    flex: 3,
-    marginRight: 5,
-  },
-  actionsColumn: {
-    width: 90,
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  editButton: {
-    padding: 8,
-    borderRadius: 8,
-    marginRight: 8,
-  },
-  deleteButton: {
-    padding: 8,
-    borderRadius: 8,
-  },
+  // ===== TEXTO VACÍO =====
   emptyText: {
-    textAlign: "center",
-    color: "#666666",
-    fontSize: 16,
     marginTop: 20,
+    textAlign: 'center',
+    color: '#888',
+    fontStyle: 'italic',
   },
+
+  // ===== MODAL - CONTENEDOR =====
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -477,19 +498,20 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#1A1A2E",
-    marginBottom: 8,
+    marginBottom: 16,
     textAlign: "center",
   },
+
+  // ===== MODAL - FORMULARIO =====
   input: {
     borderWidth: 1,
     borderColor: "#DDDDDD",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: 18,
     marginBottom: 16,
     backgroundColor: "#FFFFFF",
   },
@@ -497,6 +519,8 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: "top",
   },
+
+  // ===== MODAL - BOTONES =====
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -508,13 +532,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginHorizontal: 5,
-  },
-  cancelButton: {
-    backgroundColor: "#F44336",
-    marginRight: 10,
-  },
-  submitButton: {
-    backgroundColor: "#28a745",
   },
   cancelButton: {
     backgroundColor: "#F44336",

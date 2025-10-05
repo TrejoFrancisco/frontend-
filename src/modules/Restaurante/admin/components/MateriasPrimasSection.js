@@ -21,7 +21,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [materiasPrimas, setMateriasPrimas] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
-  const [busquedaMateria, setBusquedaMateria] = useState(""); // Nueva state para la búsqueda
+  const [busquedaMateria, setBusquedaMateria] = useState("");
+  const [archivoCSV, setArchivoCSV] = useState(null);
 
   const [formData, setFormData] = useState({
     clave: "",
@@ -54,7 +55,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
     }
   };
 
-  // Función para filtrar materias primas por búsqueda
   const getMateriasPrimasFiltradas = () => {
     if (!busquedaMateria.trim()) return materiasPrimas;
 
@@ -198,8 +198,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
     resetForm();
   };
 
-  const [archivoCSV, setArchivoCSV] = useState(null);
-
   const handleSeleccionarArchivo = async () => {
     try {
       const res = await DocumentPicker.getDocumentAsync({
@@ -215,13 +213,11 @@ export default function MateriaPrimaSection({ token, navigation }) {
 
       const archivo = res.assets[0];
 
-      // Validar tamaño del archivo (máximo 2MB como en el backend)
       if (archivo.size > 2048 * 1024) {
         Alert.alert("Error", "El archivo es muy grande. Máximo 2MB permitido.");
         return;
       }
 
-      // Validar extensión
       const extension = archivo.name.split(".").pop().toLowerCase();
       if (!["csv", "txt"].includes(extension)) {
         Alert.alert("Error", "Solo se permiten archivos .csv o .txt");
@@ -256,9 +252,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
         fileContent.substring(0, 200)
       );
 
-      // Crear un Blob del contenido
       const blob = new Blob([fileContent], { type: "text/csv" });
-
       const formData = new FormData();
       formData.append("csv_file", blob, archivoCSV.name);
 
@@ -289,85 +283,83 @@ export default function MateriaPrimaSection({ token, navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>Gestión de Materias Primas</Text>
 
-      <TouchableOpacity style={styles.createButton} onPress={openCreateModal}>
-        <View style={styles.inlineContent}>
+      {/* Botón Agregar */}
+      <TouchableOpacity style={styles.primaryButton} onPress={openCreateModal}>
+        <View style={styles.buttonContent}>
           <Image
             source={require("../../../../../assets/mas.png")}
-            style={styles.icon}
+            style={styles.buttonIcon}
           />
-          <Text style={styles.createButtonText}>Agregar Materia Prima</Text>
+          <Text style={styles.primaryButtonText}>Agregar Materia Prima</Text>
         </View>
       </TouchableOpacity>
 
+      {/* Botón Seleccionar CSV */}
       <TouchableOpacity
-        style={styles.createButton}
+        style={styles.secondaryButton}
         onPress={handleSeleccionarArchivo}
       >
-        <View style={styles.inlineContent}>
-          <Text style={styles.createButtonText}>Seleccionar archivo CSV</Text>
+        <View style={styles.buttonContent}>
+          <Text style={styles.secondaryButtonText}>Seleccionar archivo CSV</Text>
         </View>
       </TouchableOpacity>
 
+      {/* Archivo seleccionado */}
       {archivoCSV && (
-        <Text style={{ marginTop: 5, fontStyle: "italic" }}>
+        <Text style={styles.selectedFileText}>
           Archivo seleccionado: {archivoCSV.name}
         </Text>
       )}
 
+      {/* Botón Importar */}
       <TouchableOpacity
         style={[
-          styles.createButton,
-          { backgroundColor: archivoCSV ? "#28a745" : "#ccc" },
+          styles.importButton,
+          { backgroundColor: archivoCSV ? "#28A745" : "#CCCCCC" },
         ]}
         onPress={handleImportCsv}
         disabled={!archivoCSV || isLoading}
       >
-        <View style={styles.inlineContent}>
-          <Text style={styles.createButtonText}>
+        <View style={styles.buttonContent}>
+          <Text style={styles.importButtonText}>
             {isLoading ? "Importando..." : "Importar materias primas"}
           </Text>
         </View>
       </TouchableOpacity>
 
+      {/* Lista de materias primas */}
       <View style={styles.listContainer}>
-        {/* Buscador de materias primas */}
+        {/* Buscador */}
         <TextInput
-          style={[styles.buscadorInput, styles.buscadorMateria]}
+          style={styles.searchInput}
           placeholder="Buscar por clave o nombre..."
           value={busquedaMateria}
           onChangeText={setBusquedaMateria}
         />
 
-        {/* Encabezado de la tabla */}
+        {/* Encabezado de tabla */}
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, styles.idColumn]}>
-            ID
-          </Text>
-          <Text style={[styles.tableHeaderText, styles.claveColumn]}>
-            Clave
-          </Text>
-          <Text style={[styles.tableHeaderText, styles.nombreColumn]}>
-            Nombre
-          </Text>
-          <Text style={[styles.tableHeaderText, styles.actionsColumn]}>
-            Acciones
-          </Text>
+          <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
+          <Text style={[styles.tableHeaderText, styles.claveColumn]}>Clave</Text>
+          <Text style={[styles.tableHeaderText, styles.nombreColumn]}>Nombre</Text>
+          <View style={[styles.actionsColumn, styles.headerActionsContainer]}>
+            <Text style={styles.tableHeaderText} numberOfLines={2}>
+              Acciones
+            </Text>
+          </View>
         </View>
 
-        {/* Filas de la tabla */}
+        {/* Cuerpo de tabla */}
         <ScrollView style={styles.tableBody}>
           {materiasFiltradas.map((item) => (
             <View key={item.id} style={styles.tableRow}>
               <Text style={[styles.tableCellText, styles.idColumn]}>
                 {item.id}
               </Text>
-              <Text style={[styles.tableCellText, styles.claveColumn]}>
+              <Text style={[styles.tableCellText, styles.claveColumn]} numberOfLines={2}>
                 {item.clave}
               </Text>
-              <Text
-                style={[styles.tableCellText, styles.nombreColumn]}
-                numberOfLines={2}
-              >
+              <Text style={[styles.tableCellText, styles.nombreColumn]} numberOfLines={2}>
                 {item.nombre}
               </Text>
               <View style={[styles.actionsColumn, styles.actionsContainer]}>
@@ -377,7 +369,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
                 >
                   <Image
                     source={require('../../../../../assets/editarr.png')}
-                    style={styles.icon}
+                    style={styles.actionIcon}
                     accessibilityLabel="Editar materia prima"
                   />
                 </TouchableOpacity>
@@ -387,7 +379,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
                 >
                   <Image
                     source={require('../../../../../assets/eliminar.png')}
-                    style={styles.icon}
+                    style={styles.actionIcon}
                     accessibilityLabel="Eliminar materia prima"
                   />
                 </TouchableOpacity>
@@ -396,27 +388,25 @@ export default function MateriaPrimaSection({ token, navigation }) {
           ))}
         </ScrollView>
 
-        {materiasFiltradas.length === 0 && busquedaMateria.trim() !== "" && (
+        {/* Mensajes vacíos */}
+        {materiasFiltradas.length === 0 && (
           <Text style={styles.emptyText}>
-            No se encontraron materias primas que coincidan con la búsqueda.
-          </Text>
-        )}
-
-        {materiasFiltradas.length === 0 && busquedaMateria.trim() === "" && (
-          <Text style={styles.emptyText}>
-            No hay materias primas registradas.
+            {busquedaMateria.trim() !== ""
+              ? "No se encontraron materias primas que coincidan con la búsqueda."
+              : "No hay materias primas registradas."
+            }
           </Text>
         )}
       </View>
 
-      {/* Modal para crear/editar materia prima */}
+      {/* Modal para crear/editar */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={closeModal}
       >
-        <View style={styles.modalContainer}>
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ScrollView>
               <Text style={styles.modalTitle}>
@@ -458,13 +448,13 @@ export default function MateriaPrimaSection({ token, navigation }) {
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity
-                  style={[styles.button, styles.cancelButton]}
+                  style={[styles.modalButton, styles.cancelButton]}
                   onPress={closeModal}
                 >
                   <Text style={styles.cancelButtonText}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.button, styles.submitButton]}
+                  style={[styles.modalButton, styles.submitButton]}
                   onPress={handleSubmit}
                   disabled={isLoading}
                 >
@@ -488,244 +478,238 @@ export default function MateriaPrimaSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
-
-  buscadorInput: {
-    borderWidth: 1,
-    borderColor: "#2D9966",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    fontSize: 14,
-    backgroundColor: "#ECFDF5",
-  },
-  buscadorAgregar: {
-    backgroundColor: "#f0f8f0",
-    borderColor: "#28a745",
-  },
-
-
-  // Estilos para la tabla
-  listContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#f8f9fa',
-    borderBottomWidth: 2,
-    borderBottomColor: '#dee2e6',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  tableHeaderText: {
-    fontWeight: 'bold',
-    fontSize: 12,
-    textAlign: 'center',
-    color: '#495057',
-  },
-  tableBody: {
-    flex: 1,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  tableCellText: {
-    fontSize: 12,
-    textAlign: 'center',
-    color: '#212529',
-  },
-
-  // Definición de columnas (ajusta los flex según tus necesidades)
-  idColumn: {
-    flex: 0.5,
-  },
-  claveColumn: {
-    flex: 2,
-  },
-  nombreColumn: {
-    flex: 1,
-    textAlign: 'left', // Para nombres largos, mejor alineado a la izquierda
-  },
-  actionsColumn: {
-    flex: 1.8,
-  },
-
-  // Contenedor de acciones
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  editButton: {
-    padding: 5,
-    borderRadius: 4,
-    backgroundColor: '#e3f2fd',
-  },
-  deleteButton: {
-    padding: 5,
-    borderRadius: 4,
-    backgroundColor: '#ffebee',
-  },
-  icon: {
-    width: 18,
-    height: 18,
-  },
-
-  // Texto cuando no hay datos
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 40,
-    fontSize: 16,
-    color: '#6c757d',
-    fontStyle: 'italic',
-  },
-
-  ///////////////
+  // === CONTENEDOR PRINCIPAL ===
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#F5F5F5"
+    backgroundColor: "#F5F5F5",
   },
   title: {
-    fontSize: 25,
+    fontSize: 30,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
+    color: "#1F2937",
   },
-  createButton: {
+
+  // === BOTONES PRINCIPALES ===
+  primaryButton: {
     backgroundColor: "#4CAF50",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 16,
   },
-  inlineContent: {
+  secondaryButton: {
+    backgroundColor: "#2196F3",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  importButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  buttonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
-  createButtonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-  itemRow: {
-    backgroundColor: "#FFF",
-    padding: 12,
-    borderRadius: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-    elevation: 2,
-  },
-  itemRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "white",
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    elevation: 2,
-  },
-  itemText: {
-    flex: 1,
-    fontSize: 12,
-  },
-  actions: {
-    flexDirection: "row",
-  },
-  editButton: {
-    padding: 8,
-    borderRadius: 4,
+  buttonIcon: {
+    width: 30,
+    height: 30,
     marginRight: 8,
+    resizeMode: "contain",
+  },
+  primaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  secondaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  importButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  selectedFileText: {
+    marginTop: 5,
+    marginBottom: 10,
+    fontStyle: "italic",
+    color: "#666666",
+    textAlign: "center",
+  },
+
+  // === BÚSQUEDA ===
+  searchInput: {
+    backgroundColor: "#F0F8F0",
+    borderColor: "#28A745",
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 18,
+  },
+
+  // === CONTENEDOR DE LISTA ===
+  listContainer: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+  },
+
+  // === TABLA ===
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#F0F0F0",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: "#CCCCCC",
+  },
+  tableHeaderText: {
+    fontWeight: "bold",
+    fontSize: 19,
+    color: "#333333",
+    flexWrap: "wrap",
+  },
+  tableBody: {
+    maxHeight: "80%",
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: "#EEEEEE",
+    alignItems: "center",
+  },
+  tableCellText: {
+    fontSize: 17,
+    color: "#444444",
+    flexWrap: "wrap",
+  },
+
+  // === COLUMNAS DE TABLA ===
+  idColumn: {
+    flex: 1,
+    textAlign: "center",
+  },
+  claveColumn: {
+    flex: 2,
+    paddingHorizontal: 4,
+  },
+  nombreColumn: {
+    flex: 2,
+    paddingHorizontal: 4,
+  },
+  actionsColumn: {
+    flex: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerActionsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 20,
+  },
+
+  // === BOTONES DE ACCIÓN ===
+  editButton: {
+    padding: 5,
   },
   deleteButton: {
-    padding: 8,
-    borderRadius: 4,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 5,
   },
-  icon: {
+  actionIcon: {
     width: 30,
     height: 30,
     resizeMode: "contain",
   },
+
+  // === TEXTO VACÍO ===
   emptyText: {
+    marginTop: 20,
     textAlign: "center",
-    color: "#666",
+    color: "#888888",
     fontStyle: "italic",
-    marginTop: 32,
+    fontSize: 16,
   },
-  modalContainer: {
+
+  // === MODAL ===
+  modalOverlay: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#FFFFFF",
     padding: 20,
     borderRadius: 12,
     width: "90%",
+    maxHeight: "80%",
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#1A1A2E",
-    marginBottom: 8,
+    marginBottom: 16,
     textAlign: "center",
   },
+
+  // === INPUTS ===
   input: {
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: "#DDDDDD",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 16,
+    fontSize: 18,
     marginBottom: 12,
+    backgroundColor: "#FFFFFF",
   },
+
+  // === BOTONES DEL MODAL ===
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 16,
+    gap: 10,
   },
-  button: {
+  modalButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
-    marginHorizontal: 5,
   },
   cancelButton: {
     backgroundColor: "#F44336",
-    marginRight: 10,
   },
   submitButton: {
-    backgroundColor: "#28a745",
-  },
-  cancelButton: {
-    backgroundColor: "#F44336",
-    marginRight: 10,
-  },
-  submitButton: {
-    backgroundColor: "#28a745",
+    backgroundColor: "#28A745",
   },
   cancelButtonText: {
-    color: "white",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
   },
   submitButtonText: {
-    color: "white",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
   },

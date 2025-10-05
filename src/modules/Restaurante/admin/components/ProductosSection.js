@@ -25,7 +25,7 @@ export default function ProductosSection({ token, navigation }) {
   const [recetas, setRecetas] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [loadingCosts, setLoadingCosts] = useState(false);
-
+  const [vistaTabla, setVistaTabla] = useState(false);
   const [productoData, setProductoData] = useState({
     clave: "",
     nombre: "",
@@ -38,6 +38,13 @@ export default function ProductosSection({ token, navigation }) {
     existencia_inicial: "",
     unidad: "",
     estado: "activo",
+  });
+  
+  // Estado para el modal de costos
+  const [modalCostosVisible, setModalCostosVisible] = useState(false);
+  const [costosCalculados, setCostosCalculados] = useState({
+    costo_receta: 0,
+    costo_redondeado: 0
   });
 
   useEffect(() => {
@@ -130,18 +137,23 @@ export default function ProductosSection({ token, navigation }) {
       if (response.data.success) {
         const { costo_receta, costo_redondeado } = response.data.data;
 
+        // Costo receta con más precisión (4 decimales)
+        const costoRecetaFormateado = parseFloat(costo_receta).toFixed(4);
+        // Costo redondeado con formato estándar (2 decimales)
+        const costoRedondeadoFormateado = parseFloat(costo_redondeado).toFixed(2);
+
         setProductoData((prev) => ({
           ...prev,
-          costo_receta: costo_receta.toString(),
-          costo_redondeado: costo_redondeado.toString(),
+          costo_receta: costoRecetaFormateado,
+          costo_redondeado: costoRedondeadoFormateado,
         }));
 
-        // Mostrar mensaje informativo
-        Alert.alert(
-          "Costos Calculados",
-          `Se han calculado los costos de la receta:\n• Costo receta: $${costo_receta}\n• Costo redondeado: $${costo_redondeado}\n\nPuedes modificar estos valores si es necesario.`,
-          [{ text: "Entendido" }]
-        );
+        // Guardar los costos y mostrar modal
+        setCostosCalculados({
+          costo_receta: costoRecetaFormateado,
+          costo_redondeado: costoRedondeadoFormateado
+        });
+        setModalCostosVisible(true);
       }
     } catch (error) {
       console.error("Error al calcular costos:", error);
@@ -342,7 +354,7 @@ export default function ProductosSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                  "Error al eliminar el producto"
+                "Error al eliminar el producto"
               );
             }
           },
@@ -358,54 +370,70 @@ export default function ProductosSection({ token, navigation }) {
 
   const renderProductoItem = (item) => (
     <View key={item.id} style={styles.productCard}>
-      <View style={styles.productHeader}>
-        <Text style={styles.productName}>{item.nombre}</Text>
-        <View style={styles.statusContainer}>
+      <View style={styles.productHeaderRow}>
+        {/* Columna 1: Nombre */}
+        <View style={styles.colItem}>
+          <Text style={styles.productName}>{item.nombre}</Text>
+        </View>
+
+        {/* Columna 2: Prioridad */}
+        <View style={styles.colItem}>
+          <Text style={styles.productLabel}>Prioridad:</Text>
+          <Text style={styles.productDetail}>{item.prioridad}</Text>
+        </View>
+
+        {/* Columna 3: Tipo */}
+        <View style={styles.colItem}>
+          <Text style={styles.productLabel}>Tipo:</Text>
+          <Text style={styles.productDetail}>
+            {item.receta_id ? "Con receta" : "Producto directo"}
+          </Text>
+        </View>
+
+        {/* Columna 4: Clave */}
+        <View style={styles.colItem}>
           <Text style={styles.productCode}>{item.clave}</Text>
-          <View
+        </View>
+
+        {/* Columna 5: Estado como botón */}
+        <View style={styles.colItem}>
+          <TouchableOpacity
             style={[
-              styles.statusBadge,
-              {
-                backgroundColor:
-                  item.estado === "activo" ? "#4CAF50" : "#F44336",
-              },
+              styles.statusButton,
+              { backgroundColor: item.estado === "activo" ? "#32b551" : "#ffc107" },
             ]}
+            disabled
           >
-            <Text style={styles.statusText}>
+            <Text style={styles.statusButtonText}>
               {item.estado === "activo" ? "Activo" : "Inactivo"}
             </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Columna 6: Acciones */}
+        <View style={styles.colItem}>
+          <View style={styles.productActions}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={() => editarProducto(item)}
+            >
+              <Image
+                source={require("../../../../../assets/editarr.png")}
+                style={styles.iconImage}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() => eliminarProducto(item.id, item.nombre)}
+            >
+              <Image
+                source={require("../../../../../assets/eliminar.png")}
+                style={styles.iconImage}
+              />
+            </TouchableOpacity>
           </View>
         </View>
-      </View>
-      <View style={styles.productDetails}>
-        <Text style={styles.productDetail}>Precio: ${item.precio_venta}</Text>
-        <Text style={styles.productDetail}>Prioridad: {item.prioridad}</Text>
-        <Text style={styles.productDetail}>
-          Tipo: {item.receta_id ? "Con receta" : "Producto directo"}
-        </Text>
-        <Text style={styles.productDetail}>
-          Costo: ${item.costo_redondeado}
-        </Text>
-      </View>
-      <View style={styles.productActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => editarProducto(item)}
-        >
-          <Image
-            source={require("../../../../../assets/editarr.png")}
-            style={styles.icon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => eliminarProducto(item.id, item.nombre)}
-        >
-          <Image
-            source={require("../../../../../assets/eliminar.png")}
-            style={styles.icon}
-          />
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -427,10 +455,37 @@ export default function ProductosSection({ token, navigation }) {
           </View>
         </TouchableOpacity>
 
+        {/* Toggle Vista Tabla/Lista */}
+        <View style={styles.viewToggleContainer}>
+          <TouchableOpacity
+            style={[
+              styles.viewToggleButton,
+              !vistaTabla && styles.viewToggleButtonActive
+            ]}
+            onPress={() => setVistaTabla(false)}
+          >
+            <Text style={[
+              styles.viewToggleText,
+              !vistaTabla && styles.viewToggleTextActive
+            ]}>Lista</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.viewToggleButton,
+              vistaTabla && styles.viewToggleButtonActive
+            ]}
+            onPress={() => setVistaTabla(true)}
+          >
+            <Text style={[
+              styles.viewToggleText,
+              vistaTabla && styles.viewToggleTextActive
+            ]}>Tabla</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Buscador */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
-
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar por nombre o clave..."
@@ -442,29 +497,112 @@ export default function ProductosSection({ token, navigation }) {
                 style={styles.clearButton}
                 onPress={limpiarBusqueda}
               >
-
               </TouchableOpacity>
             )}
           </View>
         </View>
 
-        <View style={styles.productsList}>
-          {productosFiltrados.map((producto) => renderProductoItem(producto))}
-          
-          {productosFiltrados.length === 0 && textoBusqueda.length > 0 && (
-            <Text style={styles.emptyText}>
-              No se encontraron productos que coincidan con "{textoBusqueda}"
-            </Text>
-          )}
-          
-          {productos.length === 0 && (
-            <Text style={styles.emptyText}>
-              No hay productos registrados
-            </Text>
-          )}
-        </View>
+        {/* Vista de Lista */}
+        {!vistaTabla && (
+          <View style={styles.productsList}>
+            {productosFiltrados.map((producto) => renderProductoItem(producto))}
+
+            {productosFiltrados.length === 0 && textoBusqueda.length > 0 && (
+              <Text style={styles.emptyText}>
+                No se encontraron productos que coincidan con "{textoBusqueda}"
+              </Text>
+            )}
+
+            {productos.length === 0 && (
+              <Text style={styles.emptyText}>
+                No hay productos registrados
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Vista de Tabla */}
+        {vistaTabla && (
+          <View style={styles.tableContainer}>
+            {/* Encabezados de la tabla */}
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderText, styles.columnClave]}>Clave</Text>
+              <Text style={[styles.tableHeaderText, styles.columnNombre]}>Nombre</Text>
+              <Text style={[styles.tableHeaderText, styles.columnPrecio]}>Precio</Text>
+              <View style={[styles.columnEstado, styles.headerEstadoContainer]}>
+                <Text style={styles.tableHeaderText}>Estado</Text>
+              </View>
+              <View style={[styles.columnAcciones, styles.headerActionsContainer]}>
+                <Text style={styles.tableHeaderText}>Acciones</Text>
+              </View>
+            </View>
+
+            {/* Filas de la tabla */}
+            {productosFiltrados.map((producto, index) => (
+              <View
+                key={producto.id}
+                style={[
+                  styles.tableRow,
+                  index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd
+                ]}
+              >
+                <Text style={[styles.tableCellText, styles.columnClave]}>
+                  {producto.clave}
+                </Text>
+                <Text style={[styles.tableCellText, styles.columnNombre]} numberOfLines={2}>
+                  {producto.nombre}
+                </Text>
+                <Text style={[styles.tableCellText, styles.columnPrecio]}>
+                  ${producto.precio_venta || '0.00'}
+                </Text>
+                <View style={[styles.tableCell, styles.columnEstado]}>
+                  <View style={[
+                    styles.estadoBadge,
+                    producto.estado === 'activo' ? styles.estadoActivo : styles.estadoInactivo
+                  ]}>
+                    <Text style={[
+                      styles.estadoText,
+                      producto.estado === 'activo' ? styles.estadoTextoActivo : styles.estadoTextoInactivo
+                    ]}>
+                      {producto.estado === 'activo' ? 'Activo' : 'Inactivo'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={[styles.columnAcciones, styles.actionsContainer]}>
+                  <TouchableOpacity
+                    onPress={() => editarProducto(producto)}
+                  >
+                    <Image
+                      source={require('../../../../../assets/editarr.png')}
+                      style={styles.icon}
+                      accessibilityLabel="Editar producto"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+
+            {/* Mensajes si no hay resultados */}
+            {productosFiltrados.length === 0 && textoBusqueda.length > 0 && (
+              <View style={styles.tableEmptyRow}>
+                <Text style={styles.emptyText}>
+                  No se encontraron productos que coincidan con "{textoBusqueda}"
+                </Text>
+              </View>
+            )}
+
+            {productos.length === 0 && (
+              <View style={styles.tableEmptyRow}>
+                <Text style={styles.emptyText}>
+                  No hay productos registrados
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
 
+      {/* Modal de Formulario de Producto */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView
           style={styles.modalContainer}
@@ -671,44 +809,64 @@ export default function ProductosSection({ token, navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Modal de Costos Calculados */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalCostosVisible}
+        onRequestClose={() => setModalCostosVisible(false)}
+      >
+        <View style={styles.modalCostosOverlay}>
+          <View style={styles.modalCostosContent}>
+            <Text style={styles.modalCostosTitle}>💰 Costos Calculados</Text>
+            
+            <View style={styles.modalCostosBody}>
+              <Text style={styles.modalCostosText}>
+                Se han calculado los costos de la receta:
+              </Text>
+              
+              {/* Costo Exacto */}
+              <View style={[styles.costoItem, styles.costoItemExacto]}>
+                <View style={styles.costoInfoContainer}>
+                  <Text style={styles.costoLabel}> Costo receta (exacto)</Text>
+                  <Text style={styles.costoSubLabel}>Cálculo preciso de ingredientes</Text>
+                </View>
+                <Text style={styles.costoValorExacto}>${costosCalculados.costo_receta}</Text>
+              </View>
+              
+              
+              {/* Costo Redondeado */}
+              <View style={[styles.costoItem, styles.costoItemRedondeado]}>
+                <View style={styles.costoInfoContainer}>
+                  <Text style={styles.costoLabel}> Costo redondeado</Text>
+                  <Text style={styles.costoSubLabel}>Para precio de venta</Text>
+                </View>
+                <Text style={styles.costoValor}>${costosCalculados.costo_redondeado}</Text>
+              </View>
+              
+              <Text style={styles.modalCostosFooterText}>
+                ⭐  Puedes modificar estos valores si es necesario.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalCostosButton}
+              onPress={() => setModalCostosVisible(false)}
+            >
+              <Text style={styles.modalCostosButtonText}>Entendido</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: "white",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  costLabel: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginTop: 15,
-    marginBottom: 10,
-    color: "#333",
-  },
-  suggestedInput: {
-    backgroundColor: "#E8F5E8",
-    borderColor: "#4CAF50",
-    borderWidth: 1,
-  },
-  loadingText: {
-    textAlign: "center",
-    fontStyle: "italic",
-    color: "#666",
-    marginVertical: 10,
-  },
+  // ========================================
+  // CONTENEDOR PRINCIPAL
+  // ========================================
   container: {
     flex: 1,
   },
@@ -716,8 +874,12 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+
+  // ========================================
+  // TÍTULO Y BOTONES PRINCIPALES
+  // ========================================
   title: {
-    fontSize: 25,
+    fontSize: 30,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
@@ -735,115 +897,280 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: "#fff",
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "bold",
     marginLeft: 8,
   },
 
+  // ========================================
+  // TOGGLE DE VISTA (LISTA/TABLA)
+  // ========================================
+  viewToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#dcdcdcff',
+    borderColor: "#b7b7b7ff",
+    borderRadius: 8,
+    marginHorizontal: 16,
+    marginVertical: 10,
+    padding: 2,
+  },
+  viewToggleButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  viewToggleButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  viewToggleText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000000ff',
+  },
+  viewToggleTextActive: {
+    color: '#fff',
+  },
 
-  // Agregar estos estilos al StyleSheet existente de ProductosSection
-
-// Estilos para el buscador
-searchContainer: {
-  paddingHorizontal: 20,
-  marginVertical: 15,
-},
-searchIcon: {
-  width: 20,
-  height: 20,
-  marginRight: 10,
-  tintColor: '#6c757d',
-},
-searchInput: {
+  // ========================================
+  // BUSCADOR
+  // ========================================
+  searchContainer: {
+    paddingHorizontal: 20,
+    marginVertical: 15,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
     borderWidth: 1,
     borderColor: "#2D9966",
     borderRadius: 20,
     padding: 10,
-    marginBottom: 12,
-    fontSize: 14,
+    fontSize: 18,
     backgroundColor: "#ECFDF5",
   },
-clearButton: {
-  padding: 5,
-  marginLeft: 5,
-},
-clearIcon: {
-  width: 16,
-  height: 16,
-  tintColor: '#6c757d',
-},
-emptyText: {
-  textAlign: 'center',
-  color: '#6c757d',
-  fontSize: 16,
-  fontStyle: 'italic',
-  marginTop: 30,
-  paddingHorizontal: 20,
-},
+  clearButton: {
+    marginLeft: 8,
+    padding: 6,
+  },
 
-//////
+  // ========================================
+  // VISTA DE LISTA - PRODUCTOS
+  // ========================================
   productsList: {
     paddingBottom: 20,
   },
   productCard: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#e9ecef",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  productHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
+  productHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  colItem: {
+    flex: 1,
+    minWidth: 150,
+  },
+  productLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 2,
   },
   productName: {
     fontSize: 18,
-    fontWeight: "bold",
-    flex: 1,
-  },
-  productCode: {
-    fontSize: 14,
-    color: "#6c757d",
-    backgroundColor: "#e9ecef",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  productDetails: {
-    marginBottom: 15,
+    fontWeight: 'bold',
   },
   productDetail: {
-    fontSize: 14,
-    marginBottom: 5,
-    color: "#495057",
+    fontSize: 17,
+  },
+  productCode: {
+    fontSize: 17,
+    fontWeight: '500',
+  },
+
+  // ========================================
+  // BOTONES DE ESTADO Y ACCIONES
+  // ========================================
+  statusButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  statusButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 15,
   },
   productActions: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "flex-start",
+    gap: 8,
   },
   actionButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    padding: 7,
     borderRadius: 6,
-    minWidth: 100,
-    alignItems: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   editButton: {
     backgroundColor: "#f9ebc3ff",
+    paddingHorizontal: 16,
+    minWidth: 48,
   },
-
   deleteButton: {
-    backgroundColor: "#fed0d5ff",
-  },
-  icon: {
-    width: 30,
-    height: 30,
-    resizeMode: "contain",
+    backgroundColor: "#f9c3c3ff",
+    paddingHorizontal: 16,
+    minWidth: 48,
   },
 
+  // ========================================
+  // VISTA DE TABLA
+  // ========================================
+  tableContainer: {
+    width: '100%',
+    marginHorizontal: 3,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+
+  // Encabezado de tabla
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
+  },
+  tableHeaderText: {
+    fontWeight: 'bold',
+    fontSize: 19,
+    color: '#333',
+    flexWrap: 'wrap',
+  },
+  headerEstadoContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerActionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+
+  // Filas de tabla
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    alignItems: 'center',
+  },
+  tableRowEven: {
+    backgroundColor: '#fff',
+  },
+  tableRowOdd: {
+    backgroundColor: '#fff',
+  },
+  tableCell: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tableCellText: {
+    fontSize: 18,
+    color: '#444',
+    flexWrap: 'wrap',
+  },
+
+  // Columnas específicas
+  columnClave: {
+    flex: 2,
+    paddingHorizontal: 8,
+  },
+  columnNombre: {
+    flex: 3,
+    paddingHorizontal: 8,
+  },
+  columnPrecio: {
+    flex: 2,
+    paddingHorizontal: 4,
+  },
+  columnEstado: {
+    flex: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  columnAcciones: {
+    flex: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Estados visuales en tabla
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+  },
+  estadoBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 3,
+    borderRadius: 12,
+    alignSelf: 'center',
+  },
+  estadoActivo: {
+    backgroundColor: '#d4edda',
+  },
+  estadoInactivo: {
+    backgroundColor: '#f8d7da',
+  },
+  estadoText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  estadoTextoActivo: {
+    color: '#155724',
+  },
+  estadoTextoInactivo: {
+    color: '#721c24',
+  },
+
+  // Fila vacía en tabla
+  tableEmptyRow: {
+    padding: 20,
+    alignItems: 'center',
+  },
+
+  // ========================================
+  // MODAL DE FORMULARIO
+  // ========================================
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -862,11 +1189,15 @@ emptyText: {
     padding: 20,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "bold",
     marginBottom: 8,
     textAlign: "center",
   },
+
+  // ========================================
+  // INPUTS Y FORMULARIOS
+  // ========================================
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
@@ -874,6 +1205,11 @@ emptyText: {
     padding: 12,
     marginBottom: 15,
     fontSize: 16,
+  },
+  suggestedInput: {
+    backgroundColor: "#E8F5E8",
+    borderColor: "#4CAF50",
+    borderWidth: 1,
   },
   label: {
     fontSize: 15,
@@ -887,9 +1223,10 @@ emptyText: {
     borderRadius: 8,
     marginBottom: 15,
   },
-  marginTop: {
-    marginTop: 15,
-  },
+
+  // ========================================
+  // BOTONES DEL MODAL DE FORMULARIO
+  // ========================================
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -909,13 +1246,6 @@ emptyText: {
   submitButton: {
     backgroundColor: "#28a745",
   },
-  cancelButton: {
-    backgroundColor: "#F44336",
-    marginRight: 10,
-  },
-  submitButton: {
-    backgroundColor: "#28a745",
-  },
   cancelButtonText: {
     color: "white",
     fontSize: 16,
@@ -925,5 +1255,163 @@ emptyText: {
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+
+  // ========================================
+  // MODAL DE COSTOS CALCULADOS
+  // ========================================
+  modalCostosOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCostosContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    width: '85%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalCostosTitle: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+    color: '#333',
+  },
+  modalCostosBody: {
+    marginBottom: 20,
+  },
+  modalCostosText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  costoItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 2,
+  },
+  costoItemExacto: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#2196F3',
+  },
+  costoItemRedondeado: {
+    backgroundColor: '#E8F5E9',
+    borderColor: '#4CAF50',
+  },
+  costoInfoContainer: {
+    flex: 1,
+  },
+  costoLabel: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  costoSubLabel: {
+    fontSize: 15,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  costoValorExacto: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2196F3',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  costoValor: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  diferenciaContainer: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+  },
+  diferenciaText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#F57C00',
+    marginBottom: 4,
+  },
+  diferenciaSubtext: {
+    fontSize: 12,
+    color: '#E65100',
+    fontStyle: 'italic',
+  },
+  modalCostosFooterText: {
+    fontSize: 15,
+    color: '#999',
+    marginTop: 10,
+    fontStyle: 'italic',
+  },
+  modalCostosButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalCostosButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // ========================================
+  // ICONOS Y ELEMENTOS VISUALES
+  // ========================================
+  icon: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+  },
+  iconImage: {
+    width: 27,
+    height: 27,
+  },
+
+  // ========================================
+  // TEXTOS Y MENSAJES
+  // ========================================
+  emptyText: {
+    textAlign: 'center',
+    color: '#6c757d',
+    fontSize: 16,
+    fontStyle: 'italic',
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    textAlign: "center",
+    fontStyle: "italic",
+    color: "#666",
+    marginVertical: 10,
+  },
+
+  // ========================================
+  // UTILIDADES
+  // ========================================
+  marginTop: {
+    marginTop: 15,
   },
 });

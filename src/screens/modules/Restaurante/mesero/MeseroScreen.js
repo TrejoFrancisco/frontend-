@@ -1,5 +1,3 @@
-// MeseroScreen
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -558,25 +556,31 @@ export default function ComandaSection() {
   };
   const renderComandaCard = (comanda) => (
     <View key={comanda.id} style={styles.comandaCard}>
-      <View style={styles.comandaHeader}>
+      {/* Fila única: Mesa + Personas + Productos + Fecha + Comensal */}
+      <View style={styles.comandaHeaderRow}>
         <Text style={styles.comandaMesa}>Mesa {comanda.mesa}</Text>
-      </View>
 
-      <View style={styles.comandaDetails}>
-        <Text style={styles.comandaDetail}>Personas: {comanda.personas}</Text>
         {comanda.comensal && (
-          <Text style={styles.comandaDetail}>Comensal: {comanda.comensal}</Text>
+          <Text style={styles.comandaComensal}>Comensal: {comanda.comensal}</Text>
         )}
+
+        <Text style={styles.comandaDetail}>Personas: {comanda.personas}</Text>
+
+        {/* Badge Productos */}
+        <View style={styles.productBadge}>
+          <Text style={styles.productBadgeText}>
+            Productos: {comanda.productos?.length || 0}
+          </Text>
+        </View>
+
         <Text style={styles.comandaDetail}>
-          Productos: {comanda.productos?.length || 0}
+          {new Date(comanda.fecha).toLocaleDateString("es-MX")}
         </Text>
-        <Text style={styles.comandaDetail}>
-          Fecha: {new Date(comanda.fecha).toLocaleDateString("es-MX")}
-        </Text>
+
       </View>
 
+      {/* Acciones */}
       <View style={styles.comandaActions}>
-        {/* Mostrar botón editar solo si no es pagada y no se ha generado ticket */}
         {comanda.estado !== "pagada" && comanda.estado !== "cerrada" && (
           <TouchableOpacity
             style={[styles.actionButton, styles.editButton]}
@@ -591,8 +595,6 @@ export default function ComandaSection() {
             </View>
           </TouchableOpacity>
         )}
-
-        {/* Mostrar botón ticket solo si está entregado */}
         {comanda.estado === "entregado" && (
           <TouchableOpacity
             style={[styles.actionButton, styles.ticketButton]}
@@ -607,8 +609,6 @@ export default function ComandaSection() {
             </View>
           </TouchableOpacity>
         )}
-
-        {/* Mostrar botón pagar solo si está cerrada (después de generar ticket) */}
         {comanda.estado === "cerrada" && (
           <TouchableOpacity
             style={[styles.actionButton, styles.pagoButton]}
@@ -625,8 +625,8 @@ export default function ComandaSection() {
         )}
       </View>
     </View>
-  );
 
+  );
   const renderProductoItem = (producto, isFromBusqueda = false) => {
     const cantidad = productosSeleccionados[producto.id] || 0;
     const isSelected = cantidad > 0;
@@ -640,46 +640,50 @@ export default function ComandaSection() {
           isFromBusqueda && styles.productoBusqueda,
         ]}
       >
-        <View style={styles.productoInfo}>
-          <Text style={styles.productoClave}>{producto.clave}</Text>
-          <Text style={styles.productoNombre}>
-            {producto.nombre}
-            {isFromBusqueda && (
-              <Text style={styles.nuevoProductoTag}> (NUEVO)</Text>
-            )}
-          </Text>
-          <Text style={styles.productoPrecio}>${producto.precio_venta}</Text>
-        </View>
-
-        <View style={styles.cantidadControls}>
-          <TouchableOpacity
-            style={styles.cantidadButton}
-            onPress={() => quitarProducto(producto.id)}
-            disabled={cantidad === 0}
-          >
-            <Text
-              style={[
-                styles.cantidadButtonText,
-                cantidad === 0 && styles.cantidadButtonDisabled,
-              ]}
-            >
-              -
+        <View style={styles.productoContainer}>
+          <View style={styles.productoInfo}>
+            <Text style={styles.productoClave}>{producto.clave}</Text>
+            <Text style={styles.productoNombre}>
+              {producto.nombre}
+              {isFromBusqueda && (
+                <Text style={styles.nuevoProductoTag}> (NUEVO)</Text>
+              )}
             </Text>
-          </TouchableOpacity>
+            <Text style={styles.productoPrecio}>${producto.precio_venta}</Text>
+          </View>
 
-          <Text style={styles.cantidadText}>{cantidad}</Text>
+          <View style={styles.cantidadControls}>
+            <TouchableOpacity
+              style={styles.cantidadButton}
+              onPress={() => quitarProducto(producto.id)}
+              disabled={cantidad === 0}
+            >
+              <Text
+                style={[
+                  styles.cantidadButtonText,
+                  cantidad === 0 && styles.cantidadButtonDisabled,
+                ]}
+              >
+                -
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.cantidadButton}
-            onPress={() => agregarProducto(producto.id)}
-          >
-            <Text style={styles.cantidadButtonText}>+</Text>
-          </TouchableOpacity>
+            <Text style={styles.cantidadText}>{cantidad}</Text>
+
+            <TouchableOpacity
+              style={styles.cantidadButton}
+              onPress={() => agregarProducto(producto.id)}
+            >
+              <Text style={styles.cantidadButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* ← AGREGAR ESTA SECCIÓN PARA MOSTRAR DETALLES */}
+        {/* Sección de detalles con mejor espaciado */}
         {isSelected && (
           <View style={styles.detallesContainer}>
+            <View style={styles.detallesSeparador} />
+
             {Array.from({ length: cantidad }, (_, index) => {
               const key = `${producto.id}_${index}`;
               const detalleGuardado = detallesProductos[key];
@@ -709,6 +713,7 @@ export default function ComandaSection() {
             })}
           </View>
         )}
+
       </View>
     );
   };
@@ -778,26 +783,23 @@ export default function ComandaSection() {
     <View style={styles.container}>
       <View style={styles.topHeader}>
         <View style={styles.headerColumns}>
-          {/* Columna izquierda: saludo y rol */}
           <View style={styles.leftColumn}>
             <View style={styles.userGreeting}>
               <Image
                 source={require("../../../../../assets/saludo.png")}
                 style={styles.welcomeIcon}
               />
-
               <Text style={styles.userWelcome}>Hola, {user?.name}</Text>
             </View>
           </View>
 
-          {/* Columna derecha: división y botón de salir */}
           <View style={styles.rightColumn}>
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={handleLogout}
             >
               <Image
-                source={require("../../../../../assets/cerrarC.png")} // ← tu imagen personalizada
+                source={require("../../../../../assets/cerrarC.png")}
                 style={styles.logoutIcon}
               />
               <Text style={styles.logoutButtonText}>Salir</Text>
@@ -813,20 +815,23 @@ export default function ComandaSection() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Mis Comandas</Text>
-          <TouchableOpacity
-            style={styles.nuevaComandaButton}
-            onPress={() => setModalVisible(true)}
-          >
-            <View style={styles.buttonContent}>
-              <Image
-                source={require("../../../../../assets/agreg.png")}
-                style={styles.iconImage}
-              />
-              <Text style={styles.nuevaComandaButtonText}>Nueva Comanda</Text>
-            </View>
-          </TouchableOpacity>
+        <View style={styles.headerContainer}>
+          <View style={styles.rowWrap}>
+            <Text style={styles.contentTitle}>Mis Comandas</Text>
+
+            <TouchableOpacity
+              style={styles.nuevaComandaButton}
+              onPress={() => setModalVisible(true)}
+            >
+              <View style={styles.buttonContent}>
+                <Image
+                  source={require("../../../../../assets/agreg.png")}
+                  style={styles.iconImage}
+                />
+                <Text style={styles.nuevaComandaButtonText}>Nueva Comanda</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {comandas.length === 0 ? (
@@ -1192,92 +1197,33 @@ export default function ComandaSection() {
 }
 
 const styles = StyleSheet.create({
-  detallesContainer: {
-    marginTop: 6,
-    paddingTop: 6,
-    borderTopColor: "#e0e0e0",
+  // ========================================
+  // CONTENEDOR PRINCIPAL
+  // ========================================
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
   },
-  detalleNumero: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#666",
-    marginRight: 6,
-    minWidth: 18,
-    textAlign: "center",
-  },
-
-  detalleTexto: {
-    flex: 1, // Usar todo el espacio disponible
-    fontSize: 10,
-    color: "#888",
-    fontStyle: "italic",
-    // Remover maxWidth y numberOfLines para mostrar texto completo
-  },
-
-  detalleIcono: {
-    fontSize: 12,
-    marginLeft: 6,
-    color: "#007bff",
-    minWidth: 16,
-    textAlign: "center",
-  },
-
-  // Estados para cuando tiene detalle (mantener igual)
-  detalleItem: {
-    padding: 10,
-    marginVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#f9f9f9",
-    borderColor: "#cccccc",
-    borderWidth: 1,
-    alignItems: "center", // Centra horizontalmente
-    justifyContent: "center", // Centra verticalmente
-  },
-
-  detalleItemConBorde: {
-    borderTopColor: "#e0e0e0",
-    borderTopWidth: 1,
-  },
-
-  detalleItemConDetalle: {
-    backgroundColor: "#e8f5e9", // verde claro para indicar que ya tiene detalle
-  },
-  detalleContenido: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  detalleTextoConFondo: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    fontSize: 11,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  detalleInput: {
-    borderWidth: 1,
-    borderColor: "#326de3ff",
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 10,
-    fontSize: 16,
-    textAlignVertical: "top",
-    minHeight: 80,
-    backgroundColor: "#fff",
-    color: "#202124",
-  },
-  // ESTILOS DEL HEADER SUPERIOR
-
-  topHeader: {
-    flexDirection: "row",
+  centered: {
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 20,
-    paddingHorizontal: 15,
-    backgroundColor: "#FFFFFF",
+  },
+  scrollView: {
+    flex: 1,
+    padding: 16,
+  },
+
+  // ========================================
+  // HEADER SUPERIOR
+  // ========================================
+  topHeader: {
+    backgroundColor: "#fff",
+    paddingTop: 30,
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    marginBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#d1d1d2ff",
+    borderBottomColor: "#e0e0e0",
   },
   headerColumns: {
     flexDirection: "row",
@@ -1293,26 +1239,24 @@ const styles = StyleSheet.create({
   userGreeting: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
   },
   welcomeIcon: {
-    width: 30,
-    height: 25,
-    marginRight: 5,
-    resizeMode: "contain",
+    width: 24,
+    height: 24,
+    marginRight: 8,
   },
   userWelcome: {
-    fontSize: 14,
+    fontSize: 25,
     color: "#333",
     fontWeight: "bold",
-    maxWidth: 195, //Ancho para que el texto se acomode
+    maxWidth: 195,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
     backgroundColor: "#FEE2E2",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
     borderRadius: 8,
   },
   logoutIcon: {
@@ -1321,12 +1265,447 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   logoutButtonText: {
-    fontSize: 14,
-    color: "#333",
+    fontSize: 22,
+    color: "#000000ff",
+    fontWeight: "500",
   },
 
-  // ESTILOS DEL MODAL DE TICKET
+  // ========================================
+  // HEADER DE CONTENIDO
+  // ========================================
+  headerContainer: {
 
+    paddingVertical: 10,
+  },
+  rowWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  contentTitle: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  nuevaComandaButton: {
+    flexShrink: 1,
+    flexGrow: 0,
+    minWidth: 150,
+    maxWidth: "100%",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: "#007bff",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconImage: {
+    width: 24,
+    height: 24,
+    marginRight: 6,
+    resizeMode: "contain",
+  },
+  nuevaComandaButtonText: {
+    fontSize: 18,
+    color: "#fff",
+    fontWeight: "bold",
+    flexShrink: 1,
+    textAlign: "center",
+  },
+
+  // ========================================
+  // ESTADOS VACÍO Y CARGA
+  // ========================================
+  emptyState: {
+    alignItems: "center",
+    marginTop: 100,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#666",
+    fontSize: 16,
+    fontWeight: "500",
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 15,
+  },
+  loadingText: {
+    fontSize: 20,
+    color: "#000000ff",
+  },
+
+  // ========================================
+  // TARJETAS DE COMANDA
+  // ========================================
+  comandaCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  comandaHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+  comandaMesa: {
+    fontWeight: 'bold',
+    fontSize: 23,
+  },
+  comandaComensal: {
+    fontSize: 17,
+    fontWeight: '500',
+  },
+  comandaDetail: {
+    fontSize: 17,
+  },
+  productBadge: {
+    backgroundColor: '#eee',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  productBadgeText: {
+    fontWeight: 'bold',
+    fontSize: 17,
+  },
+
+  // ========================================
+  // ACCIONES DE COMANDA
+  // ========================================
+  comandaActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  actionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  editButton: {
+    backgroundColor: "#f9ebc3ff",
+  },
+  ticketButton: {
+    backgroundColor: "#a5eef9ff",
+  },
+  pagoButton: {
+    backgroundColor: "#cbf3ffff",
+  },
+  actionButtonText: {
+    color: "#545454ff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  pagoIcon: {
+    width: 26,
+    height: 25,
+    marginRight: 8,
+  },
+
+  // ========================================
+  // MODALES - ESTRUCTURA GENERAL
+  // ========================================
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalWrapper: {
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 25,
+    fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+
+  // ========================================
+  // FORMULARIOS EN MODALES
+  // ========================================
+  formScrollView: {
+    maxHeight: 400,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    fontSize: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  buscadorInput: {
+    borderWidth: 1,
+    borderColor: "#2D9966",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 14,
+    backgroundColor: "#ECFDF5",
+  },
+  buscadorAgregar: {
+    backgroundColor: "#f0f8f0",
+    borderColor: "#28a745",
+  },
+  noProductosText: {
+    textAlign: "center",
+    color: "#666",
+    fontSize: 14,
+    fontStyle: "italic",
+    paddingVertical: 20,
+  },
+
+  // ========================================
+  // PRODUCTOS EN MODALES
+  // ========================================
+  productoItem: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    marginVertical: 4,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#dee2e6",
+  },
+  productoSelected: {
+    backgroundColor: "#eef7ffff",
+    borderColor: "#1b89ffff",
+  },
+  productoBusqueda: {
+    backgroundColor: "#f0f8f0",
+    borderColor: "#28a745",
+  },
+
+
+  productoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    flexWrap: 'wrap',  // Permite que los elementos bajen si no caben
+    gap: 10,  // Espacio entre elementos cuando se envuelven
+  },
+  productoInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 200,  // Ancho mínimo antes de envolver
+    marginRight: 10,
+    gap: 30,
+    flexWrap: "wrap",
+  },
+  productoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  productoClave: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "bold",
+  },
+  productoNombre: {
+    fontSize: 16,
+    color: "#333",
+    marginVertical: 2,
+  },
+  productoPrecio: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#28a745",
+  },
+  nuevoProductoTag: {
+    fontSize: 16,
+    color: "#28a745",
+    fontWeight: "bold",
+  },
+
+  // ========================================
+  // CONTROLES DE CANTIDAD
+  // ========================================
+  cantidadControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginRight: 20,  // Aumenta este valor para más espacio (era 10)
+  },
+  cantidadButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#007bff",
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 4,
+  },
+  cantidadButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  cantidadButtonDisabled: {
+    opacity: 0.5,
+  },
+  cantidadText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    minWidth: 5,
+    textAlign: "center",
+  },
+
+  // ========================================
+  // DETALLES DE PRODUCTOS
+  // ========================================
+  detallesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flexWrap: 'wrap',
+    flexBasis: '100%',
+    marginLeft: 15,
+    marginTop: 10,  // Espacio vertical arriba de los detalles
+  },
+  detallesSeparador: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#ccc',
+    marginRight: 8,
+  },
+  detalleItem: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  detalleItemConBorde: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 4,
+  },
+  detalleItemConDetalle: {
+    backgroundColor: '#e8f5e9',
+    borderColor: '#4caf50',
+  },
+  detalleContenido: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detalleTexto: {
+    fontSize: 12,
+    color: '#666',
+  },
+  detalleTextoConFondo: {
+    fontSize: 12,
+    color: '#4caf50',
+    fontWeight: '600',
+  },
+  detalleInput: {
+    borderWidth: 1,
+    borderColor: "#326de3ff",
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 10,
+    fontSize: 16,
+    textAlignVertical: "top",
+    minHeight: 80,
+    backgroundColor: "#fff",
+    color: "#202124",
+  },
+
+  // ========================================
+  // SEPARADORES Y ELEMENTOS VISUALES
+  // ========================================
+  separador: {
+    marginVertical: 20,
+    alignItems: "center",
+  },
+  separadorTexto: {
+    fontSize: 19,
+    fontWeight: "bold",
+    color: "#000000ff",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+
+  // ========================================
+  // ACCIONES DE MODALES
+  // ========================================
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#F44336",
+  },
+  saveButton: {
+    backgroundColor: "#28a745",
+  },
+  pagarButton: {
+    backgroundColor: "#4ec56bff",
+  },
+  cancelButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  saveButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  pagarButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+
+  // ========================================
+  // MODAL DE TICKET
+  // ========================================
   ticketModalContent: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -1345,22 +1724,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-
   ticketIcon: {
     width: 45,
     height: 40,
     marginRight: 15,
     resizeMode: "contain",
-    marginTop: 2, // Ajuste fino para compensar altura visual
+    marginTop: 2,
   },
-
   ticketModalTitle: {
     fontSize: 24,
     fontWeight: "700",
     color: "#2c3e50",
-    lineHeight: 40, // Igual que la altura de la imagen
+    lineHeight: 40,
   },
-
   ticketScrollView: {
     maxHeight: 420,
   },
@@ -1454,354 +1830,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  // ESTILOS DE CONTROLES DE CANTIDAD DE PRODUCTOS
-
-  cantidadControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f8f9fa",
-    borderRadius: 20,
-    paddingHorizontal: 5,
-    paddingVertical: 4,
-  },
-  cantidadButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#007bff",
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 4,
-  },
-  cantidadButtonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  cantidadButtonDisabled: {
-    opacity: 0.5,
-  },
-  cantidadText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-    minWidth: 30,
-    textAlign: "center",
-  },
-
-  // ESTILOS DE INFORMACIÓN DE PRODUCTOS
-
-  productoInfo: {
-    flex: 1,
-    marginRight: 10,
-  },
-  productoClave: {
-    fontSize: 10,
-    color: "#666",
-    fontWeight: "bold",
-  },
-  productoNombre: {
-    fontSize: 13,
-    color: "#333",
-    marginVertical: 2,
-  },
-  productoPrecio: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#28a745",
-  },
-  productoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    marginVertical: 4,
-    borderWidth: 1,
-    borderColor: "#dee2e6",
-  },
-  productoSelected: {
-    backgroundColor: "#eef7ffff",
-    borderColor: "#1b89ffff",
-  },
-
-  // ESTILOS ESPECÍFICOS PARA MODAL DE EDICIÓN
-
-  productoBusqueda: {
-    backgroundColor: "#f0f8f0",
-    borderColor: "#28a745",
-  },
-  nuevoProductoTag: {
-    fontSize: 12,
-    color: "#28a745",
-    fontWeight: "bold",
-  },
-  separador: {
-    marginVertical: 20,
-    alignItems: "center",
-  },
-  separadorTexto: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#000000ff",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  buscadorAgregar: {
-    backgroundColor: "#f0f8f0",
-    borderColor: "#28a745",
-  },
-
-  // ESTILOS DEL CONTENEDOR PRINCIPAL
-
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-
-  // ESTILOS DEL HEADER DE LA PANTALLA PRINCIPAL
-
-  header: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "space-between",
-    height: 130,
-    paddingVertical: 10,
-  },
-  title: {
-    fontSize: 25,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  nuevaComandaButton: {
-    backgroundColor: "#3a90f4ff",
-    paddingVertical: 12,
-    paddingHorizontal: 35,
-    borderRadius: 8,
-    marginTop: "auto",
-  },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconImage: {
-    width: 26,
-    height: 25,
-    marginRight: 8,
-  },
-  nuevaComandaButtonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "bold",
-  },
-
-  // ESTILOS DEL ESTADO VACÍO Y CARGA
-
-  emptyState: {
-    alignItems: "center",
-    marginTop: 100,
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    textAlign: "center",
-    color: "#666",
-    fontSize: 16,
-    fontWeight: "500",
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    textAlign: "center",
-    color: "#999",
-    fontSize: 15,
-  },
-  loadingText: {
-    fontSize: 20,
-    color: "#000000ff",
-  },
-
-  // ESTILOS DE LAS TARJETAS DE COMANDA
-
-  comandaCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  comandaHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  comandaMesa: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: "white",
-    fontSize: 13,
-    fontWeight: "bold",
-  },
-  comandaDetails: {
-    marginBottom: 12,
-  },
-  comandaDetail: {
-    fontSize: 15,
-    color: "#666",
-    marginBottom: 4,
-  },
-
-  // ESTILOS DE ACCIONES DE COMANDA
-
-  comandaActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-  },
-  actionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  pagoIcon: {
-    width: 26,
-    height: 25,
-    marginRight: 8,
-  },
-  editButton: {
-    backgroundColor: "#f9ebc3ff",
-  },
-  ticketButton: {
-    backgroundColor: "#a5eef9ff",
-  },
-  pagoButton: {
-    backgroundColor: "#cbf3ffff",
-  },
-  actionButtonText: {
-    color: "#545454ff",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-
-  // ESTILOS DE MODALES GENERALES
-
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalWrapper: {
-    width: "90%",
-    maxHeight: "80%",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-
-  // ESTILOS DE FORMULARIOS EN MODALES
-
-  formScrollView: {
-    maxHeight: 400,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    fontSize: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  buscadorInput: {
-    borderWidth: 1,
-    borderColor: "#2D9966",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    fontSize: 14,
-    backgroundColor: "#ECFDF5",
-  },
-  noProductosText: {
-    textAlign: "center",
-    color: "#666",
-    fontSize: 14,
-    fontStyle: "italic",
-    paddingVertical: 20,
-  },
-
-  // ESTILOS DE ACCIONES DE MODALES
-
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  cancelButton: {
-    backgroundColor: "#F44336",
-  },
-  saveButton: {
-    backgroundColor: "#28a745",
-  },
-  pagarButton: {
-    backgroundColor: "#4ec56bff",
-  },
-  cancelButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  saveButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  pagarButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-
-  // ESTILOS DEL MODAL DE PAGO
-
+  // ========================================
+  // MODAL DE PAGO
+  // ========================================
   totalText: {
     fontSize: 18,
     fontWeight: "bold",
@@ -1825,15 +1856,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   label: {
-    minWidth: 50, // Más espacio para palabras largas
+    minWidth: 50,
     fontSize: 14,
     fontWeight: "bold",
   },
-
   metodoPagoContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "left", // Centra cada línea horizontalmente
+    justifyContent: "left",
     gap: 8,
     marginVertical: 12,
   },

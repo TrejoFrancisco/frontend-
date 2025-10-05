@@ -188,65 +188,88 @@ export default function UsuariosCocinaSection({ token, navigation }) {
 
     return (
       <View key={usuario.id} style={styles.usuarioCard}>
-        <View style={styles.usuarioHeader}>
-          <Text style={styles.usuarioName}>{usuario.name}</Text>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: tieneCategoria ? "#28a745" : "#ffc107" },
-            ]}
-          >
-            <Text style={styles.statusText}>
-              {tieneCategoria ? "Asignado" : "Sin asignar"}
+        <View style={styles.usuarioHeaderRow}>
+          {/* Columna 1: Nombre */}
+          <View style={styles.colItem}>
+            <Text style={styles.usuarioLabel}>Nombre:</Text>
+            <Text style={styles.usuarioName}>{usuario.name}</Text>
+          </View>
+
+          {/* Columna 2: Email */}
+          <View style={styles.colItem}>
+            <Text style={styles.usuarioLabel}>Email:</Text>
+            <Text style={styles.usuarioDetail}>{usuario.email}</Text>
+          </View>
+
+          {/* Columna 3: Categoría */}
+          <View style={styles.colItem}>
+            <Text style={styles.usuarioLabel}>Categoría:</Text>
+            <Text style={styles.usuarioDetail}>
+              {usuario.categoria_nombre || "Sin categoría asignada"}
             </Text>
           </View>
-        </View>
 
-        <View style={styles.usuarioDetails}>
-          <Text style={styles.usuarioDetail}>Email: {usuario.email}</Text>
-          <Text style={styles.usuarioDetail}>
-            Categoría: {usuario.categoria_nombre || "Sin categoría asignada"}
-          </Text>
-          <Text style={styles.usuarioDetail}>
-            Rol: {usuario.rol === "cocina" ? "Cocina" : "Bartender"}
-          </Text>
-        </View>
+          {/* Columna 4: Rol */}
+          <View style={styles.colItem}>
+            <Text style={styles.usuarioLabel}>Rol:</Text>
+            <Text style={styles.usuarioDetail}>
+              {usuario.rol === "cocina" ? "Cocina" : "Bartender"}
+            </Text>
+          </View>
 
-        <View style={styles.usuarioActions}>
-          {!tieneCategoria ? (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.addButton]}
-              onPress={() => abrirModalAgregar(usuario)}
+          {/* Columna 5: Estado */}
+          <View style={styles.colItem}>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: tieneCategoria ? "#28a745" : "#ffc107" },
+              ]}
             >
-              <Image
-                source={require("../../../../../assets/agreg.png")}
-                style={styles.iconImage}
-              />
-              <Text style={styles.actionButtonText}>Agregar Categoría</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.actionsContainer}>
-              <TouchableOpacity
-                style={[styles.actionButtonn, styles.editButton]}
-                onPress={() => abrirModalEditar(usuario)}
-              >
-                <Image
-                  source={require("../../../../../assets/editarr.png")}
-                  style={styles.icon}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButtonn, styles.deleteButton]}
-                onPress={() => eliminarAsociacion(usuario)}
-              >
-                <Image
-                  source={require("../../../../../assets/eliminar.png")}
-                  style={styles.icon}
-                />
-              </TouchableOpacity>
+              <Text style={styles.statusText}>
+                {tieneCategoria ? "Asignado" : "Sin asignar"}
+              </Text>
             </View>
-          )}
+          </View>
+
+          {/* Columna 6: Acciones */}
+          <View style={styles.colItem}>
+            {!tieneCategoria ? (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.addButton]}
+                onPress={() => abrirModalAgregar(usuario)}
+              >
+                <View style={styles.buttonContent}>
+                  <Image
+                    source={require("../../../../../assets/agreg.png")}
+                    style={styles.iconImagen}
+                  />
+                  <Text style={styles.actionButtonText}>Agregar Categoría</Text>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.usuarioActions}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.editButton]}
+                  onPress={() => abrirModalEditar(usuario)}
+                >
+                  <Image
+                    source={require("../../../../../assets/editarr.png")}
+                    style={styles.iconImage}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.deleteButton]}
+                  onPress={() => eliminarAsociacion(usuario)}
+                >
+                  <Image
+                    source={require("../../../../../assets/eliminar.png")}
+                    style={styles.iconImage}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     );
@@ -358,6 +381,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // ===== CONTENEDOR PRINCIPAL =====
   container: {
     flex: 1,
   },
@@ -369,8 +393,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+
+  // ===== TÍTULOS Y TEXTO =====
   title: {
-    fontSize: 25,
+    fontSize: 30,
     fontWeight: "bold",
     marginBottom: 16,
     textAlign: "center",
@@ -379,59 +405,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#6c757d",
   },
-  refreshButton: {
-    backgroundColor: "#17a2b8",
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  inlineContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  icon: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
-  },
-  refreshButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-    gap: 4,
-  },
-  statCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-    minWidth: 80,
-    maxWidth: 120, // evita que se expanda demasiado
-    width: "30%",  // se adapte proporcionalmente
-    // sombra
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#007bff",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#6c757d",
-    textAlign: "center",
-  },
   emptyText: {
     textAlign: "center",
     fontSize: 16,
@@ -439,99 +412,152 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     marginVertical: 20,
   },
+
+  // ===== ESTADÍSTICAS =====
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 30,
+  },
+  statCard: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    minWidth: 80,
+    flex: 1,
+    marginHorizontal: 5,
+    minHeight: 80,
+    justifyContent: "center",
+  },
+  statNumber: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#007bff",
+    textAlign: "center",
+    flexWrap: "wrap",
+  },
+  statLabel: {
+    fontSize: 20,
+    color: "#666666",
+    textAlign: "center",
+    marginTop: 4,
+    flexWrap: "wrap",
+  },
+
+  // ===== LISTA DE USUARIOS =====
   usuariosList: {
     paddingBottom: 20,
   },
   usuarioCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#e9ecef",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 12,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  usuarioHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
+  usuarioHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+  colItem: {
+    flex: 1,
+    minWidth: 150,
+  },
+  usuarioLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 2,
   },
   usuarioName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    flex: 1,
-    color: "#2c3e50",
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 15,
-  },
-  statusText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  usuarioDetails: {
-    marginBottom: 15,
+    fontWeight: 'bold',
+    fontSize: 20,
   },
   usuarioDetail: {
-    fontSize: 14,
-    marginBottom: 5,
-    color: "#495057",
-  },
-  usuarioActions: {
-    alignItems: "center",
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: "#4CAF50",
-  },
-  actionButtonn: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 6,
-    minWidth: 100,
-    alignItems: "center",
+    fontSize: 17,
   },
 
+  // ===== ESTADO Y BADGES =====
+  statusBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 6,
+    borderRadius: 15,
+    backgroundColor: "#ffc107",
+    alignSelf: 'flex-start',
+  },
+  statusText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+
+  // ===== BOTONES DE ACCIÓN =====
+  usuarioActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  actionButton: {
+    padding: 5,
+    borderRadius: 6,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    color: "#ffffffff",
+    fontSize: 15,
+    fontWeight: "bold",
+  },
   addButton: {
-    backgroundColor: "#28a745",
+    backgroundColor: "#32b551ff",
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   editButton: {
     backgroundColor: "#f9ebc3ff",
+    paddingHorizontal: 16,
+    minWidth: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButton: {
+    backgroundColor: "#f9c3c3ff",
+    paddingHorizontal: 16,
+    minWidth: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  deleteButton: {
-    backgroundColor: "#fed0d5ff",
-  },
-  actionButtonText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  iconImage: {
+  // ===== ICONOS =====
+  iconImagen: {
     width: 20,
     height: 20,
-    marginRight: 8,
+    marginRight: 6,
+  },
+  iconImage: {
+    width: 27,
+    height: 27,
   },
 
+  // ===== MODAL =====
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -559,6 +585,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#6c757d",
   },
+
+  // ===== FORMULARIO DEL MODAL =====
   label: {
     fontSize: 15,
     fontWeight: "bold",
@@ -571,6 +599,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 15,
   },
+
+  // ===== BOTONES DEL MODAL =====
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-around",
