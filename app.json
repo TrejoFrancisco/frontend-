@@ -1,27 +1,32 @@
 {
   "expo": {
-    "name": "sistema-web",
+    "name": "Restaurante",
     "owner": "xolotl-creative-labs",
     "slug": "sistema-web",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icono.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/cuchilleria(1).png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#5BA3D9"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "splash": {
+        "image": "./assets/icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#5BA3D9"
+      }
     },
     "android": {
       "usesCleartextTraffic": true,
       "networkSecurityConfig": "./network_security_config.xml",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#5BA3D9"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.xolotlcreative.sistemaRestaurante"
