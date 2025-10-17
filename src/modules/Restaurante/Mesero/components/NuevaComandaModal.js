@@ -121,25 +121,23 @@ export default function NuevaComandaModal({
       return;
     }
 
-    const productosArray = [];
+    // ESTE ES EL FIX PRINCIPAL: construir el array manteniendo el orden
+    const productosConDetalle = [];
+
     Object.entries(productosSeleccionados).forEach(([productoId, cantidad]) => {
       for (let i = 0; i < cantidad; i++) {
-        productosArray.push(parseInt(productoId));
+        const key = `${productoId}_${i}`;
+        productosConDetalle.push({
+          id: parseInt(productoId),
+          detalle: detallesProductos[key] || null,
+        });
       }
     });
 
-    if (productosArray.length === 0) {
+    if (productosConDetalle.length === 0) {
       Alert.alert("Error", "Debe seleccionar al menos un producto");
       return;
     }
-
-    const productosConDetalle = productosArray.map((productoId, index) => {
-      const key = `${productoId}_${index}`;
-      return {
-        id: productoId,
-        detalle: detallesProductos[key] || null,
-      };
-    });
 
     try {
       const response = await API.post(
@@ -186,15 +184,13 @@ export default function NuevaComandaModal({
             <Text style={styles.modalTitle}>Nueva Comanda</Text>
 
             <ScrollView style={styles.formScrollView}>
-              {/* Formulario básico */}
+              {/* Formulario básico - FIX: usar handleChange */}
               <TextInput
                 style={styles.input}
                 placeholder="Mesa"
                 placeholderTextColor="#999999"
                 value={formData.mesa}
-                onChangeText={(value) =>
-                  setNuevaComanda((prev) => ({ ...prev, mesa: value }))
-                }
+                onChangeText={(value) => handleChange("mesa", value)}
                 keyboardType="numeric"
               />
 
@@ -203,9 +199,7 @@ export default function NuevaComandaModal({
                 placeholder="Número de personas"
                 placeholderTextColor="#999999"
                 value={formData.personas}
-                onChangeText={(value) =>
-                  setNuevaComanda((prev) => ({ ...prev, personas: value }))
-                }
+                onChangeText={(value) => handleChange("personas", value)}
                 keyboardType="numeric"
               />
 
@@ -214,9 +208,7 @@ export default function NuevaComandaModal({
                 placeholder="Nombre del comensal"
                 placeholderTextColor="#999999"
                 value={formData.comensal}
-                onChangeText={(value) =>
-                  setNuevaComanda((prev) => ({ ...prev, comensal: value }))
-                }
+                onChangeText={(value) => handleChange("comensal", value)}
               />
 
               <Text style={styles.sectionTitle}>Productos:</Text>

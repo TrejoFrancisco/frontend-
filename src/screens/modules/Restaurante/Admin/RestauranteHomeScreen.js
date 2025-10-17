@@ -46,9 +46,7 @@ function HomeScreen() {
   const [activeSection, setActiveSection] = useState("dashboard");
   const navigation = useNavigation();
 
-  useEffect(() => {
-    return () => console.log("HomeScreen unmounted");
-  }, [token, user]);
+  useEffect(() => {}, [token, user]);
   useBackHandler(navigation);
 
   const menuItems = useMemo(
