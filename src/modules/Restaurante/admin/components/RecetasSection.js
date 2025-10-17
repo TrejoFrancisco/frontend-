@@ -387,7 +387,7 @@ export default function RecetasSection({ token, navigation }) {
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-          "No se pudo actualizar la receta"
+        "No se pudo actualizar la receta"
       );
     } finally {
       setIsLoading(false);
@@ -632,7 +632,7 @@ export default function RecetasSection({ token, navigation }) {
                           style={[
                             styles.paginacionNumero,
                             paginaActual === numeroPagina &&
-                              styles.paginacionNumeroActivo,
+                            styles.paginacionNumeroActivo,
                           ]}
                           onPress={() => cambiarPagina(numeroPagina)}
                         >
@@ -640,7 +640,7 @@ export default function RecetasSection({ token, navigation }) {
                             style={[
                               styles.paginacionNumeroTexto,
                               paginaActual === numeroPagina &&
-                                styles.paginacionNumeroTextoActivo,
+                              styles.paginacionNumeroTextoActivo,
                             ]}
                           >
                             {numeroPagina}
@@ -668,7 +668,7 @@ export default function RecetasSection({ token, navigation }) {
                   style={[
                     styles.paginacionBoton,
                     paginaActual === totalPaginas &&
-                      styles.paginacionBotonDisabled,
+                    styles.paginacionBotonDisabled,
                   ]}
                   onPress={() => cambiarPagina(paginaActual + 1)}
                   disabled={paginaActual === totalPaginas}
@@ -698,15 +698,19 @@ export default function RecetasSection({ token, navigation }) {
               <TextInput
                 style={styles.input}
                 placeholder="Clave"
-                value={recetaData.clave}
+                placeholderTextColor="#888"
+                value={recetaData.clave || undefined}
                 onChangeText={(text) => handleInputChange("clave", text)}
               />
+
               <TextInput
                 style={styles.input}
                 placeholder="Nombre"
-                value={recetaData.nombre}
+                placeholderTextColor="#888"
+                value={recetaData.nombre || undefined}
                 onChangeText={(text) => handleInputChange("nombre", text)}
               />
+
 
               {/* Selector de estado */}
               <View style={styles.estadoSelectorContainer}>
@@ -716,7 +720,7 @@ export default function RecetasSection({ token, navigation }) {
                     style={[
                       styles.estadoSelectorBoton,
                       recetaData.estado === "activo" &&
-                        styles.estadoSelectorBotonActivo,
+                      styles.estadoSelectorBotonActivo,
                     ]}
                     onPress={() => handleInputChange("estado", "activo")}
                   >
@@ -724,7 +728,7 @@ export default function RecetasSection({ token, navigation }) {
                       style={[
                         styles.estadoSelectorTexto,
                         recetaData.estado === "activo" &&
-                          styles.estadoSelectorTextoActivo,
+                        styles.estadoSelectorTextoActivo,
                       ]}
                     >
                       Activo
@@ -734,7 +738,7 @@ export default function RecetasSection({ token, navigation }) {
                     style={[
                       styles.estadoSelectorBoton,
                       recetaData.estado === "inactivo" &&
-                        styles.estadoSelectorBotonActivo,
+                      styles.estadoSelectorBotonActivo,
                     ]}
                     onPress={() => handleInputChange("estado", "inactivo")}
                   >
@@ -742,7 +746,7 @@ export default function RecetasSection({ token, navigation }) {
                       style={[
                         styles.estadoSelectorTexto,
                         recetaData.estado === "inactivo" &&
-                          styles.estadoSelectorTextoActivo,
+                        styles.estadoSelectorTextoActivo,
                       ]}
                     >
                       Inactivo
@@ -906,10 +910,10 @@ export default function RecetasSection({ token, navigation }) {
                                   ))}
                                   {getMateriasPrimasFiltradas(mp.searchText)
                                     .length === 0 && (
-                                    <Text style={styles.dropdownEmpty}>
-                                      No se encontraron materias primas
-                                    </Text>
-                                  )}
+                                      <Text style={styles.dropdownEmpty}>
+                                        No se encontraron materias primas
+                                      </Text>
+                                    )}
                                 </ScrollView>
                               </View>
                             )}
@@ -977,8 +981,8 @@ export default function RecetasSection({ token, navigation }) {
                       ? "Creando..."
                       : "Actualizando..."
                     : modalType === "crear"
-                    ? "Crear"
-                    : "Actualizar"}
+                      ? "Crear"
+                      : "Actualizar"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1347,7 +1351,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   newRowContainer: {
-    marginBottom: 70,
+    marginBottom: 20,
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderColor: "#ddd",
@@ -1372,7 +1376,7 @@ const styles = StyleSheet.create({
   },
   searchMateriaPrimaInput: {
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: "#4CAF50",
     borderRadius: 8,

@@ -190,36 +190,41 @@ export default function NuevaComandaModal({
               <TextInput
                 style={styles.input}
                 placeholder="Mesa"
-                placeholderTextColor="#999"
+                placeholderTextColor="#999999"
                 value={formData.mesa}
-                onChangeText={(value) => handleChange("mesa", value)}
+                onChangeText={(value) =>
+                  setNuevaComanda((prev) => ({ ...prev, mesa: value }))
+                }
                 keyboardType="numeric"
               />
 
               <TextInput
                 style={styles.input}
                 placeholder="Número de personas"
-                placeholderTextColor="#999"
+                placeholderTextColor="#999999"
                 value={formData.personas}
-                onChangeText={(value) => handleChange("personas", value)}
+                onChangeText={(value) =>
+                  setNuevaComanda((prev) => ({ ...prev, personas: value }))
+                }
                 keyboardType="numeric"
               />
 
               <TextInput
                 style={styles.input}
-                placeholder="Nombre del comensal (opcional)"
-                placeholderTextColor="#999"
+                placeholder="Nombre del comensal"
+                placeholderTextColor="#999999"
                 value={formData.comensal}
-                onChangeText={(value) => handleChange("comensal", value)}
+                onChangeText={(value) =>
+                  setNuevaComanda((prev) => ({ ...prev, comensal: value }))
+                }
               />
 
-              {/* Productos */}
               <Text style={styles.sectionTitle}>Productos:</Text>
 
               <TextInput
                 style={styles.buscadorInput}
-                placeholder="Buscar productos..."
-                placeholderTextColor="#666"
+                placeholder="Buscar productos por nombre o clave..."
+                placeholderTextColor="#999999"
                 value={busquedaProducto}
                 onChangeText={setBusquedaProducto}
               />

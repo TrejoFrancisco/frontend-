@@ -31,7 +31,7 @@ export default function ComandaSection() {
   const [detallesProductos, setDetallesProductos] = useState({});
   const [modalDetalleVisible, setModalDetalleVisible] = useState(false);
   const [productoParaDetalle, setProductoParaDetalle] = useState(null);
-  const [detalleTemp, setDetalleTemp] = useState("");
+  const [detalleTemp, setDetalleTemp] = useState("undefined");
   const [mesasSeleccionadas, setMesasSeleccionadas] = useState([]);
   const [comandasUnificadas, setComandasUnificadas] = useState([]);
   const [comandasSeleccionadas, setComandasSeleccionadas] = useState([]);
@@ -1106,7 +1106,7 @@ export default function ComandaSection() {
                 <TextInput
                   style={styles.input}
                   placeholder="Mesa"
-                  placeholderTextColor="#999"
+                  placeholderTextColor="#999999"
                   value={nuevaComanda.mesa}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, mesa: value }))
@@ -1117,7 +1117,7 @@ export default function ComandaSection() {
                 <TextInput
                   style={styles.input}
                   placeholder="Número de personas"
-                  placeholderTextColor="#999"
+                  placeholderTextColor="#999999"
                   value={nuevaComanda.personas}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, personas: value }))
@@ -1127,8 +1127,8 @@ export default function ComandaSection() {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Nombre del comensal (opcional)"
-                  placeholderTextColor="#999"
+                  placeholder="Nombre del comensal"
+                  placeholderTextColor="#999999"
                   value={nuevaComanda.comensal}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, comensal: value }))
@@ -1140,7 +1140,7 @@ export default function ComandaSection() {
                 <TextInput
                   style={styles.buscadorInput}
                   placeholder="Buscar productos por nombre o clave..."
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#999999"
                   value={busquedaProducto}
                   onChangeText={setBusquedaProducto}
                 />
@@ -1321,12 +1321,14 @@ export default function ComandaSection() {
               <TextInput
                 style={styles.detalleInput}
                 placeholder="Ejemplo: Con hielos, sin cebolla, etc."
-                placeholderTextColor="#999"
-                value={detalleTemp}
+                placeholderTextColor="#999999"
+                value={detalleTemp || undefined} 
                 onChangeText={setDetalleTemp}
                 multiline={true}
                 numberOfLines={3}
               />
+
+
 
               <View style={styles.modalActions}>
                 <TouchableOpacity
@@ -1490,7 +1492,7 @@ export default function ComandaSection() {
                       style={[
                         styles.mesaItem,
                         comandasSeleccionadas.includes(comanda.id) &&
-                          styles.mesaItemSelected,
+                        styles.mesaItemSelected,
                       ]}
                       onPress={() => toggleComandaSeleccionada(comanda.id)}
                     >
@@ -1736,6 +1738,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 8,
+
   },
   actionButton: {
     paddingHorizontal: 12,
@@ -1913,7 +1916,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   productoPrecio: {
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: "bold",
     color: "#28a745",
   },
@@ -2005,7 +2008,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
     minHeight: 80,
     backgroundColor: "#fff",
-    color: "#202124",
+    color: '#000', // importante para que el texto sea visible,
   },
 
   separador: {

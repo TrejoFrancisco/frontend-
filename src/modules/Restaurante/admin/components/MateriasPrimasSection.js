@@ -294,12 +294,10 @@ export default function MateriaPrimaSection({ token, navigation }) {
       if (uploadResponse.ok && responseData.success) {
         Alert.alert(
           "Éxito",
-          `Se importaron ${
-            responseData.data.total_procesadas
-          } materias primas.${
-            responseData.data.errores_encontrados > 0
-              ? ` Con ${responseData.data.errores_encontrados} errores.`
-              : ""
+          `Se importaron ${responseData.data.total_procesadas
+          } materias primas.${responseData.data.errores_encontrados > 0
+            ? ` Con ${responseData.data.errores_encontrados} errores.`
+            : ""
           }`
         );
         fetchMateriasPrimas();
@@ -417,7 +415,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
         disabled={!archivoCSV || isLoading}
       >
         <Text style={styles.importButtonText}>
-          {isLoading ? "⏳ Importando..." : "📤 Importar materias primas"}
+          {isLoading ? "Importando..." : "Importar materias primas"}
         </Text>
       </TouchableOpacity>
 
@@ -426,7 +424,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
         {/* Buscador */}
         <TextInput
           style={styles.searchInput}
-          placeholder="🔍 Buscar por clave o nombre..."
+          placeholder="Buscar por clave o nombre..."
           value={busquedaMateria}
           onChangeText={(text) => {
             setBusquedaMateria(text);
@@ -531,7 +529,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
               style={[
                 styles.paginationButton,
                 paginaActual === totalPaginas &&
-                  styles.paginationButtonDisabled,
+                styles.paginationButtonDisabled,
               ]}
               onPress={() => setPaginaActual(paginaActual + 1)}
               disabled={paginaActual === totalPaginas}
@@ -559,37 +557,45 @@ export default function MateriaPrimaSection({ token, navigation }) {
               <TextInput
                 style={styles.input}
                 placeholder="Clave"
-                value={formData.clave}
+                placeholderTextColor="#888"
+                value={formData.clave || undefined}
                 onChangeText={(text) => handleInputChange("clave", text)}
               />
+
               <TextInput
                 style={styles.input}
                 placeholder="Nombre"
-                value={formData.nombre}
+                placeholderTextColor="#888"
+                value={formData.nombre || undefined}
                 onChangeText={(text) => handleInputChange("nombre", text)}
               />
+
               <TextInput
                 style={styles.input}
                 placeholder="Unidad (ej. kg, lts)"
-                value={formData.unidad}
+                placeholderTextColor="#888"
+                value={formData.unidad || undefined}
                 onChangeText={(text) => handleInputChange("unidad", text)}
               />
+
               <TextInput
                 style={styles.input}
                 placeholder="Costo unitario"
+                placeholderTextColor="#888"
                 keyboardType="decimal-pad"
-                value={formData.costo_unitario}
-                onChangeText={(text) =>
-                  handleInputChange("costo_unitario", text)
-                }
+                value={formData.costo_unitario || undefined}
+                onChangeText={(text) => handleInputChange("costo_unitario", text)}
               />
+
               <TextInput
                 style={styles.input}
                 placeholder="Existencia"
+                placeholderTextColor="#888"
                 keyboardType="decimal-pad"
-                value={formData.existencia}
+                value={formData.existencia || undefined}
                 onChangeText={(text) => handleInputChange("existencia", text)}
               />
+
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity
@@ -609,8 +615,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
                         ? "Creando..."
                         : "Actualizando..."
                       : modalType === "crear"
-                      ? "Crear"
-                      : "Actualizar"}
+                        ? "Crear"
+                        : "Actualizar"}
                   </Text>
                 </TouchableOpacity>
               </View>

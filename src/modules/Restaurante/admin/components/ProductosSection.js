@@ -473,8 +473,7 @@ export default function ProductosSection({ token, navigation }) {
 
       Alert.alert(
         "Cambiar Estado",
-        `¿Deseas ${
-          nuevoEstado === "activo" ? "activar" : "desactivar"
+        `¿Deseas ${nuevoEstado === "activo" ? "activar" : "desactivar"
         } el producto "${nombre}"?`,
         [
           { text: "Cancelar", style: "cancel" },
@@ -500,7 +499,7 @@ export default function ProductosSection({ token, navigation }) {
                 Alert.alert(
                   "Error",
                   error.response?.data?.error?.message ||
-                    "Error al cambiar el estado del producto"
+                  "Error al cambiar el estado del producto"
                 );
               }
             },
@@ -554,7 +553,7 @@ export default function ProductosSection({ token, navigation }) {
                   style={[
                     styles.paginacionNumeroTexto,
                     paginaActual === numero &&
-                      styles.paginacionNumeroTextoActivo,
+                    styles.paginacionNumeroTextoActivo,
                   ]}
                 >
                   {numero}
@@ -903,26 +902,28 @@ export default function ProductosSection({ token, navigation }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Clave"
-                  value={productoData.clave}
+                  placeholderTextColor="#888"
+                  value={productoData.clave || undefined}
                   onChangeText={(text) => handleInputChange("clave", text)}
                 />
 
                 <TextInput
                   style={styles.input}
                   placeholder="Nombre"
-                  value={productoData.nombre}
+                  placeholderTextColor="#888"
+                  value={productoData.nombre || undefined}
                   onChangeText={(text) => handleInputChange("nombre", text)}
                 />
 
                 <Text style={styles.label}>Categoría</Text>
                 <Picker
-                  selectedValue={productoData.categoria_id}
-                  onValueChange={(value) =>
-                    handleInputChange("categoria_id", value)
-                  }
-                  style={styles.picker}
+                  selectedValue={productoData.categoria_id || "default"}
+                  onValueChange={(value) => {
+                    if (value !== "default") handleInputChange("categoria_id", value);
+                  }}
+                  style={[styles.picker, { color: productoData.categoria_id ? "#000" : "#888" }]}
                 >
-                  <Picker.Item label="Selecciona una categoría" value="" />
+                  <Picker.Item label="Selecciona una categoría" value="default" />
                   {categorias.map((categoria) => (
                     <Picker.Item
                       key={categoria.id}
@@ -934,13 +935,13 @@ export default function ProductosSection({ token, navigation }) {
 
                 <Text style={styles.label}>Receta (Opcional)</Text>
                 <Picker
-                  selectedValue={productoData.receta_id}
-                  onValueChange={(value) =>
-                    handleInputChange("receta_id", value)
-                  }
-                  style={styles.picker}
+                  selectedValue={productoData.receta_id || "default"}
+                  onValueChange={(value) => {
+                    if (value !== "default") handleInputChange("receta_id", value);
+                  }}
+                  style={[styles.picker, { color: productoData.receta_id ? "#000" : "#888" }]}
                 >
-                  <Picker.Item label="Sin receta (producto directo)" value="" />
+                  <Picker.Item label="Sin receta (producto directo)" value="default" />
                   {recetas.map((receta) => (
                     <Picker.Item
                       key={receta.id}
@@ -952,13 +953,13 @@ export default function ProductosSection({ token, navigation }) {
 
                 <Text style={styles.label}>Prioridad</Text>
                 <Picker
-                  selectedValue={productoData.prioridad}
-                  onValueChange={(value) =>
-                    handleInputChange("prioridad", value)
-                  }
-                  style={styles.picker}
+                  selectedValue={productoData.prioridad || "default"}
+                  onValueChange={(value) => {
+                    if (value !== "default") handleInputChange("prioridad", value);
+                  }}
+                  style={[styles.picker, { color: productoData.prioridad ? "#000" : "#888" }]}
                 >
-                  <Picker.Item label="Selecciona una prioridad" value="" />
+                  <Picker.Item label="Selecciona una prioridad" value="default" />
                   <Picker.Item label="1 - Alta" value="1" />
                   <Picker.Item label="2 - Media" value="2" />
                   <Picker.Item label="3 - Baja" value="3" />
@@ -979,11 +980,10 @@ export default function ProductosSection({ token, navigation }) {
                         ? "Se calculará automáticamente"
                         : "Costo unitario (opcional)"
                     }
+                    placeholderTextColor="#888"
                     keyboardType="decimal-pad"
-                    value={productoData.costo_unitario}
-                    onChangeText={(text) =>
-                      handleInputChange("costo_unitario", text)
-                    }
+                    value={productoData.costo_unitario || undefined}
+                    onChangeText={(text) => handleInputChange("costo_unitario", text)}
                     editable={!productoData.receta_id}
                   />
                   {productoData.receta_id && productoData.costo_unitario && (
@@ -997,19 +997,19 @@ export default function ProductosSection({ token, navigation }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Precio de venta"
+                  placeholderTextColor="#888"
                   keyboardType="decimal-pad"
-                  value={productoData.precio_venta}
-                  onChangeText={(text) =>
-                    handleInputChange("precio_venta", text)
-                  }
+                  value={productoData.precio_venta || undefined}
+                  onChangeText={(text) => handleInputChange("precio_venta", text)}
                 />
 
                 {!productoData.receta_id && (
                   <TextInput
                     style={styles.input}
                     placeholder="Existencia inicial"
+                    placeholderTextColor="#888"
                     keyboardType="decimal-pad"
-                    value={productoData.existencia_inicial}
+                    value={productoData.existencia_inicial || undefined}
                     onChangeText={(text) =>
                       handleInputChange("existencia_inicial", text)
                     }
@@ -1020,13 +1020,13 @@ export default function ProductosSection({ token, navigation }) {
                   <>
                     <Text style={styles.label}>Unidad</Text>
                     <Picker
-                      selectedValue={productoData.unidad}
-                      onValueChange={(value) =>
-                        handleInputChange("unidad", value)
-                      }
-                      style={styles.picker}
+                      selectedValue={productoData.unidad || "default"}
+                      onValueChange={(value) => {
+                        if (value !== "default") handleInputChange("unidad", value);
+                      }}
+                      style={[styles.picker, { color: productoData.unidad ? "#000" : "#888" }]}
                     >
-                      <Picker.Item label="Selecciona una unidad" value="" />
+                      <Picker.Item label="Selecciona una unidad" value="default" />
                       <Picker.Item label="Pieza" value="pieza" />
                       <Picker.Item label="Kilogramo" value="kg" />
                       <Picker.Item label="Gramo" value="g" />
@@ -1042,10 +1042,13 @@ export default function ProductosSection({ token, navigation }) {
 
                 <Text style={styles.label}>Estado del Producto</Text>
                 <Picker
-                  selectedValue={productoData.estado}
-                  onValueChange={(value) => handleInputChange("estado", value)}
-                  style={styles.picker}
+                  selectedValue={productoData.estado || "default"}
+                  onValueChange={(value) => {
+                    if (value !== "default") handleInputChange("estado", value);
+                  }}
+                  style={[styles.picker, { color: productoData.estado ? "#000" : "#888" }]}
                 >
+                  <Picker.Item label="Selecciona un estado" value="default" />
                   <Picker.Item label="Activo" value="activo" />
                   <Picker.Item label="Inactivo" value="inactivo" />
                 </Picker>
