@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { API } from "../../../../services/api";
@@ -24,181 +25,254 @@ export default function ProductosSection({ token, navigation }) {
   const [textoBusqueda, setTextoBusqueda] = useState("");
   const [recetas, setRecetas] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [loadingCosts, setLoadingCosts] = useState(false);
   const [vistaTabla, setVistaTabla] = useState(false);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const productosPorPagina = 10;
+
   const [productoData, setProductoData] = useState({
     clave: "",
     nombre: "",
     categoria_id: "",
     receta_id: "",
     prioridad: "",
-    costo_receta: "",
-    costo_redondeado: "",
+    costo_unitario: "",
     precio_venta: "",
     existencia_inicial: "",
     unidad: "",
     estado: "activo",
   });
-  
-  // Estado para el modal de costos
-  const [modalCostosVisible, setModalCostosVisible] = useState(false);
-  const [costosCalculados, setCostosCalculados] = useState({
-    costo_receta: 0,
-    costo_redondeado: 0
-  });
 
+  // Cargar datos iniciales con manejo de errores mejorado
   useEffect(() => {
-    fetchProductos();
-    fetchRecetas();
-    fetchCategorias();
+    let isMounted = true;
+
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        await Promise.all([
+          fetchProductos(isMounted),
+          fetchRecetas(isMounted),
+          fetchCategorias(isMounted),
+        ]);
+      } catch (err) {
+        if (isMounted) {
+          console.error("Error loading initial data:", err);
+          setError("Error al cargar los datos iniciales");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Filtrar productos cuando cambia el texto de búsqueda
   useEffect(() => {
+    if (!Array.isArray(productos)) {
+      setProductosFiltrados([]);
+      return;
+    }
+
     if (textoBusqueda.trim() === "") {
       setProductosFiltrados(productos);
     } else {
-      const filtrados = productos.filter((producto) =>
-        producto.nombre.toLowerCase().includes(textoBusqueda.toLowerCase()) ||
-        producto.clave.toLowerCase().includes(textoBusqueda.toLowerCase())
-      );
+      const filtrados = productos.filter((producto) => {
+        const nombre = producto?.nombre?.toLowerCase() || "";
+        const clave = producto?.clave?.toLowerCase() || "";
+        const busqueda = textoBusqueda.toLowerCase();
+        return nombre.includes(busqueda) || clave.includes(busqueda);
+      });
       setProductosFiltrados(filtrados);
     }
+    setPaginaActual(1);
   }, [textoBusqueda, productos]);
 
-  const fetchProductos = async () => {
+  const fetchProductos = async (isMounted = true) => {
     try {
       const response = await API.get("/restaurante/admin/productos", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.data.success) {
-        const productosData = response.data.data.productos;
+
+      if (isMounted && response.data.success) {
+        const productosData = response.data.data?.productos || [];
         setProductos(productosData);
         setProductosFiltrados(productosData);
       }
     } catch (error) {
-      console.error("Error al obtener productos:", error);
-      if (error.response?.status === 401) {
-        navigation.navigate("Login");
+      if (isMounted) {
+        console.error("Error al obtener productos:", error);
+        if (error.response?.status === 401) {
+          Alert.alert(
+            "Sesión expirada",
+            "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+            [{ text: "OK", onPress: () => navigation.navigate("Login") }]
+          );
+        }
       }
     }
   };
 
-  const fetchRecetas = async () => {
+  const fetchRecetas = async (isMounted = true) => {
     try {
       const response = await API.get("/restaurante/admin/recetas", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.data.success) {
-        setRecetas(response.data.data);
+
+      if (isMounted && response.data.success) {
+        setRecetas(response.data.data || []);
       }
     } catch (error) {
-      console.error("Error al obtener recetas:", error);
-      if (error.response?.status === 401) {
-        navigation.navigate("Login");
+      if (isMounted) {
+        console.error("Error al obtener recetas:", error);
       }
     }
   };
 
-  const fetchCategorias = async () => {
+  const fetchCategorias = async (isMounted = true) => {
     try {
       const response = await API.get("/restaurante/admin/categorias", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.data.success) {
-        setCategorias(response.data.data);
+
+      if (isMounted && response.data.success) {
+        setCategorias(response.data.data || []);
       }
     } catch (error) {
-      console.error("Error al obtener categorías:", error);
+      if (isMounted) {
+        console.error("Error al obtener categorías:", error);
+      }
     }
   };
 
-  // Nueva función para calcular costos de receta
-  const calcularCostosReceta = async (recetaId) => {
-    if (!recetaId) return;
+  const handleInputChange = useCallback(
+    (field, value) => {
+      setProductoData((prev) => {
+        const newData = { ...prev, [field]: value };
 
-    setLoadingCosts(true);
-    try {
-      const response = await API.get(
-        `/restaurante/admin/recetas/${recetaId}/costos`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        if (field === "receta_id") {
+          if (value) {
+            newData.existencia_inicial = "";
+            newData.unidad = "";
+
+            const recetaSeleccionada = recetas.find(
+              (r) => r.id.toString() === value
+            );
+            if (recetaSeleccionada?.costo_redondeado) {
+              newData.costo_unitario =
+                recetaSeleccionada.costo_redondeado.toString();
+            }
+          } else {
+            newData.costo_unitario = "";
+          }
         }
-      );
 
-      if (response.data.success) {
-        const { costo_receta, costo_redondeado } = response.data.data;
-
-        // Costo receta con más precisión (4 decimales)
-        const costoRecetaFormateado = parseFloat(costo_receta).toFixed(4);
-        // Costo redondeado con formato estándar (2 decimales)
-        const costoRedondeadoFormateado = parseFloat(costo_redondeado).toFixed(2);
-
-        setProductoData((prev) => ({
-          ...prev,
-          costo_receta: costoRecetaFormateado,
-          costo_redondeado: costoRedondeadoFormateado,
-        }));
-
-        // Guardar los costos y mostrar modal
-        setCostosCalculados({
-          costo_receta: costoRecetaFormateado,
-          costo_redondeado: costoRedondeadoFormateado
-        });
-        setModalCostosVisible(true);
-      }
-    } catch (error) {
-      console.error("Error al calcular costos:", error);
-      Alert.alert("Error", "No se pudieron calcular los costos de la receta");
-    } finally {
-      setLoadingCosts(false);
-    }
-  };
-
-  const handleInputChange = (field, value) => {
-    setProductoData((prev) => {
-      const newData = { ...prev, [field]: value };
-
-      // Limpiar campos cuando se deselecciona una receta
-      if (field === "receta_id") {
-        if (value) {
-          // Si se selecciona una receta, limpiar campos de producto sin receta
-          newData.existencia_inicial = "";
-          newData.unidad = "";
-          // Calcular costos automáticamente
-          calcularCostosReceta(value);
-        } else {
-          // Si se deselecciona la receta, limpiar costos calculados
-          newData.costo_receta = "";
-          newData.costo_redondeado = "";
+        if (
+          field === "precio_venta" ||
+          field === "costo_unitario" ||
+          field === "existencia_inicial"
+        ) {
+          const regex = /^\d*\.?\d*$/;
+          if (value && !regex.test(value)) {
+            return prev;
+          }
         }
-      }
 
-      return newData;
-    });
-  };
+        return newData;
+      });
+    },
+    [recetas]
+  );
 
-  const limpiarBusqueda = () => {
+  const limpiarBusqueda = useCallback(() => {
     setTextoBusqueda("");
-  };
+  }, []);
 
-  const resetForm = () => {
+  const indexUltimoProducto = paginaActual * productosPorPagina;
+  const indexPrimerProducto = indexUltimoProducto - productosPorPagina;
+  const productosActuales = productosFiltrados.slice(
+    indexPrimerProducto,
+    indexUltimoProducto
+  );
+  const totalPaginas = Math.ceil(
+    productosFiltrados.length / productosPorPagina
+  );
+
+  const cambiarPagina = useCallback((numeroPagina) => {
+    setPaginaActual(numeroPagina);
+  }, []);
+
+  const paginaSiguiente = useCallback(() => {
+    if (paginaActual < totalPaginas) {
+      setPaginaActual(paginaActual + 1);
+    }
+  }, [paginaActual, totalPaginas]);
+
+  const paginaAnterior = useCallback(() => {
+    if (paginaActual > 1) {
+      setPaginaActual(paginaActual - 1);
+    }
+  }, [paginaActual]);
+
+  const obtenerNumerosPagina = useCallback(() => {
+    const numeros = [];
+    const maxVisible = 5;
+
+    if (totalPaginas <= maxVisible) {
+      for (let i = 1; i <= totalPaginas; i++) {
+        numeros.push(i);
+      }
+    } else {
+      if (paginaActual <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          numeros.push(i);
+        }
+        numeros.push("...");
+        numeros.push(totalPaginas);
+      } else if (paginaActual >= totalPaginas - 2) {
+        numeros.push(1);
+        numeros.push("...");
+        for (let i = totalPaginas - 3; i <= totalPaginas; i++) {
+          numeros.push(i);
+        }
+      } else {
+        numeros.push(1);
+        numeros.push("...");
+        for (let i = paginaActual - 1; i <= paginaActual + 1; i++) {
+          numeros.push(i);
+        }
+        numeros.push("...");
+        numeros.push(totalPaginas);
+      }
+    }
+
+    return numeros;
+  }, [paginaActual, totalPaginas]);
+
+  const resetForm = useCallback(() => {
     setProductoData({
       clave: "",
       nombre: "",
       categoria_id: "",
       receta_id: "",
       prioridad: "",
-      costo_receta: "",
-      costo_redondeado: "",
+      costo_unitario: "",
       precio_venta: "",
       existencia_inicial: "",
       unidad: "",
@@ -206,59 +280,115 @@ export default function ProductosSection({ token, navigation }) {
     });
     setEditMode(false);
     setEditingProductId(null);
-  };
+  }, []);
 
-  const validarFormulario = () => {
-    const camposRequeridos = [
-      "clave",
-      "nombre",
-      "categoria_id",
-      "prioridad",
-      "costo_receta",
-      "costo_redondeado",
-      "precio_venta",
-    ];
+  const validarFormulario = useCallback(() => {
+    if (!productoData.clave || !productoData.clave.trim()) {
+      Alert.alert("Error", "La clave es requerida");
+      return false;
+    }
 
-    for (let campo of camposRequeridos) {
-      if (!productoData[campo]) {
-        Alert.alert("Error", `El campo ${campo} es requerido`);
+    if (!productoData.nombre || !productoData.nombre.trim()) {
+      Alert.alert("Error", "El nombre es requerido");
+      return false;
+    }
+
+    if (!productoData.categoria_id) {
+      Alert.alert("Error", "La categoría es requerida");
+      return false;
+    }
+
+    if (!productoData.prioridad) {
+      Alert.alert("Error", "La prioridad es requerida");
+      return false;
+    }
+
+    if (!productoData.precio_venta) {
+      Alert.alert("Error", "El precio de venta es requerido");
+      return false;
+    }
+
+    const precioVenta = parseFloat(productoData.precio_venta);
+    if (isNaN(precioVenta) || precioVenta <= 0) {
+      Alert.alert(
+        "Error",
+        "El precio de venta debe ser un número válido mayor a 0"
+      );
+      return false;
+    }
+
+    if (productoData.receta_id) {
+      if (!productoData.costo_unitario) {
+        Alert.alert(
+          "Error",
+          "El costo unitario es requerido para productos con receta"
+        );
+        return false;
+      }
+      const costoUnitario = parseFloat(productoData.costo_unitario);
+      if (isNaN(costoUnitario) || costoUnitario < 0) {
+        Alert.alert(
+          "Error",
+          "El costo unitario debe ser un número válido mayor o igual a 0"
+        );
         return false;
       }
     }
 
-    // Validar campos específicos para productos sin receta
     if (!productoData.receta_id) {
-      if (!productoData.existencia_inicial || !productoData.unidad) {
+      if (!productoData.existencia_inicial) {
         Alert.alert(
           "Error",
-          "Los campos existencia inicial y unidad son requeridos para productos sin receta"
+          "La existencia inicial es requerida para productos sin receta"
+        );
+        return false;
+      }
+
+      if (!productoData.unidad) {
+        Alert.alert(
+          "Error",
+          "La unidad es requerida para productos sin receta"
+        );
+        return false;
+      }
+
+      const existencia = parseFloat(productoData.existencia_inicial);
+      if (isNaN(existencia) || existencia < 0) {
+        Alert.alert(
+          "Error",
+          "La existencia inicial debe ser un número válido mayor o igual a 0"
         );
         return false;
       }
     }
 
     return true;
-  };
+  }, [productoData]);
 
   const guardarProducto = async () => {
     if (!validarFormulario()) return;
 
     try {
       const dataToSend = {
-        clave: productoData.clave,
-        nombre: productoData.nombre,
+        clave: productoData.clave.trim(),
+        nombre: productoData.nombre.trim(),
         categoria_id: parseInt(productoData.categoria_id),
         receta_id: productoData.receta_id
           ? parseInt(productoData.receta_id)
           : null,
         prioridad: parseFloat(productoData.prioridad),
-        costo_receta: parseFloat(productoData.costo_receta),
-        costo_redondeado: parseFloat(productoData.costo_redondeado),
         precio_venta: parseFloat(productoData.precio_venta),
         estado: productoData.estado,
       };
 
-      // Solo agregar campos de inventario si no tiene receta
+      if (productoData.receta_id) {
+        dataToSend.costo_unitario = parseFloat(productoData.costo_unitario);
+      } else {
+        if (productoData.costo_unitario && productoData.costo_unitario.trim()) {
+          dataToSend.costo_unitario = parseFloat(productoData.costo_unitario);
+        }
+      }
+
       if (!productoData.receta_id) {
         dataToSend.existencia_inicial = parseFloat(
           productoData.existencia_inicial
@@ -298,145 +428,268 @@ export default function ProductosSection({ token, navigation }) {
       }
     } catch (error) {
       console.error("Error al guardar producto:", error);
-      Alert.alert(
-        "Error",
-        error.response?.data?.error?.message || "Error al guardar el producto"
-      );
+
+      let errorMessage = "Error al guardar el producto";
+
+      if (error.response?.data?.error?.details) {
+        const details = error.response.data.error.details;
+        const errores = Object.entries(details)
+          .map(([campo, mensajes]) => `${campo}: ${mensajes.join(", ")}`)
+          .join("\n");
+        errorMessage = `Errores de validación:\n${errores}`;
+      } else if (error.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      Alert.alert("Error", errorMessage);
     }
   };
 
-  const editarProducto = (producto) => {
+  const editarProducto = useCallback((producto) => {
+    if (!producto) return;
+
     setProductoData({
-      clave: producto.clave,
-      nombre: producto.nombre,
-      categoria_id: producto.categoria_id.toString(),
+      clave: producto.clave || "",
+      nombre: producto.nombre || "",
+      categoria_id: producto.categoria_id?.toString() || "",
       receta_id: producto.receta_id ? producto.receta_id.toString() : "",
-      prioridad: producto.prioridad.toString(),
-      costo_receta: producto.costo_receta.toString(),
-      costo_redondeado: producto.costo_redondeado.toString(),
-      precio_venta: producto.precio_venta.toString(),
-      existencia_inicial: producto.existencia
-        ? producto.existencia.toString()
-        : "",
+      prioridad: producto.prioridad?.toString() || "",
+      costo_unitario: producto.costo_unitario?.toString() || "",
+      precio_venta: producto.precio_venta?.toString() || "",
+      existencia_inicial: producto.existencia?.toString() || "",
       unidad: producto.unidad || "",
-      estado: producto.estado,
+      estado: producto.estado || "activo",
     });
     setEditMode(true);
     setEditingProductId(producto.id);
     setModalVisible(true);
-  };
+  }, []);
 
-  const eliminarProducto = (id, nombre) => {
-    Alert.alert(
-      "Confirmar eliminación",
-      `¿Estás seguro de que deseas eliminar el producto "${nombre}"?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const response = await API.delete(
-                `/restaurante/admin/productos/${id}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
+  const cambiarEstadoProducto = useCallback(
+    (id, estadoActual, nombre) => {
+      const nuevoEstado = estadoActual === "activo" ? "inactivo" : "activo";
+
+      Alert.alert(
+        "Cambiar Estado",
+        `¿Deseas ${
+          nuevoEstado === "activo" ? "activar" : "desactivar"
+        } el producto "${nombre}"?`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Confirmar",
+            onPress: async () => {
+              try {
+                const response = await API.patch(
+                  `/restaurante/admin/productos/${id}/estado`,
+                  { estado: nuevoEstado },
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+                if (response.data.success) {
+                  Alert.alert("Éxito", "Estado actualizado correctamente");
+                  fetchProductos();
                 }
-              );
-              if (response.data.success) {
-                Alert.alert("Éxito", "Producto eliminado correctamente");
-                fetchProductos();
+              } catch (error) {
+                console.error("Error al cambiar estado:", error);
+                Alert.alert(
+                  "Error",
+                  error.response?.data?.error?.message ||
+                    "Error al cambiar el estado del producto"
+                );
               }
-            } catch (error) {
-              console.error("Error al eliminar producto:", error);
-              Alert.alert(
-                "Error",
-                error.response?.data?.error?.message ||
-                "Error al eliminar el producto"
-              );
-            }
+            },
           },
-        },
-      ]
-    );
-  };
+        ]
+      );
+    },
+    [token]
+  );
 
-  const abrirModal = () => {
+  const abrirModal = useCallback(() => {
     resetForm();
     setModalVisible(true);
-  };
+  }, [resetForm]);
 
-  const renderProductoItem = (item) => (
-    <View key={item.id} style={styles.productCard}>
-      <View style={styles.productHeaderRow}>
-        {/* Columna 1: Nombre */}
-        <View style={styles.colItem}>
-          <Text style={styles.productName}>{item.nombre}</Text>
+  const renderPaginacion = useCallback(() => {
+    if (productosFiltrados.length === 0) return null;
+
+    return (
+      <View style={styles.paginacionContainer}>
+        <TouchableOpacity
+          style={[
+            styles.paginacionBoton,
+            paginaActual === 1 && styles.paginacionBotonDisabled,
+          ]}
+          onPress={paginaAnterior}
+          disabled={paginaActual === 1}
+        >
+          <Text style={styles.paginacionTexto}>←</Text>
+        </TouchableOpacity>
+
+        <View style={styles.paginacionNumeros}>
+          {obtenerNumerosPagina().map((numero, index) => {
+            if (numero === "...") {
+              return (
+                <Text key={`dots-${index}`} style={styles.paginacionPuntos}>
+                  ...
+                </Text>
+              );
+            }
+            return (
+              <TouchableOpacity
+                key={numero}
+                style={[
+                  styles.paginacionNumero,
+                  paginaActual === numero && styles.paginacionNumeroActivo,
+                ]}
+                onPress={() => cambiarPagina(numero)}
+              >
+                <Text
+                  style={[
+                    styles.paginacionNumeroTexto,
+                    paginaActual === numero &&
+                      styles.paginacionNumeroTextoActivo,
+                  ]}
+                >
+                  {numero}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* Columna 2: Prioridad */}
-        <View style={styles.colItem}>
-          <Text style={styles.productLabel}>Prioridad:</Text>
-          <Text style={styles.productDetail}>{item.prioridad}</Text>
-        </View>
+        <TouchableOpacity
+          style={[
+            styles.paginacionBoton,
+            paginaActual === totalPaginas && styles.paginacionBotonDisabled,
+          ]}
+          onPress={paginaSiguiente}
+          disabled={paginaActual === totalPaginas}
+        >
+          <Text style={styles.paginacionTexto}>→</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }, [
+    productosFiltrados.length,
+    paginaActual,
+    totalPaginas,
+    paginaAnterior,
+    paginaSiguiente,
+    obtenerNumerosPagina,
+    cambiarPagina,
+  ]);
 
-        {/* Columna 3: Tipo */}
-        <View style={styles.colItem}>
-          <Text style={styles.productLabel}>Tipo:</Text>
-          <Text style={styles.productDetail}>
-            {item.receta_id ? "Con receta" : "Producto directo"}
-          </Text>
-        </View>
+  const renderProductoItem = useCallback(
+    (item) => {
+      if (!item) return null;
 
-        {/* Columna 4: Clave */}
-        <View style={styles.colItem}>
-          <Text style={styles.productCode}>{item.clave}</Text>
-        </View>
+      return (
+        <View key={item.id} style={styles.productCard}>
+          <View style={styles.productHeaderRow}>
+            <View style={styles.colItem}>
+              <Text style={styles.productName}>
+                {item.nombre || "Sin nombre"}
+              </Text>
+            </View>
 
-        {/* Columna 5: Estado como botón */}
-        <View style={styles.colItem}>
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              { backgroundColor: item.estado === "activo" ? "#32b551" : "#ffc107" },
-            ]}
-            disabled
-          >
-            <Text style={styles.statusButtonText}>
-              {item.estado === "activo" ? "Activo" : "Inactivo"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.colItem}>
+              <Text style={styles.productLabel}>Prioridad:</Text>
+              <Text style={styles.productDetail}>
+                {item.prioridad || "N/A"}
+              </Text>
+            </View>
 
-        {/* Columna 6: Acciones */}
-        <View style={styles.colItem}>
-          <View style={styles.productActions}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.editButton]}
-              onPress={() => editarProducto(item)}
-            >
-              <Image
-                source={require("../../../../../assets/editarr.png")}
-                style={styles.iconImage}
-              />
-            </TouchableOpacity>
+            <View style={styles.colItem}>
+              <Text style={styles.productLabel}>Tipo:</Text>
+              <Text style={styles.productDetail}>
+                {item.receta_id ? "Con receta" : "Producto directo"}
+              </Text>
+            </View>
 
-            <TouchableOpacity
-              style={[styles.actionButton, styles.deleteButton]}
-              onPress={() => eliminarProducto(item.id, item.nombre)}
-            >
-              <Image
-                source={require("../../../../../assets/eliminar.png")}
-                style={styles.iconImage}
-              />
-            </TouchableOpacity>
+            <View style={styles.colItem}>
+              <Text style={styles.productCode}>{item.clave || "N/A"}</Text>
+            </View>
+
+            <View style={styles.colItem}>
+              <TouchableOpacity
+                style={[
+                  styles.statusButton,
+                  {
+                    backgroundColor:
+                      item.estado === "activo" ? "#32b551" : "#ffc107",
+                  },
+                ]}
+                onPress={() =>
+                  cambiarEstadoProducto(item.id, item.estado, item.nombre)
+                }
+              >
+                <Text style={styles.statusButtonText}>
+                  {item.estado === "activo" ? "Activo" : "Inactivo"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.colItem}>
+              <View style={styles.productActions}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.editButton]}
+                  onPress={() => editarProducto(item)}
+                >
+                  <Image
+                    source={require("../../../../../assets/editarr.png")}
+                    style={styles.iconImage}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
-      </View>
-    </View>
+      );
+    },
+    [cambiarEstadoProducto, editarProducto]
   );
+
+  // Pantalla de carga
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+          <Text style={styles.loadingText}>Cargando productos...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Pantalla de error
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => {
+              setLoading(true);
+              setError(null);
+              fetchProductos();
+              fetchRecetas();
+              fetchCategorias();
+            }}
+          >
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -455,35 +708,41 @@ export default function ProductosSection({ token, navigation }) {
           </View>
         </TouchableOpacity>
 
-        {/* Toggle Vista Tabla/Lista */}
         <View style={styles.viewToggleContainer}>
           <TouchableOpacity
             style={[
               styles.viewToggleButton,
-              !vistaTabla && styles.viewToggleButtonActive
+              !vistaTabla && styles.viewToggleButtonActive,
             ]}
             onPress={() => setVistaTabla(false)}
           >
-            <Text style={[
-              styles.viewToggleText,
-              !vistaTabla && styles.viewToggleTextActive
-            ]}>Lista</Text>
+            <Text
+              style={[
+                styles.viewToggleText,
+                !vistaTabla && styles.viewToggleTextActive,
+              ]}
+            >
+              Lista
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
               styles.viewToggleButton,
-              vistaTabla && styles.viewToggleButtonActive
+              vistaTabla && styles.viewToggleButtonActive,
             ]}
             onPress={() => setVistaTabla(true)}
           >
-            <Text style={[
-              styles.viewToggleText,
-              vistaTabla && styles.viewToggleTextActive
-            ]}>Tabla</Text>
+            <Text
+              style={[
+                styles.viewToggleText,
+                vistaTabla && styles.viewToggleTextActive,
+              ]}
+            >
+              Tabla
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Buscador */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <TextInput
@@ -497,15 +756,15 @@ export default function ProductosSection({ token, navigation }) {
                 style={styles.clearButton}
                 onPress={limpiarBusqueda}
               >
+                <Text style={styles.clearButtonText}>✕</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
 
-        {/* Vista de Lista */}
         {!vistaTabla && (
           <View style={styles.productsList}>
-            {productosFiltrados.map((producto) => renderProductoItem(producto))}
+            {productosActuales.map((producto) => renderProductoItem(producto))}
 
             {productosFiltrados.length === 0 && textoBusqueda.length > 0 && (
               <Text style={styles.emptyText}>
@@ -514,66 +773,87 @@ export default function ProductosSection({ token, navigation }) {
             )}
 
             {productos.length === 0 && (
-              <Text style={styles.emptyText}>
-                No hay productos registrados
-              </Text>
+              <Text style={styles.emptyText}>No hay productos registrados</Text>
             )}
           </View>
         )}
 
-        {/* Vista de Tabla */}
+        {!vistaTabla && renderPaginacion()}
+
         {vistaTabla && (
           <View style={styles.tableContainer}>
-            {/* Encabezados de la tabla */}
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, styles.columnClave]}>Clave</Text>
-              <Text style={[styles.tableHeaderText, styles.columnNombre]}>Nombre</Text>
-              <Text style={[styles.tableHeaderText, styles.columnPrecio]}>Precio</Text>
+              <Text style={[styles.tableHeaderText, styles.columnClave]}>
+                Clave
+              </Text>
+              <Text style={[styles.tableHeaderText, styles.columnNombre]}>
+                Nombre
+              </Text>
+              <Text style={[styles.tableHeaderText, styles.columnPrecio]}>
+                Precio
+              </Text>
               <View style={[styles.columnEstado, styles.headerEstadoContainer]}>
                 <Text style={styles.tableHeaderText}>Estado</Text>
               </View>
-              <View style={[styles.columnAcciones, styles.headerActionsContainer]}>
+              <View
+                style={[styles.columnAcciones, styles.headerActionsContainer]}
+              >
                 <Text style={styles.tableHeaderText}>Acciones</Text>
               </View>
             </View>
 
-            {/* Filas de la tabla */}
-            {productosFiltrados.map((producto, index) => (
+            {productosActuales.map((producto, index) => (
               <View
                 key={producto.id}
                 style={[
                   styles.tableRow,
-                  index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd
+                  index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd,
                 ]}
               >
                 <Text style={[styles.tableCellText, styles.columnClave]}>
-                  {producto.clave}
+                  {producto.clave || "N/A"}
                 </Text>
-                <Text style={[styles.tableCellText, styles.columnNombre]} numberOfLines={2}>
-                  {producto.nombre}
+                <Text
+                  style={[styles.tableCellText, styles.columnNombre]}
+                  numberOfLines={2}
+                >
+                  {producto.nombre || "Sin nombre"}
                 </Text>
                 <Text style={[styles.tableCellText, styles.columnPrecio]}>
-                  ${producto.precio_venta || '0.00'}
+                  ${producto.precio_venta || "0.00"}
                 </Text>
                 <View style={[styles.tableCell, styles.columnEstado]}>
-                  <View style={[
-                    styles.estadoBadge,
-                    producto.estado === 'activo' ? styles.estadoActivo : styles.estadoInactivo
-                  ]}>
-                    <Text style={[
-                      styles.estadoText,
-                      producto.estado === 'activo' ? styles.estadoTextoActivo : styles.estadoTextoInactivo
-                    ]}>
-                      {producto.estado === 'activo' ? 'Activo' : 'Inactivo'}
+                  <TouchableOpacity
+                    style={[
+                      styles.estadoBadge,
+                      producto.estado === "activo"
+                        ? styles.estadoActivo
+                        : styles.estadoInactivo,
+                    ]}
+                    onPress={() =>
+                      cambiarEstadoProducto(
+                        producto.id,
+                        producto.estado,
+                        producto.nombre
+                      )
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.estadoText,
+                        producto.estado === "activo"
+                          ? styles.estadoTextoActivo
+                          : styles.estadoTextoInactivo,
+                      ]}
+                    >
+                      {producto.estado === "activo" ? "Activo" : "Inactivo"}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
                 <View style={[styles.columnAcciones, styles.actionsContainer]}>
-                  <TouchableOpacity
-                    onPress={() => editarProducto(producto)}
-                  >
+                  <TouchableOpacity onPress={() => editarProducto(producto)}>
                     <Image
-                      source={require('../../../../../assets/editarr.png')}
+                      source={require("../../../../../assets/editarr.png")}
                       style={styles.icon}
                       accessibilityLabel="Editar producto"
                     />
@@ -582,11 +862,11 @@ export default function ProductosSection({ token, navigation }) {
               </View>
             ))}
 
-            {/* Mensajes si no hay resultados */}
             {productosFiltrados.length === 0 && textoBusqueda.length > 0 && (
               <View style={styles.tableEmptyRow}>
                 <Text style={styles.emptyText}>
-                  No se encontraron productos que coincidan con "{textoBusqueda}"
+                  No se encontraron productos que coincidan con "{textoBusqueda}
+                  "
                 </Text>
               </View>
             )}
@@ -600,9 +880,10 @@ export default function ProductosSection({ token, navigation }) {
             )}
           </View>
         )}
+
+        {vistaTabla && renderPaginacion()}
       </ScrollView>
 
-      {/* Modal de Formulario de Producto */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView
           style={styles.modalContainer}
@@ -619,7 +900,6 @@ export default function ProductosSection({ token, navigation }) {
                   {editMode ? "Editar Producto" : "Agregar Producto"}
                 </Text>
 
-                {/* 1. CLAVE */}
                 <TextInput
                   style={styles.input}
                   placeholder="Clave"
@@ -627,7 +907,6 @@ export default function ProductosSection({ token, navigation }) {
                   onChangeText={(text) => handleInputChange("clave", text)}
                 />
 
-                {/* 2. NOMBRE */}
                 <TextInput
                   style={styles.input}
                   placeholder="Nombre"
@@ -635,7 +914,6 @@ export default function ProductosSection({ token, navigation }) {
                   onChangeText={(text) => handleInputChange("nombre", text)}
                 />
 
-                {/* 3. CATEGORÍA */}
                 <Text style={styles.label}>Categoría</Text>
                 <Picker
                   selectedValue={productoData.categoria_id}
@@ -654,7 +932,6 @@ export default function ProductosSection({ token, navigation }) {
                   ))}
                 </Picker>
 
-                {/* 4. RECETA */}
                 <Text style={styles.label}>Receta (Opcional)</Text>
                 <Picker
                   selectedValue={productoData.receta_id}
@@ -662,7 +939,6 @@ export default function ProductosSection({ token, navigation }) {
                     handleInputChange("receta_id", value)
                   }
                   style={styles.picker}
-                  enabled={!loadingCosts}
                 >
                   <Picker.Item label="Sin receta (producto directo)" value="" />
                   {recetas.map((receta) => (
@@ -674,13 +950,6 @@ export default function ProductosSection({ token, navigation }) {
                   ))}
                 </Picker>
 
-                {loadingCosts && (
-                  <Text style={styles.loadingText}>
-                    Calculando costos de la receta...
-                  </Text>
-                )}
-
-                {/* 5. PRIORIDAD */}
                 <Text style={styles.label}>Prioridad</Text>
                 <Picker
                   selectedValue={productoData.prioridad}
@@ -695,39 +964,36 @@ export default function ProductosSection({ token, navigation }) {
                   <Picker.Item label="3 - Baja" value="3" />
                 </Picker>
 
-                {/* 6. COSTO RECETA */}
-                <TextInput
-                  style={[
-                    styles.input,
-                    productoData.receta_id && productoData.costo_receta
-                      ? styles.suggestedInput
-                      : null,
-                  ]}
-                  placeholder="Costo receta"
-                  keyboardType="decimal-pad"
-                  value={productoData.costo_receta}
-                  onChangeText={(text) =>
-                    handleInputChange("costo_receta", text)
-                  }
-                />
+                <View>
+                  <Text style={styles.label}>
+                    Costo unitario{" "}
+                    {productoData.receta_id ? "(Automático)" : "(Opcional)"}
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      productoData.receta_id && styles.inputReadOnly,
+                    ]}
+                    placeholder={
+                      productoData.receta_id
+                        ? "Se calculará automáticamente"
+                        : "Costo unitario (opcional)"
+                    }
+                    keyboardType="decimal-pad"
+                    value={productoData.costo_unitario}
+                    onChangeText={(text) =>
+                      handleInputChange("costo_unitario", text)
+                    }
+                    editable={!productoData.receta_id}
+                  />
+                  {productoData.receta_id && productoData.costo_unitario && (
+                    <Text style={styles.helperText}>
+                      Costo de la receta: $
+                      {parseFloat(productoData.costo_unitario).toFixed(2)}
+                    </Text>
+                  )}
+                </View>
 
-                {/* 7. COSTO REDONDEADO */}
-                <TextInput
-                  style={[
-                    styles.input,
-                    productoData.receta_id && productoData.costo_redondeado
-                      ? styles.suggestedInput
-                      : null,
-                  ]}
-                  placeholder="Costo redondeado"
-                  keyboardType="decimal-pad"
-                  value={productoData.costo_redondeado}
-                  onChangeText={(text) =>
-                    handleInputChange("costo_redondeado", text)
-                  }
-                />
-
-                {/* 8. PRECIO VENTA */}
                 <TextInput
                   style={styles.input}
                   placeholder="Precio de venta"
@@ -738,7 +1004,6 @@ export default function ProductosSection({ token, navigation }) {
                   }
                 />
 
-                {/* 9. EXISTENCIA - Solo para productos sin receta */}
                 {!productoData.receta_id && (
                   <TextInput
                     style={styles.input}
@@ -751,7 +1016,6 @@ export default function ProductosSection({ token, navigation }) {
                   />
                 )}
 
-                {/* 10. UNIDAD - Solo para productos sin receta */}
                 {!productoData.receta_id && (
                   <>
                     <Text style={styles.label}>Unidad</Text>
@@ -776,7 +1040,6 @@ export default function ProductosSection({ token, navigation }) {
                   </>
                 )}
 
-                {/* 11. ESTADO */}
                 <Text style={styles.label}>Estado del Producto</Text>
                 <Picker
                   selectedValue={productoData.estado}
@@ -790,14 +1053,16 @@ export default function ProductosSection({ token, navigation }) {
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
                     style={[styles.button, styles.cancelButton]}
-                    onPress={() => setModalVisible(false)}
+                    onPress={() => {
+                      setModalVisible(false);
+                      resetForm();
+                    }}
                   >
                     <Text style={styles.cancelButtonText}>Cancelar</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.button, styles.submitButton]}
                     onPress={guardarProducto}
-                    disabled={loadingCosts}
                   >
                     <Text style={styles.submitButtonText}>
                       {editMode ? "Actualizar" : "Guardar"}
@@ -809,64 +1074,11 @@ export default function ProductosSection({ token, navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
-      {/* Modal de Costos Calculados */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalCostosVisible}
-        onRequestClose={() => setModalCostosVisible(false)}
-      >
-        <View style={styles.modalCostosOverlay}>
-          <View style={styles.modalCostosContent}>
-            <Text style={styles.modalCostosTitle}>💰 Costos Calculados</Text>
-            
-            <View style={styles.modalCostosBody}>
-              <Text style={styles.modalCostosText}>
-                Se han calculado los costos de la receta:
-              </Text>
-              
-              {/* Costo Exacto */}
-              <View style={[styles.costoItem, styles.costoItemExacto]}>
-                <View style={styles.costoInfoContainer}>
-                  <Text style={styles.costoLabel}> Costo receta (exacto)</Text>
-                  <Text style={styles.costoSubLabel}>Cálculo preciso de ingredientes</Text>
-                </View>
-                <Text style={styles.costoValorExacto}>${costosCalculados.costo_receta}</Text>
-              </View>
-              
-              
-              {/* Costo Redondeado */}
-              <View style={[styles.costoItem, styles.costoItemRedondeado]}>
-                <View style={styles.costoInfoContainer}>
-                  <Text style={styles.costoLabel}> Costo redondeado</Text>
-                  <Text style={styles.costoSubLabel}>Para precio de venta</Text>
-                </View>
-                <Text style={styles.costoValor}>${costosCalculados.costo_redondeado}</Text>
-              </View>
-              
-              <Text style={styles.modalCostosFooterText}>
-                ⭐  Puedes modificar estos valores si es necesario.
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.modalCostosButton}
-              onPress={() => setModalCostosVisible(false)}
-            >
-              <Text style={styles.modalCostosButtonText}>Entendido</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // ========================================
-  // CONTENEDOR PRINCIPAL
-  // ========================================
   container: {
     flex: 1,
   },
@@ -874,10 +1086,40 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-
-  // ========================================
-  // TÍTULO Y BOTONES PRINCIPALES
-  // ========================================
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#dc3545",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
   title: {
     fontSize: 30,
     fontWeight: "bold",
@@ -901,13 +1143,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 8,
   },
-
-  // ========================================
-  // TOGGLE DE VISTA (LISTA/TABLA)
-  // ========================================
   viewToggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#dcdcdcff',
+    flexDirection: "row",
+    backgroundColor: "#dcdcdcff",
     borderColor: "#b7b7b7ff",
     borderRadius: 8,
     marginHorizontal: 16,
@@ -919,30 +1157,26 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
-    alignItems: 'center',
+    alignItems: "center",
   },
   viewToggleButtonActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
   },
   viewToggleText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000000ff',
+    fontWeight: "bold",
+    color: "#000000ff",
   },
   viewToggleTextActive: {
-    color: '#fff',
+    color: "#fff",
   },
-
-  // ========================================
-  // BUSCADOR
-  // ========================================
   searchContainer: {
     paddingHorizontal: 20,
     marginVertical: 15,
   },
   searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
   },
   searchInput: {
@@ -958,10 +1192,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     padding: 6,
   },
-
-  // ========================================
-  // VISTA DE LISTA - PRODUCTOS
-  // ========================================
+  clearButtonText: {
+    fontSize: 20,
+    color: "#666",
+  },
   productsList: {
     paddingBottom: 20,
   },
@@ -977,10 +1211,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   productHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
     gap: 8,
   },
   colItem: {
@@ -989,30 +1223,26 @@ const styles = StyleSheet.create({
   },
   productLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#555',
+    fontWeight: "600",
+    color: "#555",
     marginBottom: 2,
   },
   productName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   productDetail: {
     fontSize: 17,
   },
   productCode: {
     fontSize: 17,
-    fontWeight: '500',
+    fontWeight: "500",
   },
-
-  // ========================================
-  // BOTONES DE ESTADO Y ACCIONES
-  // ========================================
   statusButton: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   statusButtonText: {
     color: "#fff",
@@ -1027,88 +1257,73 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 7,
     borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   editButton: {
     backgroundColor: "#f9ebc3ff",
     paddingHorizontal: 16,
     minWidth: 48,
   },
-  deleteButton: {
-    backgroundColor: "#f9c3c3ff",
-    paddingHorizontal: 16,
-    minWidth: 48,
-  },
-
-  // ========================================
-  // VISTA DE TABLA
-  // ========================================
   tableContainer: {
-    width: '100%',
+    width: "100%",
     marginHorizontal: 3,
     marginBottom: 10,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
   },
-
-  // Encabezado de tabla
   tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#f0f0f0',
+    flexDirection: "row",
+    backgroundColor: "#f0f0f0",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
   tableHeaderText: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 19,
-    color: '#333',
-    flexWrap: 'wrap',
+    color: "#333",
+    flexWrap: "wrap",
   },
   headerEstadoContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerActionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 4,
   },
-
-  // Filas de tabla
   tableRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderColor: '#eee',
-    alignItems: 'center',
+    borderColor: "#eee",
+    alignItems: "center",
   },
   tableRowEven: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   tableRowOdd: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   tableCell: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
   tableCellText: {
     fontSize: 18,
-    color: '#444',
-    flexWrap: 'wrap',
+    color: "#444",
+    flexWrap: "wrap",
   },
-
-  // Columnas específicas
   columnClave: {
     flex: 2,
     paddingHorizontal: 8,
@@ -1123,54 +1338,46 @@ const styles = StyleSheet.create({
   },
   columnEstado: {
     flex: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   columnAcciones: {
     flex: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-
-  // Estados visuales en tabla
   actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 20,
   },
   estadoBadge: {
     paddingVertical: 4,
-    paddingHorizontal: 3,
+    paddingHorizontal: 8,
     borderRadius: 12,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   estadoActivo: {
-    backgroundColor: '#d4edda',
+    backgroundColor: "#d4edda",
   },
   estadoInactivo: {
-    backgroundColor: '#f8d7da',
+    backgroundColor: "#f8d7da",
   },
   estadoText: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   estadoTextoActivo: {
-    color: '#155724',
+    color: "#155724",
   },
   estadoTextoInactivo: {
-    color: '#721c24',
+    color: "#721c24",
   },
-
-  // Fila vacía en tabla
   tableEmptyRow: {
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
-
-  // ========================================
-  // MODAL DE FORMULARIO
-  // ========================================
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -1194,10 +1401,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: "center",
   },
-
-  // ========================================
-  // INPUTS Y FORMULARIOS
-  // ========================================
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
@@ -1205,11 +1408,6 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 15,
     fontSize: 16,
-  },
-  suggestedInput: {
-    backgroundColor: "#E8F5E8",
-    borderColor: "#4CAF50",
-    borderWidth: 1,
   },
   label: {
     fontSize: 15,
@@ -1223,10 +1421,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 15,
   },
-
-  // ========================================
-  // BOTONES DEL MODAL DE FORMULARIO
-  // ========================================
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -1256,162 +1450,81 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-
-  // ========================================
-  // MODAL DE COSTOS CALCULADOS
-  // ========================================
-  modalCostosOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCostosContent: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
-    width: '85%',
-    maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalCostosTitle: {
-    fontSize: 25,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-    color: '#333',
-  },
-  modalCostosBody: {
-    marginBottom: 20,
-  },
-  modalCostosText: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 15,
-    lineHeight: 20,
-  },
-  costoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderWidth: 2,
-  },
-  costoItemExacto: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#2196F3',
-  },
-  costoItemRedondeado: {
-    backgroundColor: '#E8F5E9',
-    borderColor: '#4CAF50',
-  },
-  costoInfoContainer: {
-    flex: 1,
-  },
-  costoLabel: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  costoSubLabel: {
-    fontSize: 15,
-    color: '#666',
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-  costoValorExacto: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2196F3',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  costoValor: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-  },
-  diferenciaContainer: {
-    backgroundColor: '#FFF3E0',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF9800',
-  },
-  diferenciaText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#F57C00',
-    marginBottom: 4,
-  },
-  diferenciaSubtext: {
-    fontSize: 12,
-    color: '#E65100',
-    fontStyle: 'italic',
-  },
-  modalCostosFooterText: {
-    fontSize: 15,
-    color: '#999',
-    marginTop: 10,
-    fontStyle: 'italic',
-  },
-  modalCostosButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  modalCostosButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-
-  // ========================================
-  // ICONOS Y ELEMENTOS VISUALES
-  // ========================================
   icon: {
     width: 30,
     height: 30,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
   iconImage: {
     width: 27,
     height: 27,
   },
-
-  // ========================================
-  // TEXTOS Y MENSAJES
-  // ========================================
   emptyText: {
-    textAlign: 'center',
-    color: '#6c757d',
+    textAlign: "center",
+    color: "#6c757d",
     fontSize: 16,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     marginTop: 30,
     paddingHorizontal: 20,
   },
-  loadingText: {
-    textAlign: "center",
-    fontStyle: "italic",
-    color: "#666",
-    marginVertical: 10,
+  paginacionContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingVertical: 10,
   },
-
-  // ========================================
-  // UTILIDADES
-  // ========================================
-  marginTop: {
-    marginTop: 15,
+  paginacionBoton: {
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginHorizontal: 4,
+  },
+  paginacionBotonDisabled: {
+    backgroundColor: "#ccc",
+  },
+  paginacionTexto: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  paginacionNumeros: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 8,
+  },
+  paginacionNumero: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginHorizontal: 2,
+    borderRadius: 6,
+    backgroundColor: "#f0f0f0",
+  },
+  paginacionNumeroActivo: {
+    backgroundColor: "#4CAF50",
+  },
+  paginacionNumeroTexto: {
+    fontSize: 16,
+    color: "#333",
+  },
+  paginacionNumeroTextoActivo: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  paginacionPuntos: {
+    fontSize: 16,
+    color: "#666",
+    marginHorizontal: 4,
+  },
+  inputReadOnly: {
+    backgroundColor: "#f0f0f0",
+    color: "#666",
+  },
+  helperText: {
+    fontSize: 14,
+    color: "#2D9966",
+    marginTop: 4,
+    fontWeight: "600",
   },
 });

@@ -68,7 +68,7 @@ export default function UsuariosSection({ token, navigation }) {
       setSelectedUser(usuario);
       setName(usuario.name);
       setEmail(usuario.email);
-      setSelectedRole(usuario.rol_id || "");
+      setSelectedRole(usuario.role_id || "");
       setPassword("");
     } else {
       setEditMode(false);
@@ -280,7 +280,6 @@ export default function UsuariosSection({ token, navigation }) {
               </Picker>
             </View>
 
-
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
@@ -320,22 +319,22 @@ const styles = StyleSheet.create({
   itemRow: {
     backgroundColor: "#fff",
     borderRadius: 8,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 4,
     marginBottom: 8,
     elevation: 1,
   },
   column: {
-    flexBasis: '30%',
+    flexBasis: "30%",
     minWidth: 100,
     paddingHorizontal: 5,
     marginBottom: 10,
   },
-  leftSpacing: { 
-    paddingLeft: 15
+  leftSpacing: {
+    paddingLeft: 15,
   },
 
   // ======== TEXTOS Y TÍTULOS ========
@@ -382,7 +381,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 18,
-    color: '#333',
+    color: "#333",
   },
 
   // ======== BOTONES ========
@@ -410,9 +409,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   editButton: {
-    alignSelf: 'flex-end',
-    justifyContent: 'center',
-    alignItems: 'center',
+    alignSelf: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
   },
   editIcon: {
     width: 35,
@@ -453,10 +452,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-  backgroundColor: "#F44336" 
+    backgroundColor: "#F44336",
   },
-  submitButton: { 
-  backgroundColor: "#28a745" 
+  submitButton: {
+    backgroundColor: "#28a745",
   },
   cancelButtonText: {
     color: "white",
@@ -479,8 +478,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
     gap: 20,
   },
@@ -497,4 +496,3 @@ const styles = StyleSheet.create({
     color: "#444",
   },
 });
-

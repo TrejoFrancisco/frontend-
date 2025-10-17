@@ -1,8 +1,8 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../screens/LoginScreen";
-import HomeScreen from "../screens/HomeScreen";
 import RestauranteScreen from "../screens/modules/Restaurante/Admin/RestauranteHomeScreen";
 import MeseroScreen from "../screens/modules/Restaurante/Mesero/MeseroScreen";
+import MeseroScreen2 from "../screens/modules/Restaurante/Mesero/MeseroScreen2";
 import CocinaScreen from "../screens/modules/Restaurante/Cocina/CocinaScreen";
 import BartenderScreen from "../screens/modules/Restaurante/Bartender/BartenderScreen";
 import ChefScreen from "../screens/modules/Restaurante/Chef/ChefScreen";
@@ -23,6 +23,11 @@ export default function StackNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="MeseroScreen2"
+        component={MeseroScreen2}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="CocinaScreen"
         component={CocinaScreen}
         options={{ headerShown: false }}
@@ -40,11 +45,6 @@ export default function StackNavigator() {
       <Stack.Screen
         name="Login"
         component={LoginScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="Home"
-        component={HomeScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,15 +14,16 @@ import {
 import { API } from "../../../../services/api";
 import { useAuth } from "../../../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import { useBackHandler } from "../../../../hooks/useBackHandler";
 
 export default function ComandaSection() {
   const { token, logout, user } = useAuth();
-  const navigation = useNavigation();
   const [comandas, setComandas] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [pagoModalVisible, setPagoModalVisible] = useState(false);
   const [ticketModalVisible, setTicketModalVisible] = useState(false);
+  const [unificarModalVisible, setUnificarModalVisible] = useState(false);
   const [selectedComanda, setSelectedComanda] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,6 +32,12 @@ export default function ComandaSection() {
   const [modalDetalleVisible, setModalDetalleVisible] = useState(false);
   const [productoParaDetalle, setProductoParaDetalle] = useState(null);
   const [detalleTemp, setDetalleTemp] = useState("");
+  const [mesasSeleccionadas, setMesasSeleccionadas] = useState([]);
+  const [comandasUnificadas, setComandasUnificadas] = useState([]);
+  const [comandasSeleccionadas, setComandasSeleccionadas] = useState([]);
+
+  const navigation = useNavigation();
+  useBackHandler(navigation);
 
   const [nuevaComanda, setNuevaComanda] = useState({
     nombre: "",
@@ -41,20 +48,15 @@ export default function ComandaSection() {
   });
 
   const [productosSeleccionados, setProductosSeleccionados] = useState({});
-
   const [pagos, setPagos] = useState([{ metodo: "efectivo", monto: "" }]);
   const [productos, setProductos] = useState([]);
-
   const [busquedaProducto, setBusquedaProducto] = useState("");
 
-  useEffect(() => {
-    if (token) {
-      fetchComandas();
-      fetchProductos();
-    }
-  }, [token]);
+  // ========================================
+  // FUNCIONES MEMOIZADAS CON useCallback
+  // ========================================
 
-  const fetchComandas = async () => {
+  const fetchComandas = useCallback(async () => {
     if (!token) {
       setLoading(false);
       return;
@@ -69,7 +71,8 @@ export default function ComandaSection() {
       });
 
       if (response.data.success) {
-        setComandas(response.data.data || []);
+        setComandas(response.data.data.comandas || []);
+        setComandasUnificadas(response.data.data.comandas_unificadas || []);
       }
     } catch (error) {
       console.log("Error al obtener comandas:", error);
@@ -77,12 +80,13 @@ export default function ComandaSection() {
         navigation.navigate("Login");
       }
       setComandas([]);
+      setComandasUnificadas([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, navigation]);
 
-  const fetchProductos = async () => {
+  const fetchProductos = useCallback(async () => {
     if (!token) return;
 
     try {
@@ -100,18 +104,36 @@ export default function ComandaSection() {
       if (error.response?.status === 401) {
         navigation.navigate("Login");
       }
-
       setProductos([]);
     }
-  };
+  }, [token, navigation]);
 
-  const onRefresh = async () => {
+  useEffect(() => {
+    if (token) {
+      fetchComandas();
+      fetchProductos();
+    }
+  }, [token, fetchComandas, fetchProductos]);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchComandas();
     setRefreshing(false);
-  };
+  }, [fetchComandas]);
 
-  const crearComanda = async () => {
+  const resetNuevaComanda = useCallback(() => {
+    setNuevaComanda({
+      mesa: "",
+      personas: "",
+      comensal: "",
+      productos: [],
+    });
+    setProductosSeleccionados({});
+    setBusquedaProducto("");
+    setDetallesProductos({});
+  }, []);
+
+  const crearComanda = useCallback(async () => {
     if (!token) return;
 
     if (!nuevaComanda.mesa || !nuevaComanda.personas) {
@@ -119,7 +141,6 @@ export default function ComandaSection() {
       return;
     }
 
-    // ✅ VERIFICAR que hay productos seleccionados
     if (nuevaComanda.productos.length === 0) {
       Alert.alert("Error", "Debe seleccionar al menos un producto");
       return;
@@ -165,9 +186,16 @@ export default function ComandaSection() {
         Alert.alert("Error", "Ocurrió un error al crear la comanda");
       }
     }
-  };
+  }, [
+    token,
+    nuevaComanda,
+    detallesProductos,
+    resetNuevaComanda,
+    fetchComandas,
+    navigation,
+  ]);
 
-  const editarComanda = async () => {
+  const editarComanda = useCallback(async () => {
     if (!token || !selectedComanda) return;
 
     if (!nuevaComanda.mesa || !nuevaComanda.personas) {
@@ -224,40 +252,94 @@ export default function ComandaSection() {
         Alert.alert("Error", "Ocurrió un error al editar la comanda");
       }
     }
-  };
-  const generarTicket = async (comanda) => {
-    if (!token) return;
+  }, [
+    token,
+    selectedComanda,
+    nuevaComanda,
+    detallesProductos,
+    resetNuevaComanda,
+    fetchComandas,
+    navigation,
+  ]);
 
-    try {
-      const response = await API.get(
-        `/restaurante/mesero/comanda_ticket/${comanda.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
+  const generarTicket = useCallback(
+    async (comanda) => {
+      if (!token) return;
+
+      Alert.alert(
+        "Generar Ticket",
+        "¿Está seguro de generar el ticket? Esta acción marcará los productos pendientes como cancelados.",
+        [
+          {
+            text: "Cancelar",
+            style: "cancel",
           },
-        }
+          {
+            text: "Generar",
+            onPress: async () => {
+              try {
+                const response = await API.get(
+                  `/restaurante/mesero/comanda_ticket/${comanda.id}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+
+                if (response.data.success) {
+                  setTicket(response.data.data);
+                  setTicketModalVisible(true);
+                  fetchComandas();
+                }
+              } catch (error) {
+                console.log("Error al generar ticket:", error);
+                if (error.response?.status === 401) {
+                  navigation.navigate("Login");
+                } else if (error.response?.data?.error) {
+                  Alert.alert("Error", error.response.data.error.message);
+                }
+              }
+            },
+          },
+        ]
       );
+    },
+    [token, fetchComandas, navigation]
+  );
 
-      if (response.data.success) {
-        setTicket(response.data.data);
-        setTicketModalVisible(true);
+  const generarTicketMultiple = useCallback(
+    async (comandaUnificada) => {
+      if (!token) return;
 
-        const comandasActualizadas = comandas.map((c) =>
-          c.id === comanda.id ? { ...c, estado: "cerrada" } : c
+      try {
+        const response = await API.get(
+          `/restaurante/mesero/comanda_ticket_multiple/${comandaUnificada.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
-        setComandas(comandasActualizadas);
-      }
-    } catch (error) {
-      console.log("Error al generar ticket:", error);
-      if (error.response?.status === 401) {
-        navigation.navigate("Login");
-      } else if (error.response?.data?.error) {
-        Alert.alert("Error", error.response.data.error.message);
-      }
-    }
-  };
 
-  const procesarPago = async () => {
+        if (response.data.success) {
+          setTicket(response.data.ticket);
+          setTicketModalVisible(true);
+          fetchComandas();
+        }
+      } catch (error) {
+        console.log("Error al generar ticket múltiple:", error);
+        if (error.response?.status === 401) {
+          navigation.navigate("Login");
+        } else if (error.response?.data?.error) {
+          Alert.alert("Error", error.response.data.error.message);
+        }
+      }
+    },
+    [token, fetchComandas, navigation]
+  );
+
+  const procesarPago = useCallback(async () => {
     if (!token || !selectedComanda) return;
 
     const pagosValidos = pagos.filter(
@@ -298,9 +380,51 @@ export default function ComandaSection() {
         Alert.alert("Error", error.response.data.error.message);
       }
     }
-  };
+  }, [token, selectedComanda, pagos, fetchComandas, navigation]);
 
-  const handleLogout = () => {
+  const unificarComandasSeleccionadas = useCallback(async () => {
+    if (!token) return;
+
+    if (comandasSeleccionadas.length < 2) {
+      Alert.alert(
+        "Error",
+        "Debe seleccionar al menos 2 comandas para unificar"
+      );
+      return;
+    }
+
+    try {
+      const response = await API.post(
+        "/restaurante/mesero/comandas/unificar",
+        {
+          comandas_ids: comandasSeleccionadas,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        Alert.alert("Éxito", response.data.message);
+        setUnificarModalVisible(false);
+        setComandasSeleccionadas([]);
+        fetchComandas();
+      }
+    } catch (error) {
+      console.log("Error al unificar comandas:", error);
+      if (error.response?.status === 401) {
+        navigation.navigate("Login");
+      } else if (error.response?.data?.error) {
+        Alert.alert("Error", error.response.data.error.message);
+      } else {
+        Alert.alert("Error", "Ocurrió un error al unificar las comandas");
+      }
+    }
+  }, [token, comandasSeleccionadas, fetchComandas, navigation]);
+
+  const handleLogout = useCallback(() => {
     Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas cerrar sesión?", [
       {
         text: "Cancelar",
@@ -314,7 +438,7 @@ export default function ComandaSection() {
             if (token) {
               try {
                 await API.post(
-                  "/logout",
+                  "/auth/logout",
                   {},
                   {
                     headers: {
@@ -340,37 +464,22 @@ export default function ComandaSection() {
         },
       },
     ]);
-  };
+  }, [token, logout, navigation]);
 
-  const resetNuevaComanda = () => {
-    setNuevaComanda({
-      mesa: "",
-      personas: "",
-      comensal: "",
-      productos: [],
-    });
-    setProductosSeleccionados({});
-    setBusquedaProducto("");
-    setDetallesProductos({});
-  };
-
-  const openEditModal = (comanda) => {
+  const openEditModal = useCallback((comanda) => {
     setSelectedComanda(comanda);
 
     const productosContados = {};
     const detallesIniciales = {};
     const contadorPorProducto = {};
-    const productosArray = []; // ✅ NUEVO: Array para mantener el orden
+    const productosArray = [];
 
     comanda.productos?.forEach((producto) => {
-      // Contar productos
       productosContados[producto.id] =
         (productosContados[producto.id] || 0) + 1;
 
-      // Agregar al array en orden
       productosArray.push(producto.id);
 
-      // Mapear detalles correctamente
       if (!contadorPorProducto[producto.id]) {
         contadorPorProducto[producto.id] = 0;
       }
@@ -378,7 +487,6 @@ export default function ComandaSection() {
       const indice = contadorPorProducto[producto.id];
       const key = `${producto.id}_${indice}`;
 
-      // ✅ CORREGIDO: Guardar detalle si existe
       if (producto.pivot?.detalle) {
         detallesIniciales[key] = producto.pivot.detalle;
       }
@@ -386,7 +494,6 @@ export default function ComandaSection() {
       contadorPorProducto[producto.id]++;
     });
 
-    // ✅ IMPORTANTE: Establecer estados en el orden correcto
     setProductosSeleccionados(productosContados);
     setDetallesProductos(detallesIniciales);
     setBusquedaProducto("");
@@ -395,15 +502,14 @@ export default function ComandaSection() {
       mesa: comanda.mesa || "",
       personas: comanda.personas?.toString() || "",
       comensal: comanda.comensal || "",
-      productos: productosArray, // ✅ USAR EL ARRAY ORDENADO
+      productos: productosArray,
     });
 
     setEditModalVisible(true);
-  };
+  }, []);
 
-  const openPagoModal = (comanda) => {
+  const openPagoModal = useCallback((comanda) => {
     setSelectedComanda(comanda);
-    // Solo contar productos entregados para el total
     const total =
       comanda.productos
         ?.filter((producto) => producto.pivot?.estado === "entregado")
@@ -414,23 +520,21 @@ export default function ComandaSection() {
 
     setPagos([{ metodo: "efectivo", monto: total.toString() }]);
     setPagoModalVisible(true);
-  };
+  }, []);
 
-  const agregarProducto = (productoId) => {
+  const agregarProducto = useCallback((productoId) => {
     setProductosSeleccionados((prev) => ({
       ...prev,
       [productoId]: (prev[productoId] || 0) + 1,
     }));
-    actualizarProductosArray();
-  };
+  }, []);
 
-  const quitarProducto = (productoId) => {
+  const quitarProducto = useCallback((productoId) => {
     setProductosSeleccionados((prev) => {
       const nuevaCantidad = (prev[productoId] || 0) - 1;
       if (nuevaCantidad <= 0) {
         const { [productoId]: removed, ...rest } = prev;
 
-        // ✅ LIMPIAR DETALLES cuando se elimina completamente
         setDetallesProductos((prevDetalles) => {
           const nuevosDetalles = { ...prevDetalles };
           Object.keys(nuevosDetalles).forEach((key) => {
@@ -443,7 +547,6 @@ export default function ComandaSection() {
 
         return rest;
       } else {
-        // ✅ LIMPIAR SOLO EL ÚLTIMO DETALLE
         setDetallesProductos((prevDetalles) => {
           const nuevosDetalles = { ...prevDetalles };
           const keyToRemove = `${productoId}_${nuevaCantidad}`;
@@ -459,10 +562,9 @@ export default function ComandaSection() {
         [productoId]: nuevaCantidad,
       };
     });
-  };
+  }, []);
 
-  const actualizarProductosArray = () => {
-    // ✅ ESPERAR A QUE SE ACTUALICE productosSeleccionados
+  const actualizarProductosArray = useCallback(() => {
     setTimeout(() => {
       const productosArray = [];
       Object.entries(productosSeleccionados).forEach(
@@ -478,38 +580,40 @@ export default function ComandaSection() {
         productos: productosArray,
       }));
     }, 0);
-  };
+  }, [productosSeleccionados]);
 
   useEffect(() => {
     actualizarProductosArray();
-  }, [productosSeleccionados]);
+  }, [actualizarProductosArray]);
 
-  const agregarPago = () => {
-    setPagos([...pagos, { metodo: "efectivo", monto: "" }]);
-  };
+  const agregarPago = useCallback(() => {
+    setPagos((prev) => [...prev, { metodo: "efectivo", monto: "" }]);
+  }, []);
 
-  const actualizarPago = (index, field, value) => {
-    const nuevosPagos = [...pagos];
-    nuevosPagos[index][field] = value;
-    setPagos(nuevosPagos);
-  };
+  const actualizarPago = useCallback((index, field, value) => {
+    setPagos((prev) => {
+      const nuevosPagos = [...prev];
+      nuevosPagos[index][field] = value;
+      return nuevosPagos;
+    });
+  }, []);
 
-  const eliminarPago = (index) => {
-    if (pagos.length > 1) {
-      setPagos(pagos.filter((_, i) => i !== index));
-    }
-  };
+  const eliminarPago = useCallback((index) => {
+    setPagos((prev) => {
+      if (prev.length > 1) {
+        return prev.filter((_, i) => i !== index);
+      }
+      return prev;
+    });
+  }, []);
 
-  // Función para obtener productos de la comanda actual
-  const getProductosComandaActual = () => {
+  const getProductosComandaActual = useCallback(() => {
     if (!selectedComanda || !selectedComanda.productos) return [];
 
-    // Obtener IDs únicos de productos de la comanda
     const productosIds = [
       ...new Set(selectedComanda.productos.map((p) => p.id)),
     ];
 
-    // Mapear con información completa del producto
     return productosIds
       .map((id) => {
         const producto =
@@ -518,10 +622,9 @@ export default function ComandaSection() {
         return producto;
       })
       .filter(Boolean);
-  };
+  }, [selectedComanda, productos]);
 
-  // Función para obtener productos filtrados por búsqueda (excluye los que ya están en la comanda)
-  const getProductosBusqueda = () => {
+  const getProductosBusqueda = useCallback(() => {
     if (!busquedaProducto.trim()) return [];
 
     const productosComandaIds =
@@ -535,16 +638,19 @@ export default function ComandaSection() {
           .includes(busquedaProducto.toLowerCase()) ||
           producto.clave.toLowerCase().includes(busquedaProducto.toLowerCase()))
     );
-  };
+  }, [busquedaProducto, selectedComanda, productos]);
 
-  const abrirModalDetalle = (productoId, indice) => {
-    const key = `${productoId}_${indice}`;
-    setProductoParaDetalle({ id: productoId, indice });
-    setDetalleTemp(detallesProductos[key] || "");
-    setModalDetalleVisible(true);
-  };
+  const abrirModalDetalle = useCallback(
+    (productoId, indice) => {
+      const key = `${productoId}_${indice}`;
+      setProductoParaDetalle({ id: productoId, indice });
+      setDetalleTemp(detallesProductos[key] || "");
+      setModalDetalleVisible(true);
+    },
+    [detallesProductos]
+  );
 
-  const guardarDetalle = () => {
+  const guardarDetalle = useCallback(() => {
     const key = `${productoParaDetalle.id}_${productoParaDetalle.indice}`;
     setDetallesProductos((prev) => ({
       ...prev,
@@ -553,49 +659,109 @@ export default function ComandaSection() {
     setModalDetalleVisible(false);
     setDetalleTemp("");
     setProductoParaDetalle(null);
-  };
-  const renderComandaCard = (comanda) => (
-    <View key={comanda.id} style={styles.comandaCard}>
-      {/* Fila única: Mesa + Personas + Productos + Fecha + Comensal */}
-      <View style={styles.comandaHeaderRow}>
-        <Text style={styles.comandaMesa}>Mesa {comanda.mesa}</Text>
+  }, [productoParaDetalle, detalleTemp]);
 
-        {comanda.comensal && (
-          <Text style={styles.comandaComensal}>Comensal: {comanda.comensal}</Text>
-        )}
+  // Función para calcular el total de productos seleccionados
+  const calcularTotal = useCallback(() => {
+    let total = 0;
+    Object.entries(productosSeleccionados).forEach(([productoId, cantidad]) => {
+      const producto = productos.find((p) => p.id === parseInt(productoId));
+      if (producto) {
+        total += parseFloat(producto.precio_venta) * cantidad;
+      }
+    });
+    return total.toFixed(2);
+  }, [productosSeleccionados, productos]);
 
-        <Text style={styles.comandaDetail}>Personas: {comanda.personas}</Text>
+  // Función para acortar nombre de comensal
+  const acortarComensal = useCallback((nombre) => {
+    if (!nombre) return "";
+    if (nombre.length <= 15) return nombre;
+    return nombre.substring(0, 15) + "...";
+  }, []);
 
-        {/* Badge Productos */}
-        <View style={styles.productBadge}>
-          <Text style={styles.productBadgeText}>
-            Productos: {comanda.productos?.length || 0}
+  // Función para manejar unificación de mesas
+  const toggleComandaSeleccionada = useCallback((comandaId) => {
+    setComandasSeleccionadas((prev) => {
+      if (prev.includes(comandaId)) {
+        return prev.filter((id) => id !== comandaId);
+      } else {
+        return [...prev, comandaId];
+      }
+    });
+  }, []);
+
+  const confirmarUnificacion = useCallback(() => {
+    if (comandasSeleccionadas.length < 2) {
+      Alert.alert(
+        "Error",
+        "Debe seleccionar al menos 2 comandas para unificar"
+      );
+      return;
+    }
+
+    const mesasSeleccionadas = comandas
+      .filter((c) => comandasSeleccionadas.includes(c.id))
+      .map((c) => c.mesa)
+      .join(", ");
+
+    Alert.alert(
+      "Unificar Comandas",
+      `¿Desea unificar las comandas de las mesas ${mesasSeleccionadas}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Unificar",
+          onPress: unificarComandasSeleccionadas,
+        },
+      ]
+    );
+  }, [comandasSeleccionadas, comandas, unificarComandasSeleccionadas]);
+
+  // ========================================
+  // RENDERIZADO DE COMPONENTES
+  // ========================================
+
+  const renderComandaCard = useCallback(
+    (comanda) => (
+      <View key={comanda.id} style={styles.comandaCard}>
+        <View style={styles.comandaHeaderRow}>
+          <Text style={styles.comandaMesa}>Mesa {comanda.mesa}</Text>
+
+          {comanda.comensal && (
+            <Text style={styles.comandaComensal}>
+              {acortarComensal(comanda.comensal)}
+            </Text>
+          )}
+
+          <Text style={styles.comandaDetail}>Personas: {comanda.personas}</Text>
+
+          <View style={styles.productBadge}>
+            <Text style={styles.productBadgeText}>
+              Productos: {comanda.productos?.length || 0}
+            </Text>
+          </View>
+
+          <Text style={styles.comandaDetail}>
+            {new Date(comanda.fecha).toLocaleDateString("es-MX")}
           </Text>
         </View>
 
-        <Text style={styles.comandaDetail}>
-          {new Date(comanda.fecha).toLocaleDateString("es-MX")}
-        </Text>
-
-      </View>
-
-      {/* Acciones */}
-      <View style={styles.comandaActions}>
-        {comanda.estado !== "pagada" && comanda.estado !== "cerrada" && (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.editButton]}
-            onPress={() => openEditModal(comanda)}
-          >
-            <View style={styles.buttonContent}>
-              <Image
-                source={require("../../../../../assets/editarr.png")}
-                style={styles.iconImage}
-              />
-              <Text style={styles.actionButtonText}>Editar</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        {comanda.estado === "entregado" && (
+        <View style={styles.comandaActions}>
+          {comanda.estado !== "pagada" && comanda.estado !== "cerrada" && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={() => openEditModal(comanda)}
+            >
+              <View style={styles.buttonContent}>
+                <Image
+                  source={require("../../../../../assets/editarr.png")}
+                  style={styles.iconImage}
+                />
+                <Text style={styles.actionButtonText}>Editar</Text>
+              </View>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={[styles.actionButton, styles.ticketButton]}
             onPress={() => generarTicket(comanda)}
@@ -608,167 +774,240 @@ export default function ComandaSection() {
               <Text style={styles.actionButtonText}>Ticket</Text>
             </View>
           </TouchableOpacity>
-        )}
-        {comanda.estado === "cerrada" && (
+          {comanda.estado === "cerrada" && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.pagoButton]}
+              onPress={() => openPagoModal(comanda)}
+            >
+              <View style={styles.buttonContent}>
+                <Image
+                  source={require("../../../../../assets/card.png")}
+                  style={styles.pagoIcon}
+                />
+                <Text style={styles.actionButtonText}>Pagar</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    ),
+    [openEditModal, generarTicket, openPagoModal, acortarComensal]
+  );
+
+  const renderComandaUnificada = useCallback(
+    (comandaUnificada) => (
+      <View
+        key={`unificada-${comandaUnificada.id}`}
+        style={styles.comandaCardUnificada}
+      >
+        <View style={styles.unificadaBadge}>
+          <Text style={styles.unificadaBadgeText}>UNIFICADA</Text>
+        </View>
+
+        <View style={styles.comandaHeaderRow}>
+          <Text style={styles.comandaMesa}>Mesas: {comandaUnificada.mesa}</Text>
+
+          <Text style={styles.comandaDetail}>
+            Comensales: {comandaUnificada.comensales}
+          </Text>
+
+          <View style={styles.productBadge}>
+            <Text style={styles.productBadgeText}>
+              Productos: {comandaUnificada.productos?.length || 0}
+            </Text>
+          </View>
+
+          <Text style={styles.comandaDetail}>
+            {new Date(comandaUnificada.fecha).toLocaleDateString("es-MX")}
+          </Text>
+        </View>
+
+        <View style={styles.comandaActions}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.pagoButton]}
-            onPress={() => openPagoModal(comanda)}
+            style={[styles.actionButton, styles.ticketButton]}
+            onPress={() => {
+              Alert.alert(
+                "Generar Ticket Unificado",
+                "¿Está seguro de generar el ticket unificado?",
+                [
+                  { text: "Cancelar", style: "cancel" },
+                  {
+                    text: "Generar",
+                    onPress: () => generarTicketMultiple(comandaUnificada),
+                  },
+                ]
+              );
+            }}
           >
             <View style={styles.buttonContent}>
               <Image
-                source={require("../../../../../assets/card.png")}
-                style={styles.pagoIcon}
+                source={require("../../../../../assets/ticket.png")}
+                style={styles.iconImage}
               />
-              <Text style={styles.actionButtonText}>Pagar</Text>
+              <Text style={styles.actionButtonText}>Ticket</Text>
             </View>
           </TouchableOpacity>
-        )}
+        </View>
       </View>
-    </View>
-
+    ),
+    [generarTicketMultiple]
   );
-  const renderProductoItem = (producto, isFromBusqueda = false) => {
-    const cantidad = productosSeleccionados[producto.id] || 0;
-    const isSelected = cantidad > 0;
 
-    return (
-      <View
-        key={`${producto.id}-${isFromBusqueda ? "busqueda" : "comanda"}`}
-        style={[
-          styles.productoItem,
-          isSelected && styles.productoSelected,
-          isFromBusqueda && styles.productoBusqueda,
-        ]}
-      >
-        <View style={styles.productoContainer}>
-          <View style={styles.productoInfo}>
-            <Text style={styles.productoClave}>{producto.clave}</Text>
-            <Text style={styles.productoNombre}>
-              {producto.nombre}
-              {isFromBusqueda && (
-                <Text style={styles.nuevoProductoTag}> (NUEVO)</Text>
-              )}
-            </Text>
-            <Text style={styles.productoPrecio}>${producto.precio_venta}</Text>
-          </View>
+  const renderProductoItem = useCallback(
+    (producto, isFromBusqueda = false) => {
+      const cantidad = productosSeleccionados[producto.id] || 0;
+      const isSelected = cantidad > 0;
 
-          <View style={styles.cantidadControls}>
-            <TouchableOpacity
-              style={styles.cantidadButton}
-              onPress={() => quitarProducto(producto.id)}
-              disabled={cantidad === 0}
-            >
-              <Text
+      return (
+        <View
+          key={`${producto.id}-${isFromBusqueda ? "busqueda" : "comanda"}`}
+          style={[
+            styles.productoItem,
+            isSelected && styles.productoSelected,
+            isFromBusqueda && styles.productoBusqueda,
+          ]}
+        >
+          <View style={styles.productoContainer}>
+            <View style={styles.productoInfo}>
+              <Text style={styles.productoClave}>{producto.clave}</Text>
+              <Text style={styles.productoNombre}>
+                {producto.nombre}
+                {isFromBusqueda && (
+                  <Text style={styles.nuevoProductoTag}> (NUEVO)</Text>
+                )}
+              </Text>
+              <Text style={styles.productoPrecio}>
+                ${producto.precio_venta}
+              </Text>
+            </View>
+
+            <View style={styles.cantidadControls}>
+              <TouchableOpacity
                 style={[
-                  styles.cantidadButtonText,
+                  styles.cantidadButton,
                   cantidad === 0 && styles.cantidadButtonDisabled,
                 ]}
+                onPress={() => quitarProducto(producto.id)}
+                disabled={cantidad === 0}
               >
-                -
-              </Text>
-            </TouchableOpacity>
+                <Text style={styles.cantidadButtonText}>-</Text>
+              </TouchableOpacity>
 
-            <Text style={styles.cantidadText}>{cantidad}</Text>
+              <Text style={styles.cantidadText}>{cantidad}</Text>
 
-            <TouchableOpacity
-              style={styles.cantidadButton}
-              onPress={() => agregarProducto(producto.id)}
-            >
-              <Text style={styles.cantidadButtonText}>+</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cantidadButton}
+                onPress={() => agregarProducto(producto.id)}
+              >
+                <Text style={styles.cantidadButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {isSelected && (
+            <View style={styles.detallesContainer}>
+              <View style={styles.detallesSeparador} />
+
+              {Array.from({ length: cantidad }, (_, index) => {
+                const key = `${producto.id}_${index}`;
+                const detalleGuardado = detallesProductos[key];
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.detalleItem,
+                      styles.detalleItemConBorde,
+                      detalleGuardado && styles.detalleItemConDetalle,
+                    ]}
+                    onPress={() => abrirModalDetalle(producto.id, index)}
+                    activeOpacity={0.7}
+                  >
+                    {detalleGuardado ? (
+                      <View style={styles.detalleContenido}>
+                        <Text style={styles.detalleTextoConFondo}>
+                          #{index + 1} {detalleGuardado.substring(0, 20)}
+                          {detalleGuardado.length > 20 ? "..." : ""}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.detalleTexto}>
+                        #{index + 1} Agregar detalle
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
+      );
+    },
+    [
+      productosSeleccionados,
+      detallesProductos,
+      agregarProducto,
+      quitarProducto,
+      abrirModalDetalle,
+    ]
+  );
 
-        {/* Sección de detalles con mejor espaciado */}
-        {isSelected && (
-          <View style={styles.detallesContainer}>
-            <View style={styles.detallesSeparador} />
-
-            {Array.from({ length: cantidad }, (_, index) => {
-              const key = `${producto.id}_${index}`;
-              const detalleGuardado = detallesProductos[key];
-
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.detalleItem,
-                    styles.detalleItemConBorde,
-                    detalleGuardado && styles.detalleItemConDetalle,
-                  ]}
-                  onPress={() => abrirModalDetalle(producto.id, index)}
-                  activeOpacity={0.7}
-                >
-                  {detalleGuardado ? (
-                    <View style={styles.detalleContenido}>
-                      <Text style={styles.detalleTextoConFondo}>Editar</Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.detalleTexto}>
-                      #{index + 1} Agregar detalle
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-
-      </View>
-    );
-  };
   const productosFiltrados = productos.filter(
     (producto) =>
       producto.nombre.toLowerCase().includes(busquedaProducto.toLowerCase()) ||
       producto.clave.toLowerCase().includes(busquedaProducto.toLowerCase())
   );
 
-  const renderPagoItem = (pago, index) => (
-    <View key={index} style={styles.pagoItem}>
-      <View style={styles.pagoRow}>
-        <Text style={styles.label}>Método:</Text>
-        <View style={styles.metodoPagoContainer}>
-          {["efectivo", "tarjeta", "transferencia"].map((metodo) => (
-            <TouchableOpacity
-              key={metodo}
-              style={[
-                styles.metodoPago,
-                pago.metodo === metodo && styles.metodoPagoSelected,
-              ]}
-              onPress={() => actualizarPago(index, "metodo", metodo)}
-            >
-              <Text
+  const renderPagoItem = useCallback(
+    (pago, index) => (
+      <View key={index} style={styles.pagoItem}>
+        <View style={styles.pagoRow}>
+          <Text style={styles.label}>Método:</Text>
+          <View style={styles.metodoPagoContainer}>
+            {["efectivo", "tarjeta", "transferencia"].map((metodo) => (
+              <TouchableOpacity
+                key={metodo}
                 style={[
-                  styles.metodoPagoText,
-                  pago.metodo === metodo && styles.metodoPagoTextSelected,
+                  styles.metodoPago,
+                  pago.metodo === metodo && styles.metodoPagoSelected,
                 ]}
+                onPress={() => actualizarPago(index, "metodo", metodo)}
               >
-                {metodo}
-              </Text>
+                <Text
+                  style={[
+                    styles.metodoPagoText,
+                    pago.metodo === metodo && styles.metodoPagoTextSelected,
+                  ]}
+                >
+                  {metodo}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.pagoRow}>
+          <Text style={styles.label}>Monto:</Text>
+          <TextInput
+            style={styles.montoInput}
+            value={pago.monto}
+            onChangeText={(value) => actualizarPago(index, "monto", value)}
+            keyboardType="numeric"
+            placeholder="0.00"
+            placeholderTextColor="#999"
+          />
+          {pagos.length > 1 && (
+            <TouchableOpacity
+              style={styles.eliminarPago}
+              onPress={() => eliminarPago(index)}
+            >
+              <Text style={styles.eliminarPagoText}>❌</Text>
             </TouchableOpacity>
-          ))}
+          )}
         </View>
       </View>
-
-      <View style={styles.pagoRow}>
-        <Text style={styles.label}>Monto:</Text>
-        <TextInput
-          style={styles.montoInput}
-          value={pago.monto}
-          onChangeText={(value) => actualizarPago(index, "monto", value)}
-          keyboardType="numeric"
-          placeholder="0.00"
-        />
-        {pagos.length > 1 && (
-          <TouchableOpacity
-            style={styles.eliminarPago}
-            onPress={() => eliminarPago(index)}
-          >
-            <Text style={styles.eliminarPagoText}>❌</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
+    ),
+    [pagos, actualizarPago, eliminarPago]
   );
 
   if (loading) {
@@ -831,6 +1070,13 @@ export default function ComandaSection() {
                 <Text style={styles.nuevaComandaButtonText}>Nueva Comanda</Text>
               </View>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.unificarButton}
+              onPress={() => setUnificarModalVisible(true)}
+            >
+              <Text style={styles.unificarButtonText}>Unificar Mesas</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -843,6 +1089,9 @@ export default function ComandaSection() {
           </View>
         ) : (
           comandas.map((comanda) => renderComandaCard(comanda))
+        )}
+        {comandasUnificadas.map((comandaUnificada) =>
+          renderComandaUnificada(comandaUnificada)
         )}
       </ScrollView>
 
@@ -857,6 +1106,7 @@ export default function ComandaSection() {
                 <TextInput
                   style={styles.input}
                   placeholder="Mesa"
+                  placeholderTextColor="#999"
                   value={nuevaComanda.mesa}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, mesa: value }))
@@ -867,6 +1117,7 @@ export default function ComandaSection() {
                 <TextInput
                   style={styles.input}
                   placeholder="Número de personas"
+                  placeholderTextColor="#999"
                   value={nuevaComanda.personas}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, personas: value }))
@@ -877,6 +1128,7 @@ export default function ComandaSection() {
                 <TextInput
                   style={styles.input}
                   placeholder="Nombre del comensal (opcional)"
+                  placeholderTextColor="#999"
                   value={nuevaComanda.comensal}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, comensal: value }))
@@ -885,15 +1137,27 @@ export default function ComandaSection() {
 
                 <Text style={styles.sectionTitle}>Productos:</Text>
 
-                {/* Buscador de productos */}
                 <TextInput
                   style={styles.buscadorInput}
                   placeholder="Buscar productos por nombre o clave..."
+                  placeholderTextColor="#666"
                   value={busquedaProducto}
                   onChangeText={setBusquedaProducto}
                 />
 
-                {/* Lista de productos filtrados */}
+                {/* Sección de productos seleccionados */}
+                {Object.keys(productosSeleccionados).length > 0 && (
+                  <View style={styles.productosSeleccionadosContainer}>
+                    <Text style={styles.productosSeleccionadosTitle}>
+                      Productos Seleccionados:
+                    </Text>
+                    <View style={styles.totalContainer}>
+                      <Text style={styles.totalLabel}>Total:</Text>
+                      <Text style={styles.totalMonto}>${calcularTotal()}</Text>
+                    </View>
+                  </View>
+                )}
+
                 {productosFiltrados.length === 0 ? (
                   <Text style={styles.noProductosText}>
                     {productos.length === 0
@@ -942,6 +1206,7 @@ export default function ComandaSection() {
                 <TextInput
                   style={styles.input}
                   placeholder="Mesa"
+                  placeholderTextColor="#999"
                   value={nuevaComanda.mesa}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, mesa: value }))
@@ -951,6 +1216,7 @@ export default function ComandaSection() {
                 <TextInput
                   style={styles.input}
                   placeholder="Número de personas"
+                  placeholderTextColor="#999"
                   value={nuevaComanda.personas}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, personas: value }))
@@ -961,6 +1227,7 @@ export default function ComandaSection() {
                 <TextInput
                   style={styles.input}
                   placeholder="Nombre del comensal (opcional)"
+                  placeholderTextColor="#999"
                   value={nuevaComanda.comensal}
                   onChangeText={(value) =>
                     setNuevaComanda((prev) => ({ ...prev, comensal: value }))
@@ -971,7 +1238,16 @@ export default function ComandaSection() {
                   Productos de la Comanda:
                 </Text>
 
-                {/* Productos actuales de la comanda */}
+                {/* Mostrar total en edición */}
+                {Object.keys(productosSeleccionados).length > 0 && (
+                  <View style={styles.productosSeleccionadosContainer}>
+                    <View style={styles.totalContainer}>
+                      <Text style={styles.totalLabel}>Total:</Text>
+                      <Text style={styles.totalMonto}>${calcularTotal()}</Text>
+                    </View>
+                  </View>
+                )}
+
                 {getProductosComandaActual().length === 0 ? (
                   <Text style={styles.noProductosText}>
                     No hay productos en esta comanda
@@ -982,22 +1258,20 @@ export default function ComandaSection() {
                   )
                 )}
 
-                {/* Separador visual */}
                 <View style={styles.separador}>
                   <Text style={styles.separadorTexto}>
                     Agregar más productos:
                   </Text>
                 </View>
 
-                {/* Buscador de productos nuevos */}
                 <TextInput
                   style={[styles.buscadorInput, styles.buscadorAgregar]}
                   placeholder="Buscar productos para agregar..."
+                  placeholderTextColor="#666"
                   value={busquedaProducto}
                   onChangeText={setBusquedaProducto}
                 />
 
-                {/* Productos encontrados en la búsqueda */}
                 {busquedaProducto.trim() !== "" && (
                   <>
                     {getProductosBusqueda().length === 0 ? (
@@ -1036,6 +1310,7 @@ export default function ComandaSection() {
           </View>
         </View>
       </Modal>
+
       {/* Modal Detalle Producto */}
       <Modal visible={modalDetalleVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
@@ -1046,6 +1321,7 @@ export default function ComandaSection() {
               <TextInput
                 style={styles.detalleInput}
                 placeholder="Ejemplo: Con hielos, sin cebolla, etc."
+                placeholderTextColor="#999"
                 value={detalleTemp}
                 onChangeText={setDetalleTemp}
                 multiline={true}
@@ -1083,7 +1359,7 @@ export default function ComandaSection() {
             <View style={styles.ticketModalContent}>
               <View style={styles.ticketModalTitleContainer}>
                 <Image
-                  source={require("../../../../../assets/ticket.png")} // Ajusta la ruta según tu proyecto
+                  source={require("../../../../../assets/ticket.png")}
                   style={styles.ticketIcon}
                 />
                 <Text style={styles.ticketModalTitle}>Ticket de Cuenta</Text>
@@ -1192,14 +1468,75 @@ export default function ComandaSection() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal Unificar Mesas */}
+      <Modal visible={unificarModalVisible} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalWrapper}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Unificar Mesas</Text>
+              <Text style={styles.modalSubtitle}>
+                Selecciona las mesas que deseas unificar:
+              </Text>
+
+              <ScrollView style={styles.mesasScrollView}>
+                {comandas
+                  .filter(
+                    (c) => c.estado !== "pagada" && c.estado !== "cerrada"
+                  )
+                  .map((comanda) => (
+                    <TouchableOpacity
+                      key={comanda.id}
+                      style={[
+                        styles.mesaItem,
+                        comandasSeleccionadas.includes(comanda.id) &&
+                          styles.mesaItemSelected,
+                      ]}
+                      onPress={() => toggleComandaSeleccionada(comanda.id)}
+                    >
+                      <Text style={styles.mesaItemText}>
+                        Mesa {comanda.mesa}
+                      </Text>
+                      <Text style={styles.mesaItemDetalle}>
+                        {comanda.personas} personas -{" "}
+                        {comanda.productos?.length || 0} productos
+                      </Text>
+                      {comanda.comensal && (
+                        <Text style={styles.mesaItemComensal}>
+                          Comensal: {comanda.comensal}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+              </ScrollView>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    setUnificarModalVisible(false);
+                    setComandasSeleccionadas([]);
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={confirmarUnificacion}
+                >
+                  <Text style={styles.saveButtonText}>Unificar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // ========================================
-  // CONTENEDOR PRINCIPAL
-  // ========================================
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -1213,15 +1550,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 
-  // ========================================
-  // HEADER SUPERIOR
-  // ========================================
   topHeader: {
     backgroundColor: "#fff",
-    paddingTop: 30,
+    paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 15,
-    marginBottom: 10,
+    paddingBottom: 12,
+    marginBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
@@ -1270,24 +1604,20 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // ========================================
-  // HEADER DE CONTENIDO
-  // ========================================
   headerContainer: {
-
-    paddingVertical: 10,
+    paddingVertical: 5,
   },
   rowWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
   },
   contentTitle: {
     fontSize: 30,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 12,
   },
   nuevaComandaButton: {
@@ -1302,6 +1632,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "flex-start",
+  },
+  unificarButton: {
+    flexShrink: 1,
+    flexGrow: 0,
+    minWidth: 140,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: "#6c757d",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  unificarButtonText: {
+    fontSize: 16,
+    color: "#fff",
+    fontWeight: "bold",
   },
   buttonContent: {
     flexDirection: "row",
@@ -1322,9 +1668,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // ========================================
-  // ESTADOS VACÍO Y CARGA
-  // ========================================
   emptyState: {
     alignItems: "center",
     marginTop: 100,
@@ -1347,14 +1690,11 @@ const styles = StyleSheet.create({
     color: "#000000ff",
   },
 
-  // ========================================
-  // TARJETAS DE COMANDA
-  // ========================================
   comandaCard: {
     backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -1362,38 +1702,36 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   comandaHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 6,
   },
   comandaMesa: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 23,
   },
   comandaComensal: {
-    fontSize: 17,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#555",
   },
   comandaDetail: {
     fontSize: 17,
   },
   productBadge: {
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   productBadgeText: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 17,
   },
 
-  // ========================================
-  // ACCIONES DE COMANDA
-  // ========================================
   comandaActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -1424,9 +1762,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
-  // ========================================
-  // MODALES - ESTRUCTURA GENERAL
-  // ========================================
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -1443,15 +1778,18 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalTitle: {
-    fontSize: 25,
+    fontSize: 24,
     fontWeight: "bold",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: "#666",
     marginBottom: 16,
     textAlign: "center",
   },
 
-  // ========================================
-  // FORMULARIOS EN MODALES
-  // ========================================
   formScrollView: {
     maxHeight: 400,
   },
@@ -1462,6 +1800,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     fontSize: 16,
+    color: "#333",
   },
   sectionTitle: {
     fontSize: 20,
@@ -1477,6 +1816,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 14,
     backgroundColor: "#ECFDF5",
+    color: "#333",
   },
   buscadorAgregar: {
     backgroundColor: "#f0f8f0",
@@ -1490,15 +1830,45 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
 
-  // ========================================
-  // PRODUCTOS EN MODALES
-  // ========================================
+  productosSeleccionadosContainer: {
+    backgroundColor: "#e8f5e9",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: "#4caf50",
+  },
+  productosSeleccionadosTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#2e7d32",
+    marginBottom: 8,
+  },
+  totalContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 6,
+  },
+  totalLabel: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  totalMonto: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#4caf50",
+  },
+
   productoItem: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
     padding: 12,
     marginVertical: 4,
     borderRadius: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -1515,29 +1885,22 @@ const styles = StyleSheet.create({
     borderColor: "#28a745",
   },
 
-
   productoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    flexWrap: 'wrap',  // Permite que los elementos bajen si no caben
-    gap: 10,  // Espacio entre elementos cuando se envuelven
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    flexWrap: "wrap",
+    gap: 10,
   },
   productoInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
-    minWidth: 200,  // Ancho mínimo antes de envolver
+    minWidth: 200,
     marginRight: 10,
     gap: 30,
     flexWrap: "wrap",
-  },
-  productoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
   },
   productoClave: {
     fontSize: 14,
@@ -1560,83 +1923,77 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  // ========================================
-  // CONTROLES DE CANTIDAD
-  // ========================================
   cantidadControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
-    marginRight: 20,  // Aumenta este valor para más espacio (era 10)
+    marginRight: 20,
   },
   cantidadButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: "#007bff",
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 4,
   },
+  cantidadButtonDisabled: {
+    opacity: 0.3,
+  },
   cantidadButtonText: {
     color: "white",
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "bold",
-  },
-  cantidadButtonDisabled: {
-    opacity: 0.5,
   },
   cantidadText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#333",
-    minWidth: 5,
+    minWidth: 30,
     textAlign: "center",
   },
 
-  // ========================================
-  // DETALLES DE PRODUCTOS
-  // ========================================
   detallesContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
-    flexWrap: 'wrap',
-    flexBasis: '100%',
+    flexWrap: "wrap",
+    flexBasis: "100%",
     marginLeft: 15,
-    marginTop: 10,  // Espacio vertical arriba de los detalles
+    marginTop: 12,
   },
   detallesSeparador: {
     width: 1,
     height: 20,
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
     marginRight: 8,
   },
   detalleItem: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   detalleItemConBorde: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 4,
   },
   detalleItemConDetalle: {
-    backgroundColor: '#e8f5e9',
-    borderColor: '#4caf50',
+    backgroundColor: "#e8f5e9",
+    borderColor: "#4caf50",
   },
   detalleContenido: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   detalleTexto: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 13,
+    color: "#666",
   },
   detalleTextoConFondo: {
-    fontSize: 12,
-    color: '#4caf50',
-    fontWeight: '600',
+    fontSize: 13,
+    color: "#2e7d32",
+    fontWeight: "600",
   },
   detalleInput: {
     borderWidth: 1,
@@ -1651,9 +2008,6 @@ const styles = StyleSheet.create({
     color: "#202124",
   },
 
-  // ========================================
-  // SEPARADORES Y ELEMENTOS VISUALES
-  // ========================================
   separador: {
     marginVertical: 20,
     alignItems: "center",
@@ -1666,9 +2020,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
 
-  // ========================================
-  // ACCIONES DE MODALES
-  // ========================================
   modalActions: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1703,9 +2054,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  // ========================================
-  // MODAL DE TICKET
-  // ========================================
   ticketModalContent: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -1830,9 +2178,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  // ========================================
-  // MODAL DE PAGO
-  // ========================================
   totalText: {
     fontSize: 18,
     fontWeight: "bold",
@@ -1893,6 +2238,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     marginLeft: 8,
+    color: "#333",
   },
   eliminarPago: {
     marginLeft: 8,
@@ -1912,5 +2258,67 @@ const styles = StyleSheet.create({
   agregarPagoText: {
     color: "#007bff",
     fontWeight: "500",
+  },
+
+  mesasScrollView: {
+    maxHeight: 300,
+  },
+  mesaItem: {
+    padding: 15,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: "#f8f9fa",
+  },
+  mesaItemSelected: {
+    backgroundColor: "#e3f2fd",
+    borderColor: "#2196f3",
+    borderWidth: 2,
+  },
+  mesaItemText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 4,
+  },
+  mesaItemDetalle: {
+    fontSize: 14,
+    color: "#666",
+  },
+
+  // Agregar estos estilos al final del objeto styles
+
+  comandaCardUnificada: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  unificadaBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "#FFC107",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 1,
+  },
+  unificadaBadgeText: {
+    color: "#000",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  mesaItemComensal: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
+    fontStyle: "italic",
   },
 });

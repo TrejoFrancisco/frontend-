@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Image,
   Alert,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { API } from "../../../../services/api";
 
@@ -23,173 +24,260 @@ export default function InventarioSection({ token, navigation }) {
   const [historialVisible, setHistorialVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [busquedaInventario, setBusquedaInventario] = useState("");
 
   useEffect(() => {
-    fetchInventario();
+    let isMounted = true;
+
+    const loadInventario = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        await fetchInventario(isMounted);
+      } catch (err) {
+        if (isMounted) {
+          console.error("Error loading inventario:", err);
+          setError("Error al cargar el inventario");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadInventario();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const fetchInventario = async () => {
+  const fetchInventario = async (isMounted = true) => {
     try {
-      setLoading(true);
       const response = await API.get("/restaurante/admin/inventario", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.data.success) {
-        setInventarioData(response.data.data);
+      if (isMounted && response.data.success) {
+        const data = response.data.data || {};
+        setInventarioData({
+          productos: Array.isArray(data.productos) ? data.productos : [],
+          materias_primas: Array.isArray(data.materias_primas)
+            ? data.materias_primas
+            : [],
+        });
       }
     } catch (error) {
-      console.error("Error al obtener inventario:", error);
-      if (error.response?.status === 401) {
-        navigation.navigate("Login");
-      } else {
-        Alert.alert(
-          "Error",
-          error.response?.data?.error?.message ||
-          "Error al obtener el inventario"
-        );
+      if (isMounted) {
+        console.error("Error al obtener inventario:", error);
+        if (error.response?.status === 401) {
+          Alert.alert(
+            "Sesión expirada",
+            "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+            [{ text: "OK", onPress: () => navigation.navigate("Login") }]
+          );
+        } else {
+          const errorMessage =
+            error.response?.data?.error?.message ||
+            error.response?.data?.message ||
+            "Error al obtener el inventario";
+          Alert.alert("Error", errorMessage);
+          setError(errorMessage);
+        }
       }
-    } finally {
-      setLoading(false);
     }
   };
 
-  const getItemsFiltrados = (items) => {
-    if (!busquedaInventario.trim()) return items;
+  const getItemsFiltrados = useCallback(
+    (items) => {
+      if (!Array.isArray(items)) return [];
+      if (!busquedaInventario.trim()) return items;
 
-    return items.filter(item =>
-      item.nombre.toLowerCase().includes(busquedaInventario.toLowerCase())
-    );
-  };
+      return items.filter((item) => {
+        const nombre = item?.nombre?.toLowerCase() || "";
+        const busqueda = busquedaInventario.toLowerCase();
+        return nombre.includes(busqueda);
+      });
+    },
+    [busquedaInventario]
+  );
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setError(null);
     await fetchInventario();
     setRefreshing(false);
-  };
+  }, []);
 
-  const verHistorial = (item) => {
+  const verHistorial = useCallback((item) => {
+    if (!item) return;
     setSelectedItem(item);
     setHistorialVisible(true);
-  };
+  }, []);
 
-  const getStatusColor = (existencia) => {
-    if (existencia <= 0) return "#DC3545";
-    if (existencia <= 10) return "#FFC107";
+  const getStatusColor = useCallback((existencia) => {
+    const exist = parseFloat(existencia) || 0;
+    if (exist <= 0) return "#DC3545";
+    if (exist <= 10) return "#FFC107";
     return "#28A745";
-  };
+  }, []);
 
-  const getStatusText = (existencia) => {
-    if (existencia <= 0) return "Sin existencia";
-    if (existencia <= 10) return "Existencia baja";
+  const getStatusText = useCallback((existencia) => {
+    const exist = parseFloat(existencia) || 0;
+    if (exist <= 0) return "Sin existencia";
+    if (exist <= 10) return "Existencia baja";
     return "Disponible";
-  };
+  }, []);
 
-  const renderInventarioItem = (item, tipo) => (
-    <View key={`${tipo}-${item.id}`} style={styles.inventarioCard}>
-      <View style={styles.inventarioRow}>
-        {/* Nombre */}
-        <View style={styles.columnItem}>
-          <Text style={styles.itemName}>{item.nombre}</Text>
+  const renderInventarioItem = useCallback(
+    (item, tipo) => {
+      if (!item || !item.id) return null;
+
+      return (
+        <View key={`${tipo}-${item.id}`} style={styles.inventarioCard}>
+          <View style={styles.inventarioRow}>
+            {/* Nombre */}
+            <View style={styles.columnItem}>
+              <Text style={styles.itemName}>{item.nombre || "Sin nombre"}</Text>
+            </View>
+
+            {/* Existencia */}
+            <View style={styles.columnItem}>
+              <Text style={styles.itemLabel}>Existencia:</Text>
+              <Text style={styles.itemValue}>
+                {item.existencia !== undefined ? item.existencia : "0"}
+              </Text>
+            </View>
+
+            {/* Unidad */}
+            <View style={styles.columnItem}>
+              <Text style={styles.itemLabel}>Unidad:</Text>
+              <Text style={styles.itemValue}>{item.unidad || "N/A"}</Text>
+            </View>
+
+            {/* Tipo */}
+            <View style={styles.columnItem}>
+              <Text style={styles.itemLabel}>Tipo:</Text>
+              <Text style={styles.itemValue}>
+                {tipo === "productos" ? "Producto" : "Materia Prima"}
+              </Text>
+            </View>
+
+            {/* Estado */}
+            <View style={styles.columnItem}>
+              <View
+                style={[
+                  styles.statusButton,
+                  { backgroundColor: getStatusColor(item.existencia) },
+                ]}
+              >
+                <Text style={styles.statusButtonText}>
+                  {getStatusText(item.existencia)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Acción */}
+            <View style={styles.columnItem}>
+              <TouchableOpacity
+                style={styles.historialButton}
+                onPress={() => verHistorial(item)}
+              >
+                <View style={styles.buttonContent}>
+                  <Image
+                    source={require("../../../../../assets/historial.png")}
+                    style={styles.buttonIcon}
+                  />
+                  <Text style={styles.historialButtonText}>Ver Historial</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
+      );
+    },
+    [getStatusColor, getStatusText, verHistorial]
+  );
 
-        {/* Existencia */}
-        <View style={styles.columnItem}>
-          <Text style={styles.itemLabel}>Existencia:</Text>
-          <Text style={styles.itemValue}>{item.existencia}</Text>
-        </View>
+  const renderHistorialItem = useCallback((item, index) => {
+    if (!item) return null;
 
-        {/* Unidad */}
-        <View style={styles.columnItem}>
-          <Text style={styles.itemLabel}>Unidad:</Text>
-          <Text style={styles.itemValue}>{item.unidad}</Text>
-        </View>
-
-        {/* Tipo */}
-        <View style={styles.columnItem}>
-          <Text style={styles.itemLabel}>Tipo:</Text>
-          <Text style={styles.itemValue}>
-            {tipo === "productos" ? "Producto" : "Materia Prima"}
+    return (
+      <View key={`historial-${index}`} style={styles.historialItem}>
+        <View style={styles.historialHeader}>
+          <Text
+            style={[
+              styles.historialTipo,
+              { color: item.tipo === "entrada" ? "#28A745" : "#DC3545" },
+            ]}
+          >
+            {item.tipo === "entrada" ? "📈 Entrada" : "📉 Salida"}
+          </Text>
+          <Text style={styles.historialFecha}>
+            {item.created_at
+              ? new Date(item.created_at).toLocaleDateString("es-MX", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "Fecha no disponible"}
           </Text>
         </View>
-
-        {/* Estado */}
-        <View style={styles.columnItem}>
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              { backgroundColor: getStatusColor(item.existencia) },
-            ]}
-            disabled
-          >
-            <Text style={styles.statusButtonText}>
-              {getStatusText(item.existencia)}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Acción */}
-        <View style={styles.columnItem}>
-          <TouchableOpacity
-            style={styles.historialButton}
-            onPress={() => verHistorial(item)}
-          >
-            <View style={styles.buttonContent}>
-              <Image
-                source={require('../../../../../assets/historial.png')}
-                style={styles.buttonIcon}
-              />
-              <Text style={styles.historialButtonText}>Ver Historial</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.historialCantidad}>
+          Cantidad: {item.cantidad || 0} {item.unidad || ""}
+        </Text>
+        {item.descripcion && (
+          <Text style={styles.historialDescripcion}>
+            Descripción: {item.descripcion}
+          </Text>
+        )}
       </View>
-    </View>
-  );
+    );
+  }, []);
 
-  const renderHistorialItem = (item, index) => (
-    <View key={index} style={styles.historialItem}>
-      <View style={styles.historialHeader}>
-        <Text
-          style={[
-            styles.historialTipo,
-            { color: item.tipo === "entrada" ? "#28A745" : "#DC3545" },
-          ]}
-        >
-          {item.tipo === "entrada" ? "📈 Entrada" : "📉 Salida"}
-        </Text>
-        <Text style={styles.historialFecha}>
-          {new Date(item.created_at).toLocaleDateString("es-MX", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </Text>
-      </View>
-      <Text style={styles.historialCantidad}>
-        Cantidad: {item.cantidad} {item.unidad}
-      </Text>
-      {item.descripcion && (
-        <Text style={styles.historialDescripcion}>
-          Descripción: {item.descripcion}
-        </Text>
-      )}
-    </View>
-  );
-
+  // Pantalla de carga
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#4CAF50" />
         <Text style={styles.loadingText}>Cargando inventario...</Text>
       </View>
     );
   }
 
+  // Pantalla de error
+  if (
+    error &&
+    !inventarioData.productos.length &&
+    !inventarioData.materias_primas.length
+  ) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => {
+              setLoading(true);
+              setError(null);
+              fetchInventario();
+            }}
+          >
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   const productosFiltrados = getItemsFiltrados(inventarioData.productos);
-  const materiasPrimasFiltradas = getItemsFiltrados(inventarioData.materias_primas);
+  const materiasPrimasFiltradas = getItemsFiltrados(
+    inventarioData.materias_primas
+  );
 
   return (
     <View style={styles.container}>
@@ -204,19 +292,29 @@ export default function InventarioSection({ token, navigation }) {
 
         {/* Buscador */}
         <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar en Inventario..."
-            value={busquedaInventario}
-            onChangeText={setBusquedaInventario}
-          />
+          <View style={styles.searchInputContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar en Inventario..."
+              value={busquedaInventario}
+              onChangeText={setBusquedaInventario}
+            />
+            {busquedaInventario.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => setBusquedaInventario("")}
+              >
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Sección de Productos */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Image
-              source={require('../../../../../assets/gestionP.png')}
+              source={require("../../../../../assets/gestionP.png")}
               style={styles.sectionIcon}
             />
             <Text style={styles.sectionTitle}>
@@ -228,8 +326,7 @@ export default function InventarioSection({ token, navigation }) {
             <Text style={styles.emptyText}>
               {busquedaInventario.trim() !== ""
                 ? "No se encontraron productos que coincidan con la búsqueda"
-                : "No hay productos en inventario"
-              }
+                : "No hay productos en inventario"}
             </Text>
           ) : (
             productosFiltrados.map((item) =>
@@ -242,7 +339,7 @@ export default function InventarioSection({ token, navigation }) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Image
-              source={require('../../../../../assets/gestionMP.png')}
+              source={require("../../../../../assets/gestionMP.png")}
               style={styles.sectionIcon}
             />
             <Text style={styles.sectionTitle}>
@@ -254,8 +351,7 @@ export default function InventarioSection({ token, navigation }) {
             <Text style={styles.emptyText}>
               {busquedaInventario.trim() !== ""
                 ? "No se encontraron materias primas que coincidan con la búsqueda"
-                : "No hay materias primas en inventario"
-              }
+                : "No hay materias primas en inventario"}
             </Text>
           ) : (
             materiasPrimasFiltradas.map((item) =>
@@ -266,12 +362,17 @@ export default function InventarioSection({ token, navigation }) {
       </ScrollView>
 
       {/* Modal de Historial */}
-      <Modal visible={historialVisible} animationType="slide" transparent>
+      <Modal
+        visible={historialVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setHistorialVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalWrapper}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>
-                Historial: {selectedItem?.nombre}
+                Historial: {selectedItem?.nombre || ""}
               </Text>
 
               <ScrollView
@@ -279,7 +380,8 @@ export default function InventarioSection({ token, navigation }) {
                 showsVerticalScrollIndicator={false}
               >
                 {selectedItem?.historial &&
-                  selectedItem.historial.length > 0 ? (
+                Array.isArray(selectedItem.historial) &&
+                selectedItem.historial.length > 0 ? (
                   selectedItem.historial.map((item, index) =>
                     renderHistorialItem(item, index)
                   )
@@ -292,7 +394,10 @@ export default function InventarioSection({ token, navigation }) {
 
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={() => setHistorialVisible(false)}
+                onPress={() => {
+                  setHistorialVisible(false);
+                  setSelectedItem(null);
+                }}
               >
                 <Text style={styles.closeButtonText}>Cerrar</Text>
               </TouchableOpacity>
@@ -312,10 +417,39 @@ const styles = StyleSheet.create({
   centered: {
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
   scrollView: {
     flex: 1,
     padding: 20,
+  },
+
+  // === ESTADOS ===
+  loadingText: {
+    fontSize: 18,
+    color: "#6C757D",
+    marginTop: 10,
+  },
+  errorContainer: {
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#DC3545",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 
   // === TÍTULOS ===
@@ -326,10 +460,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#1F2937",
   },
-  loadingText: {
-    fontSize: 18,
-    color: "#6C757D",
-  },
 
   // === BUSCADOR ===
   searchContainer: {
@@ -337,15 +467,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 20,
   },
-  searchInput: {
+  searchInputContainer: {
     width: "100%",
     maxWidth: 400,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  searchInput: {
+    flex: 1,
     borderWidth: 1,
     borderColor: "#2D9966",
     borderRadius: 20,
     padding: 12,
     fontSize: 18,
     backgroundColor: "#ECFDF5",
+  },
+  clearButton: {
+    marginLeft: 8,
+    padding: 6,
+  },
+  clearButtonText: {
+    fontSize: 20,
+    color: "#666",
   },
 
   // === SECCIONES ===
@@ -364,6 +507,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     marginRight: 6,
+    resizeMode: "contain",
   },
   sectionTitle: {
     fontSize: 25,
@@ -446,6 +590,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     marginRight: 6,
+    resizeMode: "contain",
   },
   historialButtonText: {
     color: "#FFFFFF",

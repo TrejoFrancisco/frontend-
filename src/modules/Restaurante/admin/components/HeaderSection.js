@@ -1,5 +1,12 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
+import React, { useCallback } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  Image,
+} from "react-native";
 import { useAuth } from "../../../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { API } from "../../../../services/api";
@@ -8,7 +15,7 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
   const { token, logout, user } = useAuth();
   const navigation = useNavigation();
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     Alert.alert("Cerrar Sesión", "¿Deseas cerrar sesión?", [
       { text: "Cancelar", style: "cancel" },
       {
@@ -19,7 +26,7 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
             if (token) {
               try {
                 await API.post(
-                  "/logout",
+                  "/auth/logout",
                   {},
                   {
                     headers: {
@@ -27,8 +34,8 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
                     },
                   }
                 );
-              } catch (error) { 
-                // Silently handle logout API error
+              } catch (error) {
+                console.warn("Logout API error:", error.message);
               }
             }
             await logout();
@@ -37,21 +44,38 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
               routes: [{ name: "Login" }],
             });
           } catch (error) {
+            console.error("Logout error:", error);
             Alert.alert("Error", "Hubo un problema al cerrar sesión");
           }
         },
       },
     ]);
-  };
+  }, [token, logout, navigation]);
+
+  const handleMenuPress = useCallback(() => {
+    if (typeof onOpenDrawer === "function") {
+      onOpenDrawer();
+    }
+  }, [onOpenDrawer]);
+
+  const handleRefreshPress = useCallback(() => {
+    if (typeof onRefresh === "function") {
+      onRefresh();
+    }
+  }, [onRefresh]);
 
   return (
     <View style={styles.header}>
       <View style={styles.topRow}>
         {/* Botón de menú */}
-        <TouchableOpacity style={styles.menuButton} onPress={onOpenDrawer}>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={handleMenuPress}
+          activeOpacity={0.7}
+        >
           <View style={styles.iconContainer}>
             <Image
-              source={require('../../../../../assets/menu.png')} 
+              source={require("../../../../../assets/menu.png")}
               style={styles.iconImage}
               resizeMode="contain"
             />
@@ -62,7 +86,7 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
         <View style={styles.headerCenter}>
           <View style={styles.logoContainer}>
             <Image
-              source={require('../../../../../assets/logo.png')} 
+              source={require("../../../../../assets/logo.png")}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -72,20 +96,28 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
 
         {/* Botones de acción */}
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.actionButton} onPress={onRefresh}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleRefreshPress}
+            activeOpacity={0.7}
+          >
             <View style={styles.refreshIconContainer}>
               <Image
-                source={require('../../../../../assets/actualizaa.png')} 
+                source={require("../../../../../assets/actualizaa.png")}
                 style={styles.actionIconImage}
                 resizeMode="contain"
               />
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton} onPress={handleLogout}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleLogout}
+            activeOpacity={0.7}
+          >
             <View style={styles.logoutIconContainer}>
               <Image
-                source={require('../../../../../assets/cerrarC.png')} 
+                source={require("../../../../../assets/cerrarC.png")}
                 style={styles.actionIconImage}
                 resizeMode="contain"
               />
@@ -98,7 +130,6 @@ export default function HeaderSection({ onOpenDrawer, onRefresh }) {
 }
 
 const styles = StyleSheet.create({
-  // === CONTENEDOR PRINCIPAL ===
   header: {
     width: "100%",
     minHeight: 90,
@@ -115,7 +146,6 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 
-  // === LAYOUT ===
   topRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -134,7 +164,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  // === BOTONES ===
   menuButton: {
     padding: 4,
   },
@@ -142,7 +171,6 @@ const styles = StyleSheet.create({
     padding: 2,
   },
 
-  // === CONTENEDORES DE ICONOS ===
   iconContainer: {
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
@@ -177,7 +205,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
-  // === IMÁGENES ===
   iconImage: {
     width: 30,
     height: 28,
@@ -189,10 +216,9 @@ const styles = StyleSheet.create({
   logoImage: {
     width: 35,
     height: 40,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 
-  // === TEXTO ===
   appName: {
     fontSize: 20,
     fontWeight: "700",

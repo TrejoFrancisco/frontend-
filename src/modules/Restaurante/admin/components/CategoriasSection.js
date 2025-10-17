@@ -20,6 +20,10 @@ export default function CategoriasScreen({ token, navigation }) {
   const [categorias, setCategorias] = useState([]);
   const [editingCategoria, setEditingCategoria] = useState(null);
 
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const [categoriaData, setCategoriaData] = useState({
     nombre: "",
     descripcion: "",
@@ -47,6 +51,18 @@ export default function CategoriasScreen({ token, navigation }) {
       if (error.response?.status === 401) {
         navigation.navigate("Login");
       }
+    }
+  };
+
+  // Cálculos de paginación
+  const totalPages = Math.ceil(categorias.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCategorias = categorias.slice(startIndex, endIndex);
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
     }
   };
 
@@ -164,6 +180,14 @@ export default function CategoriasScreen({ token, navigation }) {
                 },
               });
               Alert.alert("Éxito", "Categoría eliminada exitosamente");
+
+              // Ajustar la página si es necesario después de eliminar
+              const newTotal = categorias.length - 1;
+              const newTotalPages = Math.ceil(newTotal / itemsPerPage);
+              if (currentPage > newTotalPages && newTotalPages > 0) {
+                setCurrentPage(newTotalPages);
+              }
+
               fetchCategorias();
             } catch (error) {
               console.log("Error:", error.response?.data || error.message);
@@ -203,6 +227,97 @@ export default function CategoriasScreen({ token, navigation }) {
     }
   };
 
+  // Renderizar los botones de paginación
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    return (
+      <View style={styles.paginationContainer}>
+        <TouchableOpacity
+          style={[
+            styles.paginationButton,
+            currentPage === 1 && styles.disabledButton,
+          ]}
+          onPress={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <Text style={styles.paginationText}>{"<"}</Text>
+        </TouchableOpacity>
+
+        {startPage > 1 && (
+          <>
+            <TouchableOpacity
+              style={styles.paginationButton}
+              onPress={() => goToPage(1)}
+            >
+              <Text style={styles.paginationText}>1</Text>
+            </TouchableOpacity>
+            {startPage > 2 && <Text style={styles.ellipsis}>...</Text>}
+          </>
+        )}
+
+        {pageNumbers.map((page) => (
+          <TouchableOpacity
+            key={page}
+            style={[
+              styles.paginationButton,
+              currentPage === page && styles.activePageButton,
+            ]}
+            onPress={() => goToPage(page)}
+          >
+            <Text
+              style={[
+                styles.paginationText,
+                currentPage === page && styles.activePageText,
+              ]}
+            >
+              {page}
+            </Text>
+          </TouchableOpacity>
+        ))}
+
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && (
+              <Text style={styles.ellipsis}>...</Text>
+            )}
+            <TouchableOpacity
+              style={styles.paginationButton}
+              onPress={() => goToPage(totalPages)}
+            >
+              <Text style={styles.paginationText}>{totalPages}</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        <TouchableOpacity
+          style={[
+            styles.paginationButton,
+            currentPage === totalPages && styles.disabledButton,
+          ]}
+          onPress={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          <Text style={styles.paginationText}>{">"}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gestión de Categorías</Text>
@@ -220,8 +335,12 @@ export default function CategoriasScreen({ token, navigation }) {
         {/* Encabezado de la tabla */}
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
-          <Text style={[styles.tableHeaderText, styles.nameColumn]}>Nombre</Text>
-          <Text style={[styles.tableHeaderText, styles.descriptionColumn]}>Descripción</Text>
+          <Text style={[styles.tableHeaderText, styles.nameColumn]}>
+            Nombre
+          </Text>
+          <Text style={[styles.tableHeaderText, styles.descriptionColumn]}>
+            Descripción
+          </Text>
           <View style={[styles.actionsColumn, styles.headerActionsContainer]}>
             <Text style={styles.tableHeaderText} numberOfLines={2}>
               Acciones
@@ -231,16 +350,22 @@ export default function CategoriasScreen({ token, navigation }) {
 
         {/* Filas de la tabla */}
         <ScrollView style={styles.tableBody}>
-          {categorias.map((categoria) => (
+          {currentCategorias.map((categoria) => (
             <View key={categoria.id} style={styles.tableRow}>
               <Text style={[styles.tableCellText, styles.idColumn]}>
                 {categoria.id}
               </Text>
-              <Text style={[styles.tableCellText, styles.nameColumn]} numberOfLines={2}>
+              <Text
+                style={[styles.tableCellText, styles.nameColumn]}
+                numberOfLines={2}
+              >
                 {categoria.nombre}
               </Text>
-              <Text style={[styles.tableCellText, styles.descriptionColumn]} numberOfLines={2}>
-                {categoria.descripcion || 'Sin descripción'}
+              <Text
+                style={[styles.tableCellText, styles.descriptionColumn]}
+                numberOfLines={2}
+              >
+                {categoria.descripcion || "Sin descripción"}
               </Text>
               <View style={[styles.actionsColumn, styles.actionsContainer]}>
                 <TouchableOpacity
@@ -248,7 +373,7 @@ export default function CategoriasScreen({ token, navigation }) {
                   onPress={() => openEditModal(categoria)}
                 >
                   <Image
-                    source={require('../../../../../assets/editarr.png')}
+                    source={require("../../../../../assets/editarr.png")}
                     style={styles.icon}
                     accessibilityLabel="Editar categoría"
                   />
@@ -258,7 +383,7 @@ export default function CategoriasScreen({ token, navigation }) {
                   onPress={() => handleDeleteCategoria(categoria.id)}
                 >
                   <Image
-                    source={require('../../../../../assets/eliminar.png')}
+                    source={require("../../../../../assets/eliminar.png")}
                     style={styles.icon}
                     accessibilityLabel="Eliminar categoría"
                   />
@@ -267,6 +392,19 @@ export default function CategoriasScreen({ token, navigation }) {
             </View>
           ))}
         </ScrollView>
+
+        {/* Información de paginación */}
+        {categorias.length > 0 && (
+          <View style={styles.paginationInfo}>
+            <Text style={styles.paginationInfoText}>
+              Mostrando {startIndex + 1} -{" "}
+              {Math.min(endIndex, categorias.length)}
+            </Text>
+          </View>
+        )}
+
+        {/* Controles de paginación */}
+        {renderPagination()}
 
         {/* Mensaje si no hay categorías */}
         {categorias.length === 0 && (
@@ -325,8 +463,8 @@ export default function CategoriasScreen({ token, navigation }) {
                         ? "Creando..."
                         : "Actualizando..."
                       : modalType === "crear"
-                        ? "Crear"
-                        : "Actualizar"}
+                      ? "Crear"
+                      : "Actualizar"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -409,31 +547,30 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 4
+    paddingHorizontal: 4,
   },
 
   // ===== TABLA - CUERPO =====
   tableBody: {
-    maxHeight: '80%',
+    maxHeight: "100%",
   },
   tableRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderColor: '#eee',
-    alignItems: 'center',
-      
+    borderColor: "#eee",
+    alignItems: "center",
   },
   tableCellText: {
     fontSize: 17,
-    color: '#444',
-    flexWrap: 'wrap',
+    color: "#444",
+    flexWrap: "wrap",
   },
 
   // ===== TABLA - COLUMNAS =====
   idColumn: {
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
   },
   nameColumn: {
     flex: 2,
@@ -445,15 +582,15 @@ const styles = StyleSheet.create({
   },
   actionsColumn: {
     flex: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   // ===== TABLA - BOTONES DE ACCIÓN =====
   actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 20,
   },
   editButton: {
@@ -467,15 +604,62 @@ const styles = StyleSheet.create({
   icon: {
     width: 30,
     height: 30,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
 
   // ===== TEXTO VACÍO =====
   emptyText: {
     marginTop: 20,
-    textAlign: 'center',
-    color: '#888',
-    fontStyle: 'italic',
+    textAlign: "center",
+    color: "#888",
+    fontStyle: "italic",
+  },
+
+  // ===== PAGINACIÓN =====
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 15,
+    gap: 8,
+  },
+  paginationButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: "#F0F0F0",
+    minWidth: 40,
+    alignItems: "center",
+  },
+  activePageButton: {
+    backgroundColor: "#4CAF50",
+  },
+  disabledButton: {
+    opacity: 0.4,
+  },
+  paginationText: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "500",
+  },
+  activePageText: {
+    color: "#FFF",
+    fontWeight: "bold",
+  },
+  ellipsis: {
+    fontSize: 16,
+    color: "#666",
+    paddingHorizontal: 4,
+  },
+  paginationInfo: {
+    paddingVertical: 10,
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: "#EEEEEE",
+  },
+  paginationInfoText: {
+    fontSize: 14,
+    color: "#666",
   },
 
   // ===== MODAL - CONTENEDOR =====
