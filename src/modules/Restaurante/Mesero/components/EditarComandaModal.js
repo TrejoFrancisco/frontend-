@@ -275,7 +275,7 @@ export default function EditarComandaModal({
 
               <TextInput
                 style={styles.input}
-                placeholder="Nombre del comensal (opcional)"
+                placeholder="Nombre del comensal"
                 placeholderTextColor="#999"
                 value={formData.comensal}
                 onChangeText={(value) => handleChange("comensal", value)}
@@ -463,10 +463,12 @@ function ProductoItem({
             <Text style={styles.detalleModalTitle}>Detalle del Producto</Text>
             <TextInput
               style={styles.detalleInput}
-              placeholder="Ej: Sin cebolla, con hielos..."
-              value={detalleTemp}
+              placeholder="Ejemplo: Con hielos, sin cebolla, etc."
+              placeholderTextColor="#999999"
+              value={detalleTemp || undefined}
               onChangeText={setDetalleTemp}
-              multiline
+              multiline={true}
+              numberOfLines={3}
             />
             <View style={styles.detalleModalActions}>
               <TouchableOpacity

@@ -689,12 +689,12 @@ const ReportesSection = ({ token, navigation }) => {
               {loading
                 ? "Generando..."
                 : activeTab === "ventas"
-                ? "Ver Reporte de Ventas"
+                ? "Ver Reporte"
                 : activeTab === "inventario"
-                ? "Ver Reporte de Inventario"
+                ? "Ver Reporte"
                 : activeTab === "comandas"
-                ? "Ver Reporte de Comandas"
-                : "Ver Reporte de Entregas"}
+                ? "Ver Reporte"
+                : "Ver Reporte"}
             </Text>
           </TouchableOpacity>
 
@@ -710,7 +710,7 @@ const ReportesSection = ({ token, navigation }) => {
             disabled={loading || downloadingExcel}
           >
             <Text style={styles.excelButtonText}>
-              {downloadingExcel ? "Descargando..." : "📊 Descargar Excel"}
+              {downloadingExcel ? "Descargando..." : "Descargar Excel"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -1392,7 +1392,7 @@ const styles = StyleSheet.create({
   },
   generateButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "600",
     textAlign: "center",
   },
@@ -1406,7 +1406,7 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "bold",
     textAlign: "center",
   },
@@ -1428,7 +1428,7 @@ const styles = StyleSheet.create({
   },
   excelButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
   },
   loadingContainer: {

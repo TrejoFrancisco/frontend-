@@ -431,14 +431,16 @@ export default function CategoriasScreen({ token, navigation }) {
               <TextInput
                 style={styles.input}
                 placeholder="Nombre de la categoría"
-                value={categoriaData.nombre}
+                placeholderTextColor="#888"
+                value={categoriaData.nombre || undefined}
                 onChangeText={(text) => handleInputChange("nombre", text)}
               />
 
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Descripción de la categoría"
-                value={categoriaData.descripcion}
+                placeholderTextColor="#888"
+                value={categoriaData.descripcion || undefined}
                 onChangeText={(text) => handleInputChange("descripcion", text)}
                 multiline
                 numberOfLines={4}
@@ -463,8 +465,8 @@ export default function CategoriasScreen({ token, navigation }) {
                         ? "Creando..."
                         : "Actualizando..."
                       : modalType === "crear"
-                      ? "Crear"
-                      : "Actualizar"}
+                        ? "Crear"
+                        : "Actualizar"}
                   </Text>
                 </TouchableOpacity>
               </View>

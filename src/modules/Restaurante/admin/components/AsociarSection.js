@@ -21,7 +21,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedCategoriaId, setSelectedCategoriaId] = useState("");
+  const [selectedCategoriaId, setSelectedCategoriaId] = useState("undefined");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +61,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
         Alert.alert(
           "Error",
           error.response?.data?.error?.message ||
-            "Error al obtener los usuarios"
+          "Error al obtener los usuarios"
         );
       }
     } finally {
@@ -87,7 +87,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-          "Error al obtener las categorías"
+        "Error al obtener las categorías"
       );
     }
   };
@@ -172,8 +172,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
 
     Alert.alert(
       "Confirmar eliminación",
-      `¿Estás seguro de que deseas eliminar la categoría asignada a "${
-        usuario.name || "este usuario"
+      `¿Estás seguro de que deseas eliminar la categoría asignada a "${usuario.name || "este usuario"
       }"?`,
       [
         { text: "Cancelar", style: "cancel" },
@@ -199,7 +198,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                  "Error al eliminar la asociación"
+                "Error al eliminar la asociación"
               );
             }
           },
@@ -271,7 +270,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               >
                 <View style={styles.buttonContent}>
                   <Text style={styles.actionButtonText}>
-                    + Agregar Categoría
+                    Agregar Categoría
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -281,14 +280,24 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                   style={[styles.actionButton, styles.editButton]}
                   onPress={() => abrirModalEditar(usuario)}
                 >
-                  <Text style={styles.actionButtonTextSmall}>✏️</Text>
+                  <Image
+                    source={require("../../../../../assets/editarr.png")}
+                    style={styles.icon}
+                    accessibilityLabel="Editar categoría"
+                  />
+
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[styles.actionButton, styles.deleteButton]}
                   onPress={() => eliminarAsociacion(usuario)}
                 >
-                  <Text style={styles.actionButtonTextSmall}>🗑️</Text>
+                  <Image
+                    source={require("../../../../../assets/eliminar.png")}
+                    style={styles.icon}
+                    accessibilityLabel="Eliminar categoría"
+                  />
+
                 </TouchableOpacity>
               </View>
             )}
@@ -369,7 +378,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                 onValueChange={(value) => setSelectedCategoriaId(value)}
                 style={styles.picker}
               >
-                <Picker.Item label="Selecciona una categoría" value="" />
+                <Picker.Item label="Selecciona una categoría" value={undefined} />
                 {categorias.map((categoria) => (
                   <Picker.Item
                     key={categoria.id}
@@ -378,6 +387,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                   />
                 ))}
               </Picker>
+
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity
@@ -572,7 +582,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
+  icon: {
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
+  },
   // ===== MODAL =====
   modalContainer: {
     flex: 1,

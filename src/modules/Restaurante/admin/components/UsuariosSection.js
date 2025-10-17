@@ -229,14 +229,16 @@ export default function UsuariosSection({ token, navigation }) {
 
             <TextInput
               placeholder="Nombre"
-              value={name}
+              placeholderTextColor="#888"
+              value={name || undefined}
               onChangeText={setName}
               style={styles.input}
             />
 
             <TextInput
               placeholder="Email"
-              value={email}
+              placeholderTextColor="#888"
+              value={email || undefined}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -247,7 +249,8 @@ export default function UsuariosSection({ token, navigation }) {
               <>
                 <TextInput
                   placeholder="Contraseña"
-                  value={password}
+                  placeholderTextColor="#888"
+                  value={password || undefined}
                   onChangeText={(text) => {
                     setPassword(text);
                     validarPassword(text);
@@ -259,9 +262,7 @@ export default function UsuariosSection({ token, navigation }) {
                   ]}
                 />
                 {passwordError ? (
-                  <Text style={{ color: "red", fontSize: 12 }}>
-                    {passwordError}
-                  </Text>
+                  <Text style={{ color: "red", fontSize: 12 }}>{passwordError}</Text>
                 ) : null}
               </>
             )}
@@ -269,11 +270,11 @@ export default function UsuariosSection({ token, navigation }) {
             <View style={styles.row}>
               <Text style={styles.labelR}>Rol</Text>
               <Picker
-                selectedValue={selectedRole}
-                onValueChange={setSelectedRole}
-                style={styles.picker}
+                selectedValue={selectedRole || "default"}
+                onValueChange={(value) => setSelectedRole(value === "default" ? null : value)}
+                style={[styles.picker, { color: selectedRole ? "#000" : "#888" }]}
               >
-                <Picker.Item label="Selecciona un rol" value="" />
+                <Picker.Item label="Selecciona un rol" value="default" />
                 {roles.map((rol) => (
                   <Picker.Item key={rol.id} label={rol.name} value={rol.id} />
                 ))}
@@ -484,11 +485,11 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   picker: {
-    height: 60, // asegura que se vea el campo
+    height: 50, // asegura que se vea el campo
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    paddingHorizontal: 120,
+    paddingHorizontal: 150,
   },
   labelR: {
     fontWeight: "bold",
