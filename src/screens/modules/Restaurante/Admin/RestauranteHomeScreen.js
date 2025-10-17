@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   StatusBar,
   Image,
   ActivityIndicator,
+  Alert,
+  BackHandler,
 } from "react-native";
 import {
   SafeAreaProvider,
@@ -27,8 +29,8 @@ import InventarioSection from "../../../../modules/Restaurante/admin/components/
 import ReportesSection from "../../../../modules/Restaurante/admin/components/ReportesSection";
 import ComandasSection from "../../../../modules/Restaurante/admin/components/ComandasSection";
 import { API } from "../../../../services/api";
+import { useBackHandler } from "../../../../hooks/useBackHandler";
 
-// Componente principal envuelto con SafeAreaProvider
 export default function HomeScreenWrapper() {
   return (
     <SafeAreaProvider>
@@ -38,145 +40,111 @@ export default function HomeScreenWrapper() {
 }
 
 function HomeScreen() {
-  const { token, user } = useAuth();
-  const navigation = useNavigation();
+  const { token, user, logout } = useAuth();
   const insets = useSafeAreaInsets();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeSection, setActiveSection] = useState("dashboard");
+  const navigation = useNavigation();
 
-  const menuItems = [
-    {
-      id: "dashboard",
-      title: "Dashboard",
-      icon: (
-        <Image
-          source={require("../../../../../assets/dash.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#aac6f0ff",
-      bgColor: "#e7f1feff",
-    },
-    {
-      id: "usuarios",
-      title: "Usuarios",
-      icon: (
-        <Image
-          source={require("../../../../../assets/gestionU.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#58D68D",
-      bgColor: "#D5F5E3",
-    },
-    {
-      id: "categorias",
-      title: "Categorías",
-      icon: (
-        <Image
-          source={require("../../../../../assets/gestionC.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#eeb98aff",
-      bgColor: "#f9eaddff",
-    },
-    {
-      id: "materias-primas",
-      title: "Materias Primas",
-      icon: (
-        <Image
-          source={require("../../../../../assets/gestionMP.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#F1948A",
-      bgColor: "#FADBD8",
-    },
-    {
-      id: "recetas",
-      title: "Gestión de Recetas",
-      icon: (
-        <Image
-          source={require("../../../../../assets/gestionR.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#C39BD3",
-      bgColor: "#E8DAEF",
-    },
-    {
-      id: "productos",
-      title: "Productos",
-      icon: (
-        <Image
-          source={require("../../../../../assets/gestionP.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#F7DC6F",
-      bgColor: "#FCF3CF",
-    },
-    {
-      id: "asociar",
-      title: "Asociar Usuarios",
-      icon: (
-        <Image
-          source={require("../../../../../assets/asociarU.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#76D7C4",
-      bgColor: "#D1F2EB",
-    },
-    {
-      id: "inventario",
-      title: "Inventario",
-      icon: (
-        <Image
-          source={require("../../../../../assets/gestionI.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#ffc089ff",
-      bgColor: "#fff0e2ff",
-    },
-    {
-      id: "reportes",
-      title: "Gestión de Reportes",
-      icon: (
-        <Image
-          source={require("../../../../../assets/reportes.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#F8BBD0",
-      bgColor: "#FCE4EC",
-    },
-    {
-      id: "comandas",
-      title: "Comandas",
-      icon: (
-        <Image
-          source={require("../../../../../assets/comandas.png")}
-          style={styles.menuIco}
-        />
-      ),
-      color: "#F4A8FF",
-      bgColor: "#FAE8FF",
-    },
-  ];
+  useEffect(() => {
+    return () => console.log("HomeScreen unmounted");
+  }, [token, user]);
+  useBackHandler(navigation);
 
-  const handleMenuPress = (itemId) => {
+  const menuItems = useMemo(
+    () => [
+      {
+        id: "dashboard",
+        title: "Dashboard",
+        icon: require("../../../../../assets/dash.png"),
+        color: "#aac6f0ff",
+        bgColor: "#e7f1feff",
+      },
+      {
+        id: "usuarios",
+        title: "Usuarios",
+        icon: require("../../../../../assets/gestionU.png"),
+        color: "#58D68D",
+        bgColor: "#D5F5E3",
+      },
+      {
+        id: "categorias",
+        title: "Categorías",
+        icon: require("../../../../../assets/gestionC.png"),
+        color: "#eeb98aff",
+        bgColor: "#f9eaddff",
+      },
+      {
+        id: "materias-primas",
+        title: "Materias Primas",
+        icon: require("../../../../../assets/gestionMP.png"),
+        color: "#F1948A",
+        bgColor: "#FADBD8",
+      },
+      {
+        id: "recetas",
+        title: "Gestión de Recetas",
+        icon: require("../../../../../assets/gestionR.png"),
+        color: "#C39BD3",
+        bgColor: "#E8DAEF",
+      },
+      {
+        id: "productos",
+        title: "Productos",
+        icon: require("../../../../../assets/gestionP.png"),
+        color: "#F7DC6F",
+        bgColor: "#FCF3CF",
+      },
+      {
+        id: "asociar",
+        title: "Asociar Usuarios",
+        icon: require("../../../../../assets/asociarU.png"),
+        color: "#76D7C4",
+        bgColor: "#D1F2EB",
+      },
+      {
+        id: "inventario",
+        title: "Inventario",
+        icon: require("../../../../../assets/gestionI.png"),
+        color: "#ffc089ff",
+        bgColor: "#fff0e2ff",
+      },
+      {
+        id: "reportes",
+        title: "Gestión de Reportes",
+        icon: require("../../../../../assets/reportes.png"),
+        color: "#F8BBD0",
+        bgColor: "#FCE4EC",
+      },
+      {
+        id: "comandas",
+        title: "Comandas",
+        icon: require("../../../../../assets/comandas.png"),
+        color: "#F4A8FF",
+        bgColor: "#FAE8FF",
+      },
+    ],
+    []
+  );
+
+  const handleMenuPress = useCallback((itemId) => {
     setActiveSection(itemId);
     setDrawerVisible(false);
-  };
+  }, []);
 
-  const handleRefresh = () => {
+  const handleOpenDrawer = useCallback(() => {
+    setDrawerVisible(true);
+  }, []);
+
+  const handleCloseDrawer = useCallback(() => {
+    setDrawerVisible(false);
+  }, []);
+
+  const handleRefresh = useCallback(() => {
     console.log("Refreshing section:", activeSection);
-  };
+  }, [activeSection]);
 
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     switch (activeSection) {
       case "dashboard":
         return <DashboardContent token={token} />;
@@ -201,12 +169,12 @@ function HomeScreen() {
       default:
         return <DashboardContent token={token} />;
     }
-  };
+  }, [activeSection, token, navigation]);
 
-  const getCurrentSectionTitle = () => {
+  const getCurrentSectionTitle = useCallback(() => {
     const currentItem = menuItems.find((item) => item.id === activeSection);
     return currentItem ? currentItem.title : "Dashboard";
-  };
+  }, [activeSection, menuItems]);
 
   return (
     <View style={styles.container}>
@@ -217,10 +185,7 @@ function HomeScreen() {
       />
 
       <View style={[styles.safeContainer, { paddingTop: insets.top }]}>
-        <Header
-          onOpenDrawer={() => setDrawerVisible(true)}
-          onRefresh={handleRefresh}
-        />
+        <Header onOpenDrawer={handleOpenDrawer} onRefresh={handleRefresh} />
 
         <ScrollView style={styles.content}>{renderContent()}</ScrollView>
 
@@ -228,141 +193,138 @@ function HomeScreen() {
           animationType="fade"
           transparent={true}
           visible={drawerVisible}
-          onRequestClose={() => setDrawerVisible(false)}
+          onRequestClose={handleCloseDrawer}
           statusBarTranslucent={true}
         >
           <TouchableOpacity
             style={styles.drawerOverlay}
             activeOpacity={1}
-            onPress={() => setDrawerVisible(false)}
+            onPress={handleCloseDrawer}
           >
-            <View style={[styles.drawerContainer, { paddingTop: insets.top }]}>
-              {/* Header del Drawer */}
-              <View style={styles.drawerHeader}>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setDrawerVisible(false)}
-                >
-                  <View style={styles.closeButtonContainer}>
-                    <Text style={styles.closeButtonText}>✕</Text>
-                  </View>
-                </TouchableOpacity>
-
-                <View style={styles.drawerHeaderContent}>
-                  <View style={styles.appLogoContainer}>
-                    <Image
-                      source={require("../../../../../assets/logo.png")}
-                      style={styles.appLogo}
-                      resizeMode="contain"
-                    />
-                  </View>
-                  <Text style={styles.drawerTitle}>Mi Restaurante</Text>
-                  <Text style={styles.drawerSubtitle}>
-                    Panel de Administración
-                  </Text>
-
-                  {/* Info del usuario */}
-                  <View style={styles.userInfoContainer}>
-                    <View style={styles.userAvatarContainer}>
-                      <Text style={styles.userAvatar}>
-                        {(user?.name || "U").charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
-                    <View style={styles.userDetails}>
-                      <Text style={styles.userName}>
-                        {user?.name || "Usuario"}
-                      </Text>
-                      <Text style={styles.userRoleText}>
-                        {user?.role === "admin_local_restaurante"
-                          ? "Administrador"
-                          : "Admin"}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-
-              {/* Contenido del Drawer */}
-              <ScrollView
-                style={styles.drawerContent}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.menuSection}>
-                  <Text style={styles.menuSectionTitle}>Navegación</Text>
-                  {menuItems.map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        styles.menuItem,
-                        activeSection === item.id && [
-                          styles.activeMenuItem,
-                          { backgroundColor: item.bgColor },
-                        ],
-                      ]}
-                      onPress={() => handleMenuPress(item.id)}
-                      activeOpacity={0.7}
-                    >
-                      <View
-                        style={[
-                          styles.menuIconContainer,
-                          activeSection === item.id && {
-                            backgroundColor: item.color,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.menuIconText,
-                            activeSection === item.id && { color: "#FFFFFF" },
-                          ]}
-                        >
-                          {item.icon}
-                        </Text>
-                      </View>
-
-                      <View style={styles.menuItemContent}>
-                        <Text
-                          style={[
-                            styles.menuText,
-                            activeSection === item.id && {
-                              color: item.color,
-                              fontWeight: "700",
-                            },
-                          ]}
-                        >
-                          {item.title}
-                        </Text>
-                        {activeSection === item.id && (
-                          <View style={styles.activeIndicator}>
-                            <Text style={styles.activeIndicatorText}>●</Text>
-                          </View>
-                        )}
-                      </View>
-
-                      {activeSection === item.id && (
-                        <View
-                          style={[
-                            styles.activeBorder,
-                            { backgroundColor: item.color },
-                          ]}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-
-              {/* Footer del Drawer */}
-              <View style={styles.drawerFooter}>
-                <Text style={styles.footerText}>v1.0.0 • Mi Restaurante</Text>
-              </View>
-            </View>
+            <DrawerContent
+              insets={insets}
+              menuItems={menuItems}
+              activeSection={activeSection}
+              onMenuPress={handleMenuPress}
+              user={user}
+              onClose={handleCloseDrawer}
+            />
           </TouchableOpacity>
         </Modal>
       </View>
     </View>
   );
 }
+
+const DrawerContent = React.memo(
+  ({ insets, menuItems, activeSection, onMenuPress, user, onClose }) => (
+    <View style={[styles.drawerContainer, { paddingTop: insets.top }]}>
+      <View style={styles.drawerHeader}>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <View style={styles.closeButtonContainer}>
+            <Text style={styles.closeButtonText}>✕</Text>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.drawerHeaderContent}>
+          <View style={styles.appLogoContainer}>
+            <Image
+              source={require("../../../../../assets/logo.png")}
+              style={styles.appLogo}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.drawerTitle}>Mi Restaurante</Text>
+          <Text style={styles.drawerSubtitle}>Panel de Administración</Text>
+
+          <View style={styles.userInfoContainer}>
+            <View style={styles.userAvatarContainer}>
+              <Text style={styles.userAvatar}>
+                {(user?.name || "U").charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.userDetails}>
+              <Text style={styles.userName}>{user?.name || "Usuario"}</Text>
+              <Text style={styles.userRoleText}>
+                {user?.role === "admin_local_restaurante"
+                  ? "Administrador"
+                  : "Admin"}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView
+        style={styles.drawerContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.menuSection}>
+          <Text style={styles.menuSectionTitle}>Navegación</Text>
+          {menuItems.map((item) => (
+            <MenuItem
+              key={item.id}
+              item={item}
+              isActive={activeSection === item.id}
+              onPress={() => onMenuPress(item.id)}
+            />
+          ))}
+        </View>
+      </ScrollView>
+
+      <View style={styles.drawerFooter}>
+        <Text style={styles.footerText}>v1.0.0 • Mi Restaurante</Text>
+      </View>
+    </View>
+  )
+);
+
+DrawerContent.displayName = "DrawerContent";
+
+const MenuItem = React.memo(({ item, isActive, onPress }) => (
+  <TouchableOpacity
+    style={[
+      styles.menuItem,
+      isActive && [styles.activeMenuItem, { backgroundColor: item.bgColor }],
+    ]}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View
+      style={[
+        styles.menuIconContainer,
+        isActive && { backgroundColor: item.color },
+      ]}
+    >
+      <Image source={item.icon} style={styles.menuIco} resizeMode="contain" />
+    </View>
+
+    <View style={styles.menuItemContent}>
+      <Text
+        style={[
+          styles.menuText,
+          isActive && {
+            color: item.color,
+            fontWeight: "700",
+          },
+        ]}
+      >
+        {item.title}
+      </Text>
+      {isActive && (
+        <View style={styles.activeIndicator}>
+          <Text style={styles.activeIndicatorText}>●</Text>
+        </View>
+      )}
+    </View>
+
+    {isActive && (
+      <View style={[styles.activeBorder, { backgroundColor: item.color }]} />
+    )}
+  </TouchableOpacity>
+));
+
+MenuItem.displayName = "MenuItem";
 
 const DashboardContent = ({ token }) => {
   const [loading, setLoading] = useState(true);
@@ -375,7 +337,7 @@ const DashboardContent = ({ token }) => {
   });
   const [error, setError] = useState(null);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -395,21 +357,21 @@ const DashboardContent = ({ token }) => {
       console.error("Error fetching dashboard data:", error);
       setError(
         error.response?.data?.error?.message ||
-        error.response?.data?.message ||
-        "Error de conexión. Verifica tu conexión a internet."
+          error.response?.data?.message ||
+          "Error de conexión. Verifica tu conexión a internet."
       );
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     fetchDashboardData();
-  };
+  }, [fetchDashboardData]);
 
   if (loading) {
     return (
@@ -442,7 +404,6 @@ const DashboardContent = ({ token }) => {
       <View style={styles.titleContainer}>
         <View style={styles.rowWrap}>
           <Text style={styles.contentTitle}>Dashboard</Text>
-
           <TouchableOpacity
             style={styles.refreshButton}
             onPress={handleRefresh}
@@ -450,7 +411,6 @@ const DashboardContent = ({ token }) => {
             <Text style={styles.refreshButtonText}>Actualizar</Text>
           </TouchableOpacity>
         </View>
-
         <Text style={styles.dateText}>Fecha: {dashboardData.fecha}</Text>
       </View>
 
@@ -476,7 +436,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Productos Más Vendidos</Text>
         {dashboardData.productos_mas_vendidos &&
-          dashboardData.productos_mas_vendidos.length > 0 ? (
+        dashboardData.productos_mas_vendidos.length > 0 ? (
           dashboardData.productos_mas_vendidos.map((item, index) => (
             <View key={item.producto_id} style={styles.productItem}>
               <View style={styles.rankBadge}>
@@ -500,7 +460,7 @@ const DashboardContent = ({ token }) => {
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Cancelaciones del día</Text>
         {dashboardData.productos_cancelados &&
-          dashboardData.productos_cancelados.length > 0 ? (
+        dashboardData.productos_cancelados.length > 0 ? (
           dashboardData.productos_cancelados.map((item, index) => (
             <View key={index} style={styles.canceledItem}>
               <View style={styles.canceledIcon}>
@@ -525,37 +485,21 @@ const DashboardContent = ({ token }) => {
           </Text>
         )}
       </View>
-    </View >
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  // ===== CONTENEDOR PRINCIPAL =====
-  container: {
-    flex: 1,
-    backgroundColor: "#1e3151ff",
-  },
-  safeContainer: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
-  content: {
-    flex: 1,
-    backgroundColor: "#F5F5F5",
-  },
-
-  // ===== CONTENIDO PRINCIPAL =====
-  contentContainer: {
-    padding: 20,
-  },
-  titleContainer: {
-    paddingVertical: 25,
-  },
+  container: { flex: 1, backgroundColor: "#1e3151ff" },
+  safeContainer: { flex: 1, backgroundColor: "#F5F5F5" },
+  content: { flex: 1, backgroundColor: "#F5F5F5" },
+  contentContainer: { padding: 20 },
+  titleContainer: { paddingVertical: 25 },
   rowWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
   },
   contentTitle: {
@@ -572,8 +516,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginTop: 4,
   },
-
-  // ===== BOTONES =====
   refreshButton: {
     backgroundColor: "#033468ff",
     flexShrink: 1,
@@ -585,25 +527,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "flex-start",
   },
-  refreshButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "500",
-  },
+  refreshButtonText: { color: "#fff", fontSize: 18, fontWeight: "500" },
   retryButton: {
     backgroundColor: "#1A1A2E",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
   },
-  retryButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-
-  // ===== ESTADÍSTICAS =====
+  retryButtonText: { color: "#fff", fontWeight: "600" },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -640,8 +572,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     flexWrap: "wrap",
   },
-
-  // ===== SECCIONES =====
   sectionContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -659,8 +589,6 @@ const styles = StyleSheet.create({
     color: "#1A1A2E",
     marginBottom: 15,
   },
-
-  // ===== PRODUCTOS MÁS VENDIDOS =====
   productItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -677,26 +605,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 15,
   },
-  rankText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  productInfo: {
-    flex: 1,
-  },
-  productName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  productQuantity: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 2,
-  },
-
-  // ===== PRODUCTOS CANCELADOS =====
+  rankText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+  productInfo: { flex: 1 },
+  productName: { fontSize: 16, fontWeight: "600", color: "#333" },
+  productQuantity: { fontSize: 14, color: "#666", marginTop: 2 },
   canceledItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -708,51 +620,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
   },
-  canceledIcon: {
-    marginRight: 12,
-  },
-  canceledIconText: {
-    fontSize: 20,
-  },
-  canceledInfo: {
-    flex: 1,
-  },
-  canceledProductName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  canceledDetails: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 2,
-  },
+  canceledIcon: { marginRight: 12 },
+  canceledIconText: { fontSize: 20 },
+  canceledInfo: { flex: 1 },
+  canceledProductName: { fontSize: 16, fontWeight: "600", color: "#333" },
+  canceledDetails: { fontSize: 12, color: "#666", marginTop: 2 },
   canceledBadge: {
     backgroundColor: "#dc3545",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  canceledText: {
-    fontSize: 15,
-    color: "#fff",
-    fontWeight: "bold",
-  },
-
-  // ===== ESTADOS DE CARGA Y ERROR =====
-  loadingContainer: {
-    alignItems: "center",
-    paddingVertical: 50,
-  },
-  loadingText: {
-    marginTop: 15,
-    fontSize: 16,
-    color: "#666",
-  },
-  errorContainer: {
-    alignItems: "center",
-    paddingVertical: 30,
-  },
+  canceledText: { fontSize: 15, color: "#fff", fontWeight: "bold" },
+  loadingContainer: { alignItems: "center", paddingVertical: 50 },
+  loadingText: { marginTop: 15, fontSize: 16, color: "#666" },
+  errorContainer: { alignItems: "center", paddingVertical: 30 },
   errorText: {
     color: "#dc3545",
     fontSize: 16,
@@ -766,8 +648,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     paddingVertical: 20,
   },
-
-  // ===== DRAWER - OVERLAY =====
   drawerOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
@@ -787,8 +667,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 10,
   },
-
-  // ===== DRAWER - HEADER =====
   drawerHeader: {
     backgroundColor: "#1A1A2E",
     borderTopRightRadius: 24,
@@ -796,12 +674,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     position: "relative",
   },
-  closeButton: {
-    position: "absolute",
-    top: 15,
-    right: 15,
-    zIndex: 10,
-  },
+  closeButton: { position: "absolute", top: 15, right: 15, zIndex: 10 },
   closeButtonContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 20,
@@ -810,15 +683,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  drawerHeaderContent: {
-    alignItems: "center",
-    paddingTop: 10,
-  },
+  closeButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
+  drawerHeaderContent: { alignItems: "center", paddingTop: 10 },
   appLogoContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 30,
@@ -829,25 +695,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingVertical: 4,
   },
-  appLogo: {
-    width: 45,
-    height: 40,
-  },
+  appLogo: { width: 45, height: 40 },
   drawerTitle: {
     fontSize: 22,
     color: "#c8c8c8ff",
-    fontWeight: 'bold',
-    textAlign: 'center',
-    flexWrap: 'wrap',
+    fontWeight: "bold",
+    textAlign: "center",
+    flexWrap: "wrap",
   },
   drawerSubtitle: {
     fontSize: 18,
-    color: '#b8b8b8ff',
-    textAlign: 'center',
-    flexWrap: 'wrap',
+    color: "#b8b8b8ff",
+    textAlign: "center",
+    flexWrap: "wrap",
   },
-
-  // ===== DRAWER - USUARIO =====
   userInfoContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -866,35 +727,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
-  userAvatar: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  userDetails: {
-    flex: 1,
-  },
+  userAvatar: { fontSize: 18, fontWeight: "bold", color: "#FFFFFF" },
+  userDetails: { flex: 1 },
   userName: {
     fontSize: 18,
     color: "#d8d8d8ff",
-    fontWeight: '600',
-    flexWrap: 'wrap',
+    fontWeight: "600",
+    flexWrap: "wrap",
   },
-  userRoleText: {
-    fontSize: 16,
-    color: '#c0c0c0ff',
-    flexWrap: 'wrap',
-  },
-
-  // ===== DRAWER - CONTENIDO =====
-  drawerContent: {
-    flex: 1,
-    paddingTop: 20,
-  },
-  menuSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
+  userRoleText: { fontSize: 16, color: "#c0c0c0ff", flexWrap: "wrap" },
+  drawerContent: { flex: 1, paddingTop: 20 },
+  menuSection: { paddingHorizontal: 16, paddingBottom: 20 },
   menuSectionTitle: {
     fontSize: 14,
     fontWeight: "700",
@@ -904,8 +747,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 4,
   },
-
-  // ===== DRAWER - MENU ITEMS =====
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -916,10 +757,7 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
   },
-  activeMenuItem: {
-    borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.2)",
-  },
+  activeMenuItem: { borderWidth: 1, borderColor: "rgba(59, 130, 246, 0.2)" },
   menuIconContainer: {
     backgroundColor: "#F2F4F4",
     borderRadius: 10,
@@ -929,10 +767,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 9,
     paddingVertical: 4,
-  },
-  menuIconText: {
-    fontSize: 18,
-    color: "#6B7280",
   },
   menuItemContent: {
     flex: 1,
@@ -944,17 +778,12 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 18,
     flexShrink: 1,
-    flexWrap: 'wrap',
-    width: '80%',
-    color: '#333333',
+    flexWrap: "wrap",
+    width: "80%",
+    color: "#333333",
   },
-  activeIndicator: {
-    marginLeft: 8,
-  },
-  activeIndicatorText: {
-    fontSize: 12,
-    color: "#3B82F6",
-  },
+  activeIndicator: { marginLeft: 8 },
+  activeIndicatorText: { fontSize: 12, color: "#3B82F6" },
   activeBorder: {
     position: "absolute",
     left: 0,
@@ -964,8 +793,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 2,
     borderBottomRightRadius: 2,
   },
-
-  // ===== DRAWER - FOOTER =====
   drawerFooter: {
     paddingHorizontal: 20,
     paddingVertical: 3,
@@ -976,15 +803,9 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 15,
     fontWeight: "700",
-    color: '#7d7d7dff',
-    textAlign: 'center',
-    flexWrap: 'wrap',
+    color: "#7d7d7dff",
+    textAlign: "center",
+    flexWrap: "wrap",
   },
-
-  // ===== ICONOS DEL MENÚ =====
-  menuIco: {
-    width: 50,
-    height: 30,
-    resizeMode: "contain",
-  },
+  menuIco: { width: 25, height: 25 },
 });

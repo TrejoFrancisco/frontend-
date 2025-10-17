@@ -13,19 +13,23 @@ import {
 import { API } from "../../../../services/api";
 import { useAuth } from "../../../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
-import { Dimensions } from 'react-native';
+import { Dimensions } from "react-native";
+import { useBackHandler } from "../../../../hooks/useBackHandler";
 
-const screenWidth = Dimensions.get('window').width;
+const screenWidth = Dimensions.get("window").width;
 const isMobile = screenWidth <= 480;
 
 export default function ChefComandasSection() {
   const { token, logout, user } = useAuth();
-  const navigation = useNavigation();
 
   const [comandas, setComandas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
+
+  // Manejo del botón de retroceso de Android
+  const navigation = useNavigation();
+  useBackHandler(navigation); // ¡Una sola línea!
 
   useEffect(() => {
     fetchComandas();
@@ -91,7 +95,7 @@ export default function ChefComandasSection() {
             if (token) {
               try {
                 await API.post(
-                  "/logout",
+                  "/auth/logout",
                   {},
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
@@ -184,7 +188,10 @@ export default function ChefComandasSection() {
             </View>
           </View>
           <View style={styles.rightColumn}>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+            >
               <Image
                 source={require("../../../../../assets/cerrarC.png")}
                 style={styles.logoutIcon}
@@ -218,12 +225,16 @@ export default function ChefComandasSection() {
                   {/* Tocar el header de mesa para expandir */}
                   <TouchableOpacity
                     onPress={() =>
-                      setExpandedId((prev) => (prev === comanda.id ? null : comanda.id))
+                      setExpandedId((prev) =>
+                        prev === comanda.id ? null : comanda.id
+                      )
                     }
                     style={styles.mesaHeader}
                     activeOpacity={1}
                   >
-                    <Text style={styles.mesaText}>Mesa {comanda.mesa || "N/A"}</Text>
+                    <Text style={styles.mesaText}>
+                      Mesa {comanda.mesa || "N/A"}
+                    </Text>
                     <Text style={styles.personasText}>
                       {comanda.personas || 0} personas
                     </Text>
@@ -239,8 +250,11 @@ export default function ChefComandasSection() {
 
                       {/* Lista de productos */}
                       <View style={styles.productosContainer}>
-                        {!comanda.productos || comanda.productos.length === 0 ? (
-                          <Text style={styles.sinProductosText}>Sin productos</Text>
+                        {!comanda.productos ||
+                        comanda.productos.length === 0 ? (
+                          <Text style={styles.sinProductosText}>
+                            Sin productos
+                          </Text>
                         ) : (
                           comanda.productos.map((producto, index) => (
                             <View
@@ -281,7 +295,9 @@ export default function ChefComandasSection() {
                           <Text style={styles.fechaText}>
                             Fecha: {fechaFormateada.fecha}
                           </Text>
-                          <Text style={styles.fechaText}>Hora: {fechaFormateada.hora}</Text>
+                          <Text style={styles.fechaText}>
+                            Hora: {fechaFormateada.hora}
+                          </Text>
                         </View>
 
                         <Text style={styles.usuarioText}>
@@ -290,7 +306,8 @@ export default function ChefComandasSection() {
                         {comanda.ultimo_cambio &&
                           comanda.ultimo_cambio !== comanda.fecha && (
                             <Text style={styles.ultimoCambioText}>
-                              Último cambio: {formatFecha(comanda.ultimo_cambio).hora}
+                              Último cambio:{" "}
+                              {formatFecha(comanda.ultimo_cambio).hora}
                             </Text>
                           )}
                       </View>
@@ -310,10 +327,10 @@ const styles = StyleSheet.create({
   // ===== CONTENEDOR PRINCIPAL =====
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5"
+    backgroundColor: "#f5f5f5",
   },
   scrollContainer: {
-    flex: 1
+    flex: 1,
   },
 
   // ===== TÍTULO =====
@@ -335,7 +352,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#666"
+    color: "#666",
   },
 
   // ===== ESTADO VACÍO =====
@@ -348,7 +365,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     color: "#666",
-    textAlign: "center"
+    textAlign: "center",
   },
 
   // ===== GRID RESPONSIVO =====
@@ -362,7 +379,14 @@ const styles = StyleSheet.create({
   },
 
   comandaWrapper: {
-    width: screenWidth <= 600 ? "95%" : screenWidth <= 768 ? "45%" : screenWidth <= 1024 ? "30%" : "280px",
+    width:
+      screenWidth <= 600
+        ? "95%"
+        : screenWidth <= 768
+        ? "45%"
+        : screenWidth <= 1024
+        ? "30%"
+        : "280px",
     maxWidth: 500, // Ancho máximo
     minWidth: 300, // Ancho mínimo
     marginBottom: 15,
@@ -488,21 +512,21 @@ const styles = StyleSheet.create({
     borderColor: "#2196F3",
   },
   textoProductoPendiente: {
-    color: "#1565C0"
+    color: "#1565C0",
   },
   productoEntregado: {
     backgroundColor: "#E8F5E8",
     borderColor: "#4CAF50",
   },
   textoProductoEntregado: {
-    color: "#2E7D32"
+    color: "#2E7D32",
   },
   productoCancelado: {
     backgroundColor: "#FFEBEE",
     borderColor: "#F44336",
   },
   textoProductoCancelado: {
-    color: "#C62828"
+    color: "#C62828",
   },
 
   // ===== INFORMACIÓN DEL PIE =====
@@ -556,16 +580,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   leftColumn: {
-    flex: 1
+    flex: 1,
   },
   rightColumn: {
-    justifyContent: "flex-end"
+    justifyContent: "flex-end",
   },
 
   // ===== SALUDO DE USUARIO =====
   userGreeting: {
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
   },
   welcomeIcon: {
     width: 30,
@@ -592,11 +616,11 @@ const styles = StyleSheet.create({
   logoutIcon: {
     width: 20,
     height: 20,
-    marginRight: 6
+    marginRight: 6,
   },
   logoutButtonText: {
     fontSize: 22,
     color: "#000000ff",
-    fontWeight: "500"
+    fontWeight: "500",
   },
 });

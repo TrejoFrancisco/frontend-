@@ -30,7 +30,12 @@ export default function UsuariosCocinaSection({ token, navigation }) {
   }, []);
 
   const fetchData = async () => {
-    await Promise.all([fetchUsuarios(), fetchCategorias()]);
+    try {
+      await Promise.all([fetchUsuarios(), fetchCategorias()]);
+    } catch (error) {
+      console.error("Error en fetchData:", error);
+      Alert.alert("Error", "Error al cargar los datos iniciales");
+    }
   };
 
   const fetchUsuarios = async () => {
@@ -41,17 +46,22 @@ export default function UsuariosCocinaSection({ token, navigation }) {
       });
 
       if (response.data.success) {
-        setUsuarios(response.data.data);
+        // Validar que sea un array
+        const usuariosData = Array.isArray(response.data.data)
+          ? response.data.data
+          : [];
+        setUsuarios(usuariosData);
       }
     } catch (error) {
       console.error("Error al obtener usuarios:", error);
       if (error.response?.status === 401) {
-        navigation.navigate("Login");
+        Alert.alert("Sesión Expirada", "Por favor inicia sesión nuevamente");
+        navigation?.navigate("Login");
       } else {
         Alert.alert(
           "Error",
           error.response?.data?.error?.message ||
-          "Error al obtener los usuarios"
+            "Error al obtener los usuarios"
         );
       }
     } finally {
@@ -66,14 +76,18 @@ export default function UsuariosCocinaSection({ token, navigation }) {
       });
 
       if (response.data.success) {
-        setCategorias(response.data.data);
+        // Validar que sea un array
+        const categoriasData = Array.isArray(response.data.data)
+          ? response.data.data
+          : [];
+        setCategorias(categoriasData);
       }
     } catch (error) {
       console.error("Error al obtener categorías:", error);
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-        "Error al obtener las categorías"
+          "Error al obtener las categorías"
       );
     }
   };
@@ -85,6 +99,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
   };
 
   const abrirModalAgregar = (usuario) => {
+    if (!usuario) return;
     setSelectedUser(usuario);
     setSelectedCategoriaId("");
     setEditMode(false);
@@ -92,6 +107,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
   };
 
   const abrirModalEditar = (usuario) => {
+    if (!usuario) return;
     setSelectedUser(usuario);
     const categoriaActual = usuario.categoria_encargado_id || "";
     setSelectedCategoriaId(categoriaActual.toString());
@@ -102,6 +118,11 @@ export default function UsuariosCocinaSection({ token, navigation }) {
   const guardarAsociacion = async () => {
     if (!selectedCategoriaId) {
       Alert.alert("Error", "Debe seleccionar una categoría");
+      return;
+    }
+
+    if (!selectedUser) {
+      Alert.alert("Error", "No hay usuario seleccionado");
       return;
     }
 
@@ -147,9 +168,13 @@ export default function UsuariosCocinaSection({ token, navigation }) {
   };
 
   const eliminarAsociacion = (usuario) => {
+    if (!usuario) return;
+
     Alert.alert(
       "Confirmar eliminación",
-      `¿Estás seguro de que deseas eliminar la categoría asignada a "${usuario.name}"?`,
+      `¿Estás seguro de que deseas eliminar la categoría asignada a "${
+        usuario.name || "este usuario"
+      }"?`,
       [
         { text: "Cancelar", style: "cancel" },
         {
@@ -174,7 +199,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                "Error al eliminar la asociación"
+                  "Error al eliminar la asociación"
               );
             }
           },
@@ -184,6 +209,8 @@ export default function UsuariosCocinaSection({ token, navigation }) {
   };
 
   const renderUsuarioItem = (usuario) => {
+    if (!usuario) return null;
+
     const tieneCategoria = usuario.categoria_encargado_id;
 
     return (
@@ -192,13 +219,17 @@ export default function UsuariosCocinaSection({ token, navigation }) {
           {/* Columna 1: Nombre */}
           <View style={styles.colItem}>
             <Text style={styles.usuarioLabel}>Nombre:</Text>
-            <Text style={styles.usuarioName}>{usuario.name}</Text>
+            <Text style={styles.usuarioName}>
+              {usuario.name || "Sin nombre"}
+            </Text>
           </View>
 
           {/* Columna 2: Email */}
           <View style={styles.colItem}>
             <Text style={styles.usuarioLabel}>Email:</Text>
-            <Text style={styles.usuarioDetail}>{usuario.email}</Text>
+            <Text style={styles.usuarioDetail}>
+              {usuario.email || "Sin email"}
+            </Text>
           </View>
 
           {/* Columna 3: Categoría */}
@@ -239,11 +270,9 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                 onPress={() => abrirModalAgregar(usuario)}
               >
                 <View style={styles.buttonContent}>
-                  <Image
-                    source={require("../../../../../assets/agreg.png")}
-                    style={styles.iconImagen}
-                  />
-                  <Text style={styles.actionButtonText}>Agregar Categoría</Text>
+                  <Text style={styles.actionButtonText}>
+                    + Agregar Categoría
+                  </Text>
                 </View>
               </TouchableOpacity>
             ) : (
@@ -252,20 +281,14 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                   style={[styles.actionButton, styles.editButton]}
                   onPress={() => abrirModalEditar(usuario)}
                 >
-                  <Image
-                    source={require("../../../../../assets/editarr.png")}
-                    style={styles.iconImage}
-                  />
+                  <Text style={styles.actionButtonTextSmall}>✏️</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[styles.actionButton, styles.deleteButton]}
                   onPress={() => eliminarAsociacion(usuario)}
                 >
-                  <Image
-                    source={require("../../../../../assets/eliminar.png")}
-                    style={styles.iconImage}
-                  />
+                  <Text style={styles.actionButtonTextSmall}>🗑️</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -302,13 +325,13 @@ export default function UsuariosCocinaSection({ token, navigation }) {
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
-              {usuarios.filter((u) => u.categoria_encargado_id).length}
+              {usuarios.filter((u) => u?.categoria_encargado_id).length}
             </Text>
             <Text style={styles.statLabel}>Con Categoría</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
-              {usuarios.filter((u) => !u.categoria_encargado_id).length}
+              {usuarios.filter((u) => !u?.categoria_encargado_id).length}
             </Text>
             <Text style={styles.statLabel}>Sin Asignar</Text>
           </View>
@@ -337,7 +360,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               </Text>
 
               <Text style={styles.modalSubtitle}>
-                Usuario: {selectedUser?.name}
+                Usuario: {selectedUser?.name || "Sin nombre"}
               </Text>
 
               <Text style={styles.label}>Seleccionar Categoría</Text>
@@ -467,25 +490,25 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   usuarioHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
     marginBottom: 6,
   },
   colItem: {
     flex: 1,
     minWidth: 150,
+    marginBottom: 8,
   },
   usuarioLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#555',
+    fontWeight: "600",
+    color: "#555",
     marginBottom: 2,
   },
   usuarioName: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 20,
   },
   usuarioDetail: {
@@ -498,7 +521,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 15,
     backgroundColor: "#ffc107",
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   statusText: {
     color: "#fff",
@@ -510,51 +533,44 @@ const styles = StyleSheet.create({
   usuarioActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 8,
+    marginRight: 8,
   },
   actionButton: {
     padding: 5,
     borderRadius: 6,
+    marginLeft: 8,
   },
   buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   actionButtonText: {
-    color: "#ffffffff",
+    color: "#ffffff",
     fontSize: 15,
     fontWeight: "bold",
   },
+  actionButtonTextSmall: {
+    fontSize: 20,
+  },
   addButton: {
-    backgroundColor: "#32b551ff",
-    alignSelf: 'flex-start',
+    backgroundColor: "#32b551",
+    alignSelf: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   editButton: {
-    backgroundColor: "#f9ebc3ff",
+    backgroundColor: "#f9ebc3",
     paddingHorizontal: 16,
     minWidth: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   deleteButton: {
-    backgroundColor: "#f9c3c3ff",
+    backgroundColor: "#f9c3c3",
     paddingHorizontal: 16,
     minWidth: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // ===== ICONOS =====
-  iconImagen: {
-    width: 20,
-    height: 20,
-    marginRight: 6,
-  },
-  iconImage: {
-    width: 27,
-    height: 27,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // ===== MODAL =====

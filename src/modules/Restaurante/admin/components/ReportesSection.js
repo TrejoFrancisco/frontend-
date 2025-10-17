@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,14 +8,14 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  Linking,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import * as FileSystem from "expo-file-system";
+// Importar desde la API legacy para evitar el warning
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { API } from "../../../../services/api";
 
-const ReportesSection = ({ token }) => {
+const ReportesSection = ({ token, navigation }) => {
   const [loading, setLoading] = useState(false);
   const [reporteData, setReporteData] = useState(null);
   const [inventarioData, setInventarioData] = useState(null);
@@ -44,8 +44,15 @@ const ReportesSection = ({ token }) => {
     try {
       setDownloadingExcel(true);
 
+      if (!excelUrl || !filename) {
+        throw new Error("URL o nombre de archivo no válidos");
+      }
+
       const downloadDir = FileSystem.documentDirectory;
       const fileUri = downloadDir + filename;
+
+      console.log("Descargando desde:", excelUrl);
+      console.log("Guardando en:", fileUri);
 
       const downloadResult = await FileSystem.downloadAsync(excelUrl, fileUri);
 
@@ -57,8 +64,18 @@ const ReportesSection = ({ token }) => {
             {
               text: "Compartir",
               onPress: async () => {
-                if (await Sharing.isAvailableAsync()) {
-                  await Sharing.shareAsync(downloadResult.uri);
+                try {
+                  if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(downloadResult.uri);
+                  } else {
+                    Alert.alert(
+                      "Info",
+                      "Compartir no está disponible en este dispositivo"
+                    );
+                  }
+                } catch (shareError) {
+                  console.error("Error al compartir:", shareError);
+                  Alert.alert("Error", "No se pudo compartir el archivo");
                 }
               },
             },
@@ -66,13 +83,17 @@ const ReportesSection = ({ token }) => {
           ]
         );
       } else {
-        throw new Error("Error en la descarga");
+        throw new Error(
+          `Error en la descarga. Status: ${downloadResult.status}`
+        );
       }
     } catch (error) {
       console.error("Error descargando Excel:", error);
       Alert.alert(
         "Error de Descarga",
-        "No se pudo descargar el archivo Excel. Inténtalo de nuevo.",
+        `No se pudo descargar el archivo Excel. ${
+          error.message || "Inténtalo de nuevo."
+        }`,
         [{ text: "OK" }]
       );
     } finally {
@@ -95,13 +116,21 @@ const ReportesSection = ({ token }) => {
       ]);
 
       if (usuariosResponse.data.success) {
-        setUsuarios(usuariosResponse.data.data || []);
+        setUsuarios(
+          Array.isArray(usuariosResponse.data.data)
+            ? usuariosResponse.data.data
+            : []
+        );
       } else {
         setUsuarios([]);
       }
 
       if (categoriasResponse.data.success) {
-        setCategorias(categoriasResponse.data.data || []);
+        setCategorias(
+          Array.isArray(categoriasResponse.data.data)
+            ? categoriasResponse.data.data
+            : []
+        );
       } else {
         setCategorias([]);
       }
@@ -110,6 +139,14 @@ const ReportesSection = ({ token }) => {
       setError("Error al cargar usuarios y categorías");
       setUsuarios([]);
       setCategorias([]);
+
+      if (error.response?.status === 401) {
+        Alert.alert(
+          "Sesión expirada",
+          "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+          [{ text: "OK", onPress: () => navigation?.navigate("Login") }]
+        );
+      }
     } finally {
       setLoadingData(false);
     }
@@ -119,6 +156,7 @@ const ReportesSection = ({ token }) => {
   const generarReporteEntregas = async (format = "json") => {
     if (!selectedUserId) {
       setError("Por favor selecciona un usuario");
+      Alert.alert("Error", "Por favor selecciona un usuario");
       return;
     }
 
@@ -131,7 +169,6 @@ const ReportesSection = ({ token }) => {
         fecha_fin: fechaFin.toISOString().split("T")[0],
       };
 
-      // Agregar parámetro format si se solicita Excel
       const url =
         format === "excel"
           ? `/restaurante/admin/reporte-usuario/${selectedUserId}?format=excel`
@@ -149,11 +186,10 @@ const ReportesSection = ({ token }) => {
         setInventarioData(null);
         setComandasData(null);
 
-        // Si hay URL de Excel, descargar automáticamente
-        if (format === "excel" && response.data.data.excel_url) {
+        if (format === "excel" && response.data.data?.excel_url) {
           await downloadExcel(
             response.data.data.excel_url,
-            response.data.data.filename
+            response.data.data.filename || "reporte_entregas.xlsx"
           );
         }
       } else {
@@ -163,11 +199,19 @@ const ReportesSection = ({ token }) => {
       }
     } catch (error) {
       console.error("Error generating deliveries report:", error);
-      setError(
+      const errorMessage =
         error.response?.data?.error?.message ||
         error.response?.data?.message ||
-        "Error al generar el reporte de entregas"
-      );
+        "Error al generar el reporte de entregas";
+      setError(errorMessage);
+
+      if (error.response?.status === 401) {
+        Alert.alert(
+          "Sesión expirada",
+          "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+          [{ text: "OK", onPress: () => navigation?.navigate("Login") }]
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -183,7 +227,6 @@ const ReportesSection = ({ token }) => {
         fecha_fin: fechaFin.toISOString().split("T")[0],
       };
 
-      // Agregar parámetro format si se solicita Excel
       const url =
         format === "excel"
           ? "/restaurante/admin/reporte-fechas?format=excel"
@@ -201,11 +244,10 @@ const ReportesSection = ({ token }) => {
         setEntregasData(null);
         setComandasData(null);
 
-        // Si hay URL de Excel, descargar automáticamente
-        if (format === "excel" && response.data.data.excel_url) {
+        if (format === "excel" && response.data.data?.excel_url) {
           await downloadExcel(
             response.data.data.excel_url,
-            response.data.data.filename
+            response.data.data.filename || "reporte_ventas.xlsx"
           );
         }
       } else {
@@ -215,17 +257,24 @@ const ReportesSection = ({ token }) => {
       }
     } catch (error) {
       console.error("Error generating sales report:", error);
-      setError(
+      const errorMessage =
         error.response?.data?.error?.message ||
         error.response?.data?.message ||
-        "Error al generar el reporte de ventas"
-      );
+        "Error al generar el reporte de ventas";
+      setError(errorMessage);
+
+      if (error.response?.status === 401) {
+        Alert.alert(
+          "Sesión expirada",
+          "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+          [{ text: "OK", onPress: () => navigation?.navigate("Login") }]
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Función para generar el reporte de inventario
   const generarReporteInventario = async (format = "json") => {
     try {
       setLoading(true);
@@ -236,7 +285,6 @@ const ReportesSection = ({ token }) => {
         fecha_fin: fechaFin.toISOString().split("T")[0],
       };
 
-      // Agregar parámetro format si se solicita Excel
       const url =
         format === "excel"
           ? "/restaurante/admin/reporte-inventario?format=excel"
@@ -254,11 +302,10 @@ const ReportesSection = ({ token }) => {
         setEntregasData(null);
         setComandasData(null);
 
-        // Si hay URL de Excel, descargar automáticamente
-        if (format === "excel" && response.data.data.excel_url) {
+        if (format === "excel" && response.data.data?.excel_url) {
           await downloadExcel(
             response.data.data.excel_url,
-            response.data.data.filename
+            response.data.data.filename || "reporte_inventario.xlsx"
           );
         }
       } else {
@@ -268,11 +315,19 @@ const ReportesSection = ({ token }) => {
       }
     } catch (error) {
       console.error("Error generating inventory report:", error);
-      setError(
+      const errorMessage =
         error.response?.data?.error?.message ||
         error.response?.data?.message ||
-        "Error al generar el reporte de inventario"
-      );
+        "Error al generar el reporte de inventario";
+      setError(errorMessage);
+
+      if (error.response?.status === 401) {
+        Alert.alert(
+          "Sesión expirada",
+          "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+          [{ text: "OK", onPress: () => navigation?.navigate("Login") }]
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -290,7 +345,6 @@ const ReportesSection = ({ token }) => {
 
       console.log("Enviando datos para reporte de comandas:", dataToSend);
 
-      // Agregar parámetro format si se solicita Excel
       const url =
         format === "excel"
           ? "/restaurante/admin/reporte-comandas?format=excel"
@@ -311,11 +365,10 @@ const ReportesSection = ({ token }) => {
         setInventarioData(null);
         setEntregasData(null);
 
-        // Si hay URL de Excel, descargar automáticamente
-        if (format === "excel" && response.data.data.excel_url) {
+        if (format === "excel" && response.data.data?.excel_url) {
           await downloadExcel(
             response.data.data.excel_url,
-            response.data.data.filename
+            response.data.data.filename || "reporte_comandas.xlsx"
           );
         }
       } else {
@@ -338,26 +391,37 @@ const ReportesSection = ({ token }) => {
       }
 
       setError(errorMessage);
+
+      if (error.response?.status === 401) {
+        Alert.alert(
+          "Sesión expirada",
+          "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+          [{ text: "OK", onPress: () => navigation?.navigate("Login") }]
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
   // Función para generar reporte según la pestaña activa
-  const generarReporte = (format = "json") => {
-    if (activeTab === "ventas") {
-      generarReporteVentas(format);
-    } else if (activeTab === "inventario") {
-      generarReporteInventario(format);
-    } else if (activeTab === "comandas") {
-      generarReporteComandas(format);
-    } else {
-      generarReporteEntregas(format);
-    }
-  };
+  const generarReporte = useCallback(
+    (format = "json") => {
+      if (activeTab === "ventas") {
+        generarReporteVentas(format);
+      } else if (activeTab === "inventario") {
+        generarReporteInventario(format);
+      } else if (activeTab === "comandas") {
+        generarReporteComandas(format);
+      } else {
+        generarReporteEntregas(format);
+      }
+    },
+    [activeTab, fechaInicio, fechaFin, selectedUserId]
+  );
 
   // Función para limpiar reportes
-  const limpiarReporte = () => {
+  const limpiarReporte = useCallback(() => {
     setReporteData(null);
     setInventarioData(null);
     setEntregasData(null);
@@ -366,65 +430,77 @@ const ReportesSection = ({ token }) => {
     setFechaInicio(new Date());
     setFechaFin(new Date());
     setSelectedUserId(null);
-  };
+  }, []);
 
   // Handlers para los date pickers
-  const onChangeFechaInicio = (event, selectedDate) => {
+  const onChangeFechaInicio = useCallback((event, selectedDate) => {
     setShowDatePickerInicio(Platform.OS === "ios");
     if (selectedDate) {
       setFechaInicio(selectedDate);
     }
-  };
+  }, []);
 
-  const onChangeFechaFin = (event, selectedDate) => {
+  const onChangeFechaFin = useCallback((event, selectedDate) => {
     setShowDatePickerFin(Platform.OS === "ios");
     if (selectedDate) {
       setFechaFin(selectedDate);
     }
-  };
+  }, []);
 
   // Función para formatear fecha
-  const formatearFecha = (fecha) => {
-    return fecha.toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  const formatearFecha = useCallback((fecha) => {
+    if (!fecha) return "Fecha no disponible";
+    try {
+      return fecha.toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch (error) {
+      console.error("Error formateando fecha:", error);
+      return "Fecha inválida";
+    }
+  }, []);
 
   // Función para formatear fecha y hora
-  const formatearFechaHora = (fechaString) => {
-    const fecha = new Date(fechaString);
-    return fecha.toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatearFechaHora = useCallback((fechaString) => {
+    if (!fechaString) return "Fecha no disponible";
+    try {
+      const fecha = new Date(fechaString);
+      return fecha.toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      console.error("Error formateando fecha y hora:", error);
+      return "Fecha inválida";
+    }
+  }, []);
 
-  const formatearEstadoComanda = (estado) => {
+  const formatearEstadoComanda = useCallback((estado) => {
     const estados = {
       abierta: { emoji: "🟡", texto: "Abierta" },
       cerrada: { emoji: "🔴", texto: "Cerrada" },
       pagada: { emoji: "🟢", texto: "Pagada" },
       cancelada: { emoji: "❌", texto: "Cancelada" },
     };
-    return estados[estado] || { emoji: "⚪", texto: estado };
-  };
+    return estados[estado] || { emoji: "⚪", texto: estado || "Desconocido" };
+  }, []);
 
-  const formatearEstadoProducto = (estado) => {
+  const formatearEstadoProducto = useCallback((estado) => {
     const estados = {
       pendiente: { emoji: "🟡", texto: "Pendiente" },
       entregado: { emoji: "🔵", texto: "Entregado" },
       cancelado: { emoji: "🔴", texto: "Cancelado" },
     };
-    return estados[estado] || { emoji: "⚪", texto: estado };
-  };
+    return estados[estado] || { emoji: "⚪", texto: estado || "Desconocido" };
+  }, []);
 
   // Cargar datos cuando se selecciona la pestaña de entregas
-  React.useEffect(() => {
+  useEffect(() => {
     if (activeTab === "entregas" && (!usuarios || usuarios.length === 0)) {
       cargarDatosEntregas();
     }
@@ -544,64 +620,65 @@ const ReportesSection = ({ token }) => {
                 showsVerticalScrollIndicator={true}
                 nestedScrollEnabled={true}
               >
-                {usuarios && usuarios.length > 0
+                {Array.isArray(usuarios) && usuarios.length > 0
                   ? usuarios.map((usuario) => (
-                    <TouchableOpacity
-                      key={usuario.id}
-                      style={[
-                        styles.userOption,
-                        selectedUserId === usuario.id &&
-                        styles.selectedUserOption,
-                      ]}
-                      onPress={() => setSelectedUserId(usuario.id)}
-                    >
-                      <View style={styles.userInfo}>
-                        <Text
-                          style={[
-                            styles.userName,
-                            selectedUserId === usuario.id &&
-                            styles.selectedUserText,
-                          ]}
-                        >
-                          {usuario.name}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.userRole,
-                            selectedUserId === usuario.id &&
-                            styles.selectedUserRole,
-                          ]}
-                        >
-                          {usuario.categoria_nombre} | {usuario.rol}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.userEmail,
-                            selectedUserId === usuario.id &&
-                            styles.selectedUserEmail,
-                          ]}
-                        >
-                          {usuario.email}
-                        </Text>
-                      </View>
-                      {selectedUserId === usuario.id && (
-                        <View style={styles.selectedIndicator}>
-                          <Text style={styles.selectedIndicatorText}>✓</Text>
+                      <TouchableOpacity
+                        key={usuario.id}
+                        style={[
+                          styles.userOption,
+                          selectedUserId === usuario.id &&
+                            styles.selectedUserOption,
+                        ]}
+                        onPress={() => setSelectedUserId(usuario.id)}
+                      >
+                        <View style={styles.userInfo}>
+                          <Text
+                            style={[
+                              styles.userName,
+                              selectedUserId === usuario.id &&
+                                styles.selectedUserText,
+                            ]}
+                          >
+                            {usuario.name || "Sin nombre"}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.userRole,
+                              selectedUserId === usuario.id &&
+                                styles.selectedUserRole,
+                            ]}
+                          >
+                            {usuario.categoria_nombre || "Sin categoría"} |{" "}
+                            {usuario.rol || "Sin rol"}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.userEmail,
+                              selectedUserId === usuario.id &&
+                                styles.selectedUserEmail,
+                            ]}
+                          >
+                            {usuario.email || "Sin email"}
+                          </Text>
                         </View>
-                      )}
-                    </TouchableOpacity>
-                  ))
+                        {selectedUserId === usuario.id && (
+                          <View style={styles.selectedIndicator}>
+                            <Text style={styles.selectedIndicatorText}>✓</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    ))
                   : !loadingData && (
-                    <Text style={styles.noUsersText}>
-                      No hay usuarios disponibles
-                    </Text>
-                  )}
+                      <Text style={styles.noUsersText}>
+                        No hay usuarios disponibles
+                      </Text>
+                    )}
               </ScrollView>
             )}
           </View>
         )}
 
-        {/* Botones de acción - Ahora con 2 botones */}
+        {/* Botones de acción */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.generateButton}
@@ -612,12 +689,12 @@ const ReportesSection = ({ token }) => {
               {loading
                 ? "Generando..."
                 : activeTab === "ventas"
-                  ? "Ver Reporte de Ventas"
-                  : activeTab === "inventario"
-                    ? "Ver Reporte de Inventario"
-                    : activeTab === "comandas"
-                      ? "Ver Reporte de Comandas"
-                      : "Ver Reporte de Entregas"}
+                ? "Ver Reporte de Ventas"
+                : activeTab === "inventario"
+                ? "Ver Reporte de Inventario"
+                : activeTab === "comandas"
+                ? "Ver Reporte de Comandas"
+                : "Ver Reporte de Entregas"}
             </Text>
           </TouchableOpacity>
 
@@ -633,7 +710,7 @@ const ReportesSection = ({ token }) => {
             disabled={loading || downloadingExcel}
           >
             <Text style={styles.excelButtonText}>
-              {downloadingExcel ? "Descargando.." : "Descargar"}
+              {downloadingExcel ? "Descargando..." : "📊 Descargar Excel"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -687,19 +764,18 @@ const ReportesSection = ({ token }) => {
       {/* Resultados del reporte de ventas */}
       {reporteData && (
         <View style={styles.reportContainer}>
-          {/* Header del reporte */}
           <View style={styles.reportHeader}>
             <Text style={styles.reportTitle}>📊 Reporte de Ventas</Text>
             <Text style={styles.reportDateRange}>
-              Del {reporteData.rango.inicio} al {reporteData.rango.fin}
+              Del {reporteData.rango?.inicio || "N/A"} al{" "}
+              {reporteData.rango?.fin || "N/A"}
             </Text>
           </View>
 
-          {/* Estadísticas principales */}
           <View style={styles.statsContainer}>
             <View style={styles.statCard}>
               <Text style={styles.statNumber}>
-                {reporteData.total_comandas}
+                {reporteData.total_comandas || 0}
               </Text>
               <Text style={styles.statLabel}>Total Comandas</Text>
             </View>
@@ -717,13 +793,15 @@ const ReportesSection = ({ token }) => {
             </View>
           </View>
 
-          {/* Productos más vendidos */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>🏆 Productos Más Vendidos</Text>
-            {reporteData.productos_mas_vendidos &&
-              reporteData.productos_mas_vendidos.length > 0 ? (
+            {Array.isArray(reporteData.productos_mas_vendidos) &&
+            reporteData.productos_mas_vendidos.length > 0 ? (
               reporteData.productos_mas_vendidos.map((item, index) => (
-                <View key={item.producto_id} style={styles.productItem}>
+                <View
+                  key={item.producto_id || index}
+                  style={styles.productItem}
+                >
                   <View style={styles.rankBadge}>
                     <Text style={styles.rankText}>{index + 1}</Text>
                   </View>
@@ -732,7 +810,7 @@ const ReportesSection = ({ token }) => {
                       {item.producto?.nombre || "Producto sin nombre"}
                     </Text>
                     <Text style={styles.productQuantity}>
-                      Vendidos: {item.total}
+                      Vendidos: {item.total || 0}
                     </Text>
                   </View>
                 </View>
@@ -744,11 +822,10 @@ const ReportesSection = ({ token }) => {
             )}
           </View>
 
-          {/* Productos cancelados */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>❌ Productos Cancelados</Text>
-            {reporteData.productos_cancelados &&
-              reporteData.productos_cancelados.length > 0 ? (
+            {Array.isArray(reporteData.productos_cancelados) &&
+            reporteData.productos_cancelados.length > 0 ? (
               reporteData.productos_cancelados.map((item, index) => (
                 <View key={index} style={styles.canceledItem}>
                   <View style={styles.canceledIcon}>
@@ -779,15 +856,14 @@ const ReportesSection = ({ token }) => {
       {/* Resultados del reporte de inventario */}
       {inventarioData && (
         <View style={styles.reportContainer}>
-          {/* Header del reporte */}
           <View style={styles.reportHeader}>
             <Text style={styles.reportTitle}>📦 Reporte de Inventario</Text>
             <Text style={styles.reportDateRange}>
-              Del {inventarioData.rango.inicio} al {inventarioData.rango.fin}
+              Del {inventarioData.rango?.inicio || "N/A"} al{" "}
+              {inventarioData.rango?.fin || "N/A"}
             </Text>
           </View>
 
-          {/* Estadísticas principales */}
           <View style={styles.statsContainer}>
             <View style={styles.statCard}>
               <Text style={styles.statNumber}>
@@ -810,15 +886,17 @@ const ReportesSection = ({ token }) => {
             </View>
           </View>
 
-          {/* Productos sin receta que salieron */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>
               🍽️ Productos Sin Receta (Salidas)
             </Text>
-            {inventarioData.productos_sin_receta &&
-              inventarioData.productos_sin_receta.length > 0 ? (
+            {Array.isArray(inventarioData.productos_sin_receta) &&
+            inventarioData.productos_sin_receta.length > 0 ? (
               inventarioData.productos_sin_receta.map((item, index) => (
-                <View key={item.producto_id} style={styles.inventoryItem}>
+                <View
+                  key={item.producto_id || index}
+                  style={styles.inventoryItem}
+                >
                   <View style={styles.inventoryIcon}>
                     <Text style={styles.inventoryIconText}>🍽️</Text>
                   </View>
@@ -827,13 +905,13 @@ const ReportesSection = ({ token }) => {
                       {item.producto?.nombre || "Producto sin nombre"}
                     </Text>
                     <Text style={styles.inventoryDetails}>
-                      Cantidad salida: {item.total_salidas}{" "}
+                      Cantidad salida: {item.total_salidas || 0}{" "}
                       {item.producto?.unidad || "unidades"}
                     </Text>
                   </View>
                   <View style={styles.inventoryBadge}>
                     <Text style={styles.inventoryBadgeText}>
-                      {item.total_salidas}
+                      {item.total_salidas || 0}
                     </Text>
                   </View>
                 </View>
@@ -845,15 +923,17 @@ const ReportesSection = ({ token }) => {
             )}
           </View>
 
-          {/* Materias primas que salieron */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>
               🥕 Materias Primas (Salidas)
             </Text>
-            {inventarioData.materias_primas &&
-              inventarioData.materias_primas.length > 0 ? (
+            {Array.isArray(inventarioData.materias_primas) &&
+            inventarioData.materias_primas.length > 0 ? (
               inventarioData.materias_primas.map((item, index) => (
-                <View key={item.materia_prima_id} style={styles.inventoryItem}>
+                <View
+                  key={item.materia_prima_id || index}
+                  style={styles.inventoryItem}
+                >
                   <View style={styles.inventoryIcon}>
                     <Text style={styles.inventoryIconText}>🥕</Text>
                   </View>
@@ -862,13 +942,13 @@ const ReportesSection = ({ token }) => {
                       {item.materia_prima?.nombre || "Materia prima sin nombre"}
                     </Text>
                     <Text style={styles.inventoryDetails}>
-                      Cantidad salida: {item.total_salidas}{" "}
+                      Cantidad salida: {item.total_salidas || 0}{" "}
                       {item.materia_prima?.unidad || "unidades"}
                     </Text>
                   </View>
                   <View style={styles.inventoryBadge}>
                     <Text style={styles.inventoryBadgeText}>
-                      {item.total_salidas}
+                      {item.total_salidas || 0}
                     </Text>
                   </View>
                 </View>
@@ -885,22 +965,21 @@ const ReportesSection = ({ token }) => {
       {/* Resultados del reporte de entregas */}
       {entregasData && (
         <View style={styles.reportContainer}>
-          {/* Header del reporte */}
           <View style={styles.reportHeader}>
             <Text style={styles.reportTitle}>🚚 Reporte de Entregas</Text>
             <Text style={styles.reportDateRange}>
-              Del {entregasData.rango.inicio} al {entregasData.rango.fin}
+              Del {entregasData.rango?.inicio || "N/A"} al{" "}
+              {entregasData.rango?.fin || "N/A"}
             </Text>
             <Text style={styles.reportUserInfo}>
-              Usuario: {entregasData.usuario.categoria}
+              Usuario: {entregasData.usuario?.categoria || "N/A"}
             </Text>
           </View>
 
-          {/* Estadísticas principales */}
           <View style={styles.statsContainer}>
             <View style={styles.statCard}>
               <Text style={styles.statNumber}>
-                {entregasData.total_productos_entregados}
+                {entregasData.total_productos_entregados || 0}
               </Text>
               <Text style={styles.statLabel}>Total Entregas</Text>
             </View>
@@ -913,25 +992,27 @@ const ReportesSection = ({ token }) => {
             <View style={styles.statCard}>
               <Text style={styles.statNumber}>
                 $
-                {entregasData.productos
-                  ?.reduce(
-                    (total, item) =>
-                      total + parseFloat(item.producto_precio || 0),
-                    0
-                  )
-                  .toLocaleString() || 0}
+                {Array.isArray(entregasData.productos)
+                  ? entregasData.productos
+                      .reduce(
+                        (total, item) =>
+                          total + parseFloat(item.producto_precio || 0),
+                        0
+                      )
+                      .toLocaleString()
+                  : 0}
               </Text>
               <Text style={styles.statLabel}>Valor Total</Text>
             </View>
           </View>
 
-          {/* Lista de productos entregados */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>📋 Productos Entregados</Text>
-            {entregasData.productos && entregasData.productos.length > 0 ? (
+            {Array.isArray(entregasData.productos) &&
+            entregasData.productos.length > 0 ? (
               entregasData.productos.map((item, index) => (
                 <View
-                  key={item.comanda_producto_id}
+                  key={item.comanda_producto_id || index}
                   style={styles.deliveryItem}
                 >
                   <View style={styles.deliveryIcon}>
@@ -939,13 +1020,14 @@ const ReportesSection = ({ token }) => {
                   </View>
                   <View style={styles.deliveryInfo}>
                     <Text style={styles.deliveryProductName}>
-                      {item.producto_nombre}
+                      {item.producto_nombre || "Sin nombre"}
                     </Text>
                     <Text style={styles.deliveryProductCode}>
-                      Clave: {item.producto_clave}
+                      Clave: {item.producto_clave || "N/A"}
                     </Text>
                     <Text style={styles.deliveryDetails}>
-                      Mesa: {item.mesa} | Comensal: {item.comensal}
+                      Mesa: {item.mesa || "N/A"} | Comensal:{" "}
+                      {item.comensal || "N/A"}
                     </Text>
                     <Text style={styles.deliveryDateTime}>
                       Entregado: {formatearFechaHora(item.fecha_entrega)}
@@ -970,27 +1052,26 @@ const ReportesSection = ({ token }) => {
       {/* Resultados del reporte de comandas */}
       {comandasData && (
         <View style={styles.reportContainer}>
-          {/* Header del reporte */}
           <View style={styles.reportHeader}>
             <Text style={styles.reportTitle}>
               📋 Reporte Detallado de Comandas
             </Text>
             <Text style={styles.reportDateRange}>
-              Del {comandasData.rango.inicio} al {comandasData.rango.fin}
+              Del {comandasData.rango?.inicio || "N/A"} al{" "}
+              {comandasData.rango?.fin || "N/A"}
             </Text>
           </View>
 
-          {/* Estadísticas principales */}
           <View style={styles.statsContainer}>
             <View style={styles.statCard}>
               <Text style={styles.statNumber}>
-                {comandasData.total_comandas}
+                {comandasData.total_comandas || 0}
               </Text>
               <Text style={styles.statLabel}>Total Comandas</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statNumber}>
-                {comandasData.total_productos}
+                {comandasData.total_productos || 0}
               </Text>
               <Text style={styles.statLabel}>Total Productos</Text>
             </View>
@@ -1002,29 +1083,30 @@ const ReportesSection = ({ token }) => {
             </View>
           </View>
 
-          {/* Lista detallada de comandas */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>📋 Detalle de Comandas</Text>
-            {comandasData.comandas && comandasData.comandas.length > 0 ? (
+            {Array.isArray(comandasData.comandas) &&
+            comandasData.comandas.length > 0 ? (
               comandasData.comandas.map((comanda, index) => {
                 const estadoComanda = formatearEstadoComanda(comanda.estado);
                 return (
-                  <View key={comanda.comanda_id} style={styles.comandaCard}>
-                    {/* Header de la comanda  */}
+                  <View
+                    key={comanda.comanda_id || index}
+                    style={styles.comandaCard}
+                  >
                     <View style={styles.comandaHeader}>
-                      {/* Columna 1: Mesa */}
                       <View style={styles.comandaInfo}>
-                        <Text style={styles.comandaTitle}>Mesa {comanda.mesa}</Text>
+                        <Text style={styles.comandaTitle}>
+                          Mesa {comanda.mesa || "N/A"}
+                        </Text>
                       </View>
 
-                      {/* Columna 2: Mesero */}
                       <View style={styles.comandaInfo}>
                         <Text style={styles.comandaDetailText}>
                           👤 {comanda.mesero || "No asignado"}
                         </Text>
                       </View>
 
-                      {/* Columna 3: Fecha */}
                       <View style={styles.comandaInfo}>
                         <Text style={styles.comandaDetailText}>
                           {formatearFechaHora(comanda.fecha)}
@@ -1036,14 +1118,12 @@ const ReportesSection = ({ token }) => {
                         )}
                       </View>
 
-                      {/* Columna 4: Total */}
                       <View style={styles.comandaInfo}>
                         <Text style={styles.comandaDetailText}>
                           ${parseFloat(comanda.total || 0).toFixed(2)}
                         </Text>
                       </View>
 
-                      {/* Columna 5: Estado */}
                       <View style={styles.estadoContainer}>
                         <Text style={styles.estadoEmoji}>
                           {estadoComanda.emoji}
@@ -1054,40 +1134,44 @@ const ReportesSection = ({ token }) => {
                       </View>
                     </View>
 
-                    {/* Lista de productos */}
                     <View style={styles.productosContainer}>
                       <Text style={styles.productosTitle}>
-                        🍽️ Productos ({comanda.productos.length}):
+                        🍽️ Productos (
+                        {Array.isArray(comanda.productos)
+                          ? comanda.productos.length
+                          : 0}
+                        ):
                       </Text>
                       <View style={styles.comandaDetails}>
-                        {comanda.productos.map((producto, prodIndex) => {
-                          const estadoProducto = formatearEstadoProducto(
-                            producto.estado
-                          );
-                          return (
-                            <View key={prodIndex} style={styles.productoItem}>
-                              <View style={styles.productoInfo}>
-                                <Text style={styles.productoNombre}>
-                                  {producto.nombre}
-                                </Text>
-                                <Text style={styles.productoPrecio}>
-                                  $
-                                  {parseFloat(producto.precio_venta || 0).toFixed(
-                                    2
-                                  )}
-                                </Text>
+                        {Array.isArray(comanda.productos) &&
+                          comanda.productos.map((producto, prodIndex) => {
+                            const estadoProducto = formatearEstadoProducto(
+                              producto.estado
+                            );
+                            return (
+                              <View key={prodIndex} style={styles.productoItem}>
+                                <View style={styles.productoInfo}>
+                                  <Text style={styles.productoNombre}>
+                                    {producto.nombre || "Sin nombre"}
+                                  </Text>
+                                  <Text style={styles.productoPrecio}>
+                                    $
+                                    {parseFloat(
+                                      producto.precio_venta || 0
+                                    ).toFixed(2)}
+                                  </Text>
+                                </View>
+                                <View style={styles.productoEstado}>
+                                  <Text style={styles.productoEstadoEmoji}>
+                                    {estadoProducto.emoji}
+                                  </Text>
+                                  <Text style={styles.productoEstadoText}>
+                                    {estadoProducto.texto}
+                                  </Text>
+                                </View>
                               </View>
-                              <View style={styles.productoEstado}>
-                                <Text style={styles.productoEstadoEmoji}>
-                                  {estadoProducto.emoji}
-                                </Text>
-                                <Text style={styles.productoEstadoText}>
-                                  {estadoProducto.texto}
-                                </Text>
-                              </View>
-                            </View>
-                          );
-                        })}
+                            );
+                          })}
                       </View>
                     </View>
                   </View>
@@ -1108,18 +1192,11 @@ const ReportesSection = ({ token }) => {
 export default ReportesSection;
 
 const styles = StyleSheet.create({
-  // ========================================
-  // CONTENEDOR PRINCIPAL
-  // ========================================
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
     padding: 20,
   },
-
-  // ========================================
-  // ENCABEZADO
-  // ========================================
   headerContainer: {
     alignItems: "center",
     marginBottom: 30,
@@ -1137,10 +1214,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-
-  // ========================================
-  // PESTAÑAS (2x2)
-  // ========================================
   tabContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -1176,10 +1249,6 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: "#FFFFFF",
   },
-
-  // ========================================
-  // CONTENEDOR DE FECHAS Y CONTROLES
-  // ========================================
   dateContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -1220,10 +1289,6 @@ const styles = StyleSheet.create({
     color: "#1A1A2E",
     fontWeight: "500",
   },
-
-  // ========================================
-  // SELECTOR DE USUARIO (ENTREGAS)
-  // ========================================
   userSelectorContainer: {
     marginBottom: 20,
   },
@@ -1310,10 +1375,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     paddingVertical: 20,
   },
-
-  // ========================================
-  // BOTONES DE ACCIÓN
-  // ========================================
   actionButtons: {
     flexDirection: "row",
     justifyContent: "center",
@@ -1370,10 +1431,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-
-  // ========================================
-  // ESTADOS DE CARGA Y ERROR
-  // ========================================
   loadingContainer: {
     alignItems: "center",
     paddingVertical: 40,
@@ -1406,10 +1463,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
-
-  // ========================================
-  // CONTENEDORES DE REPORTES
-  // ========================================
   reportContainer: {
     marginTop: 20,
   },
@@ -1435,10 +1488,6 @@ const styles = StyleSheet.create({
     color: "#E8E8E8",
     marginTop: 4,
   },
-
-  // ========================================
-  // TARJETAS DE ESTADÍSTICAS
-  // ========================================
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -1475,10 +1524,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     flexWrap: "wrap",
   },
-
-  // ========================================
-  // SECCIONES DE CONTENIDO
-  // ========================================
   sectionContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -1503,10 +1548,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     paddingVertical: 20,
   },
-
-  // ========================================
-  // ITEMS DE PRODUCTOS (VENTAS)
-  // ========================================
   productItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1541,10 +1582,6 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 2,
   },
-
-  // ========================================
-  // ITEMS CANCELADOS
-  // ========================================
   canceledItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1586,10 +1623,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-
-  // ========================================
-  // ITEMS DE INVENTARIO
-  // ========================================
   inventoryItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1631,10 +1664,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-
-  // ========================================
-  // ITEMS DE ENTREGAS
-  // ========================================
   deliveryItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1687,10 +1716,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-
-  // ========================================
-  // REPORTE DE COMANDAS
-  // ========================================
   comandaCard: {
     backgroundColor: "#ffffff",
     borderRadius: 10,
@@ -1707,100 +1732,72 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-
-  // ===== HEADER DE COMANDA =====
   comandaHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 12,
   },
-
   comandaInfo: {
     flex: 1,
     minWidth: 120,
   },
-
   comandaTitle: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 25,
-    color: '#000',
+    color: "#000",
     marginBottom: 2,
   },
-
-  comandaSubtitle: {
-    fontSize: 14,
-    color: '#6c757d',
-    fontWeight: 'normal',
-  },
-
   comandaDetailText: {
     fontSize: 16,
-    fontWeight: 'normal',
-    color: '#000',
+    fontWeight: "normal",
+    color: "#000",
   },
-
-  // ===== ESTADO DE COMANDA =====
   estadoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 6,
     paddingVertical: 5,
     borderRadius: 15,
-    backgroundColor: '#e9ecef',
+    backgroundColor: "#e9ecef",
   },
-
   estadoEmoji: {
     fontSize: 16,
     marginRight: 5,
   },
-
   estadoText: {
     color: "#2c3e50",
     fontSize: 15,
     fontWeight: "bold",
   },
-
-  // ===== PRODUCTOS =====
   productosContainer: {
     marginBottom: 18,
     backgroundColor: "#f8f9fa",
     padding: 10,
     borderRadius: 8,
   },
-
   productosTitle: {
     fontSize: 19,
     fontWeight: "bold",
     marginBottom: 8,
     color: "#2c3e50",
   },
-
   comandaDetails: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
-
   productoItem: {
     width: 180,
     marginRight: 12,
     marginBottom: 12,
     padding: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 8,
     borderLeftWidth: 3,
     borderLeftColor: "#007bff",
   },
-
-  productoInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-
   productoNombre: {
     fontSize: 20,
     fontWeight: "bold",
@@ -1808,28 +1805,24 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-
   productoPrecio: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#28a745",
   },
-
   productoEstado: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
-    backgroundColor: '#e9ecef',
+    backgroundColor: "#e9ecef",
     marginTop: 4,
   },
-
   productoEstadoEmoji: {
     fontSize: 14,
     marginRight: 4,
   },
-
   productoEstadoText: {
     color: "#2c3e50",
     fontSize: 13,

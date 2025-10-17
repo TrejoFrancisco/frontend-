@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "https://apirestaurant.xolotlcl.com/api";
+const BASE_URL = "http://192.168.0.13:8000/api";
 
 export const API = axios.create({
   baseURL: BASE_URL,

@@ -1,4 +1,7 @@
 import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
+
+import * as Sharing from "expo-sharing";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -12,7 +15,7 @@ import {
   Image,
   Alert,
 } from "react-native";
-import axios from "axios";
+import { Buffer } from "buffer";
 import { API } from "../../../../services/api";
 
 export default function MateriaPrimaSection({ token, navigation }) {
@@ -23,6 +26,10 @@ export default function MateriaPrimaSection({ token, navigation }) {
   const [editingItem, setEditingItem] = useState(null);
   const [busquedaMateria, setBusquedaMateria] = useState("");
   const [archivoCSV, setArchivoCSV] = useState(null);
+
+  // Estados para paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
 
   const [formData, setFormData] = useState({
     clave: "",
@@ -46,6 +53,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
       });
       if (response.data.success) {
         setMateriasPrimas(response.data.data);
+        setPaginaActual(1); // Reset a la primera página
       }
     } catch (error) {
       console.log("Error al obtener materias primas:", error);
@@ -63,6 +71,20 @@ export default function MateriaPrimaSection({ token, navigation }) {
         materia.nombre.toLowerCase().includes(busquedaMateria.toLowerCase()) ||
         materia.clave.toLowerCase().includes(busquedaMateria.toLowerCase())
     );
+  };
+
+  // Función para obtener materias paginadas
+  const getMateriasPaginadas = () => {
+    const filtradas = getMateriasPrimasFiltradas();
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    return filtradas.slice(inicio, fin);
+  };
+
+  // Calcular total de páginas
+  const getTotalPaginas = () => {
+    const filtradas = getMateriasPrimasFiltradas();
+    return Math.ceil(filtradas.length / itemsPorPagina);
   };
 
   const resetForm = () => {
@@ -268,16 +290,78 @@ export default function MateriaPrimaSection({ token, navigation }) {
       });
 
       const responseData = await uploadResponse.json();
+
+      if (uploadResponse.ok && responseData.success) {
+        Alert.alert(
+          "Éxito",
+          `Se importaron ${
+            responseData.data.total_procesadas
+          } materias primas.${
+            responseData.data.errores_encontrados > 0
+              ? ` Con ${responseData.data.errores_encontrados} errores.`
+              : ""
+          }`
+        );
+        fetchMateriasPrimas();
+      } else {
+        Alert.alert(
+          "Error",
+          responseData.error?.message || "No se pudo importar el archivo"
+        );
+      }
+
       setArchivoCSV(null);
     } catch (error) {
-      console.log("Error en alternativa 1:", error);
+      console.log("Error al importar:", error);
       Alert.alert("Error", "No se pudo importar el archivo CSV.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const materiasFiltradas = getMateriasPrimasFiltradas();
+  const handleDescargarPlantilla = async () => {
+    setIsLoading(true);
+    try {
+      const response = await API.get(
+        "/restaurante/admin/materias-primas/download-template",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "arraybuffer",
+        }
+      );
+
+      // Convertir el contenido binario a base64
+      const base64String = Buffer.from(response.data, "binary").toString(
+        "base64"
+      );
+
+      // Crear ruta temporal del archivo
+      const fileUri =
+        FileSystem.cacheDirectory +
+        `plantilla_materias_primas_${Date.now()}.csv`;
+
+      // Guardar el archivo temporalmente
+      await FileSystem.writeAsStringAsync(fileUri, base64String, {
+        encoding: "base64", // cambio aquí
+      });
+
+      // Verificar si Sharing está disponible
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Alert.alert("Éxito", "Plantilla descargada correctamente");
+      }
+    } catch (error) {
+      console.log("Error al descargar plantilla:", error);
+      Alert.alert("Error", "No se pudo descargar la plantilla CSV");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const materiasPaginadas = getMateriasPaginadas();
+  const totalPaginas = getTotalPaginas();
 
   return (
     <View style={styles.container}>
@@ -294,21 +378,33 @@ export default function MateriaPrimaSection({ token, navigation }) {
         </View>
       </TouchableOpacity>
 
-      {/* Botón Seleccionar CSV */}
-      <TouchableOpacity
-        style={styles.secondaryButton}
-        onPress={handleSeleccionarArchivo}
-      >
-        <View style={styles.buttonContent}>
-          <Text style={styles.secondaryButtonText}>Seleccionar archivo CSV</Text>
-        </View>
-      </TouchableOpacity>
+      {/* Fila de botones CSV */}
+      <View style={styles.csvButtonsRow}>
+        <TouchableOpacity
+          style={styles.templateButton}
+          onPress={handleDescargarPlantilla}
+          disabled={isLoading}
+        >
+          <Text style={styles.templateButtonText}>
+            {isLoading ? "Descargando..." : "📥 Descargar Plantilla"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.selectButton}
+          onPress={handleSeleccionarArchivo}
+        >
+          <Text style={styles.selectButtonText}>📂 Seleccionar CSV</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Archivo seleccionado */}
       {archivoCSV && (
-        <Text style={styles.selectedFileText}>
-          Archivo seleccionado: {archivoCSV.name}
-        </Text>
+        <View style={styles.selectedFileContainer}>
+          <Text style={styles.selectedFileText}>
+            ✓ {archivoCSV.name} ({(archivoCSV.size / 1024).toFixed(2)} KB)
+          </Text>
+        </View>
       )}
 
       {/* Botón Importar */}
@@ -320,11 +416,9 @@ export default function MateriaPrimaSection({ token, navigation }) {
         onPress={handleImportCsv}
         disabled={!archivoCSV || isLoading}
       >
-        <View style={styles.buttonContent}>
-          <Text style={styles.importButtonText}>
-            {isLoading ? "Importando..." : "Importar materias primas"}
-          </Text>
-        </View>
+        <Text style={styles.importButtonText}>
+          {isLoading ? "⏳ Importando..." : "📤 Importar materias primas"}
+        </Text>
       </TouchableOpacity>
 
       {/* Lista de materias primas */}
@@ -332,16 +426,23 @@ export default function MateriaPrimaSection({ token, navigation }) {
         {/* Buscador */}
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar por clave o nombre..."
+          placeholder="🔍 Buscar por clave o nombre..."
           value={busquedaMateria}
-          onChangeText={setBusquedaMateria}
+          onChangeText={(text) => {
+            setBusquedaMateria(text);
+            setPaginaActual(1); // Reset a primera página al buscar
+          }}
         />
 
         {/* Encabezado de tabla */}
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
-          <Text style={[styles.tableHeaderText, styles.claveColumn]}>Clave</Text>
-          <Text style={[styles.tableHeaderText, styles.nombreColumn]}>Nombre</Text>
+          <Text style={[styles.tableHeaderText, styles.claveColumn]}>
+            Clave
+          </Text>
+          <Text style={[styles.tableHeaderText, styles.nombreColumn]}>
+            Nombre
+          </Text>
           <View style={[styles.actionsColumn, styles.headerActionsContainer]}>
             <Text style={styles.tableHeaderText} numberOfLines={2}>
               Acciones
@@ -349,17 +450,23 @@ export default function MateriaPrimaSection({ token, navigation }) {
           </View>
         </View>
 
-        {/* Cuerpo de tabla */}
-        <ScrollView style={styles.tableBody}>
-          {materiasFiltradas.map((item) => (
+        {/* Cuerpo de tabla con ScrollView */}
+        <ScrollView style={styles.tableBody} nestedScrollEnabled={true}>
+          {materiasPaginadas.map((item) => (
             <View key={item.id} style={styles.tableRow}>
               <Text style={[styles.tableCellText, styles.idColumn]}>
                 {item.id}
               </Text>
-              <Text style={[styles.tableCellText, styles.claveColumn]} numberOfLines={2}>
+              <Text
+                style={[styles.tableCellText, styles.claveColumn]}
+                numberOfLines={2}
+              >
                 {item.clave}
               </Text>
-              <Text style={[styles.tableCellText, styles.nombreColumn]} numberOfLines={2}>
+              <Text
+                style={[styles.tableCellText, styles.nombreColumn]}
+                numberOfLines={2}
+              >
                 {item.nombre}
               </Text>
               <View style={[styles.actionsColumn, styles.actionsContainer]}>
@@ -368,7 +475,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
                   onPress={() => openEditModal(item)}
                 >
                   <Image
-                    source={require('../../../../../assets/editarr.png')}
+                    source={require("../../../../../assets/editarr.png")}
                     style={styles.actionIcon}
                     accessibilityLabel="Editar materia prima"
                   />
@@ -378,7 +485,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
                   onPress={() => handleDelete(item.id)}
                 >
                   <Image
-                    source={require('../../../../../assets/eliminar.png')}
+                    source={require("../../../../../assets/eliminar.png")}
                     style={styles.actionIcon}
                     accessibilityLabel="Eliminar materia prima"
                   />
@@ -389,13 +496,49 @@ export default function MateriaPrimaSection({ token, navigation }) {
         </ScrollView>
 
         {/* Mensajes vacíos */}
-        {materiasFiltradas.length === 0 && (
+        {getMateriasPrimasFiltradas().length === 0 && (
           <Text style={styles.emptyText}>
             {busquedaMateria.trim() !== ""
               ? "No se encontraron materias primas que coincidan con la búsqueda."
-              : "No hay materias primas registradas."
-            }
+              : "No hay materias primas registradas."}
           </Text>
+        )}
+
+        {/* Controles de paginación */}
+        {getMateriasPrimasFiltradas().length > 0 && (
+          <View style={styles.paginationContainer}>
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                paginaActual === 1 && styles.paginationButtonDisabled,
+              ]}
+              onPress={() => setPaginaActual(paginaActual - 1)}
+              disabled={paginaActual === 1}
+            >
+              <Text style={styles.paginationButtonText}>← Anterior</Text>
+            </TouchableOpacity>
+
+            <View style={styles.paginationInfo}>
+              <Text style={styles.paginationText}>
+                Página {paginaActual} de {totalPaginas}
+              </Text>
+              <Text style={styles.paginationSubtext}>
+                ({getMateriasPrimasFiltradas().length} registros)
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                paginaActual === totalPaginas &&
+                  styles.paginationButtonDisabled,
+              ]}
+              onPress={() => setPaginaActual(paginaActual + 1)}
+              disabled={paginaActual === totalPaginas}
+            >
+              <Text style={styles.paginationButtonText}>Siguiente →</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 
@@ -436,7 +579,9 @@ export default function MateriaPrimaSection({ token, navigation }) {
                 placeholder="Costo unitario"
                 keyboardType="decimal-pad"
                 value={formData.costo_unitario}
-                onChangeText={(text) => handleInputChange("costo_unitario", text)}
+                onChangeText={(text) =>
+                  handleInputChange("costo_unitario", text)
+                }
               />
               <TextInput
                 style={styles.input}
@@ -464,8 +609,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
                         ? "Creando..."
                         : "Actualizando..."
                       : modalType === "crear"
-                        ? "Crear"
-                        : "Actualizar"}
+                      ? "Crear"
+                      : "Actualizar"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -500,19 +645,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  secondaryButton: {
-    backgroundColor: "#2196F3",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  importButton: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 16,
-  },
   buttonContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -529,22 +661,66 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  secondaryButtonText: {
+
+  // === FILA DE BOTONES CSV ===
+  csvButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    gap: 10,
+  },
+  templateButton: {
+    flex: 1,
+    backgroundColor: "#FF9800",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  selectButton: {
+    flex: 1,
+    backgroundColor: "#2196F3",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  templateButtonText: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
+  },
+  selectButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  // === BOTÓN IMPORTAR ===
+  importButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 16,
   },
   importButtonText: {
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "bold",
   },
+
+  // === ARCHIVO SELECCIONADO ===
+  selectedFileContainer: {
+    backgroundColor: "#E8F5E9",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+  },
   selectedFileText: {
-    marginTop: 5,
-    marginBottom: 10,
-    fontStyle: "italic",
-    color: "#666666",
+    color: "#2E7D32",
+    fontSize: 14,
     textAlign: "center",
+    fontWeight: "500",
   },
 
   // === BÚSQUEDA ===
@@ -581,7 +757,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   tableBody: {
-    maxHeight: "80%",
+    maxHeight: 400,
   },
   tableRow: {
     flexDirection: "row",
@@ -639,6 +815,48 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     resizeMode: "contain",
+  },
+
+  // === PAGINACIÓN ===
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderTopWidth: 1,
+    borderColor: "#EEEEEE",
+    backgroundColor: "#FAFAFA",
+    marginTop: 10,
+  },
+  paginationButton: {
+    backgroundColor: "#2196F3",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    minWidth: 100,
+  },
+  paginationButtonDisabled: {
+    backgroundColor: "#CCCCCC",
+  },
+  paginationButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  paginationInfo: {
+    alignItems: "center",
+  },
+  paginationText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333333",
+  },
+  paginationSubtext: {
+    fontSize: 12,
+    color: "#666666",
+    marginTop: 2,
   },
 
   // === TEXTO VACÍO ===

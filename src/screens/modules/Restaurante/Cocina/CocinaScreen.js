@@ -13,10 +13,10 @@ import {
 import { API } from "../../../../services/api";
 import { useAuth } from "../../../../AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import { useBackHandler } from "../../../../hooks/useBackHandler";
 
 export default function CocinaSection() {
   const { token, logout, user } = useAuth();
-  const navigation = useNavigation();
   const [productos, setProductos] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,6 +31,10 @@ export default function CocinaSection() {
   // Estados para filtros y ordenamiento
   const [ordenamiento, setOrdenamiento] = useState("fecha_asc");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Manejo del botón de retroceso de Android
+  const navigation = useNavigation();
+  useBackHandler(navigation); // ¡Una sola línea!
 
   const opcionesOrdenamiento = [
     { label: "Fecha: más antigua primero ", value: "fecha_asc" },
@@ -122,7 +126,7 @@ export default function CocinaSection() {
             if (token) {
               try {
                 await API.post(
-                  "/logout",
+                  "/auth/logout",
                   {},
                   {
                     headers: {
@@ -150,46 +154,69 @@ export default function CocinaSection() {
     ]);
   };
 
-  const marcarComoEntregado = async (comandaProductoId) => {
+  const marcarComoEntregado = async (comandaProductoId, nombreProducto) => {
     if (!token) return;
 
-    try {
-      const response = await API.patch(
-        `/restaurante/cocina/comandas/${comandaProductoId}/estado`,
+    // Mostrar alerta de confirmación
+    Alert.alert(
+      "Confirmar Entrega",
+      `¿Estás seguro de marcar como entregado:\n\n"${nombreProducto}"?`,
+      [
         {
-          estado: "entregado",
+          text: "Cancelar",
+          style: "cancel",
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
+          text: "Sí, Entregar",
+          style: "default",
+          onPress: async () => {
+            try {
+              const response = await API.patch(
+                `/restaurante/cocina/comandas/${comandaProductoId}/estado`,
+                {
+                  estado: "entregado",
+                },
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              if (response.data.success) {
+                Alert.alert("✓ Éxito", "Producto marcado como entregado");
+
+                setProductos((prevProductos) =>
+                  prevProductos.map((producto) =>
+                    producto.comanda_producto_id === comandaProductoId
+                      ? { ...producto, estado: "entregado" }
+                      : producto
+                  )
+                );
+
+                setStats((prev) => ({
+                  ...prev,
+                  totalProductos: Math.max(0, prev.totalProductos - 1),
+                }));
+              }
+            } catch (error) {
+              console.log("Error al marcar producto como entregado:", error);
+              if (error.response?.status === 401) {
+                navigation.navigate("Login");
+              } else if (error.response?.data?.error) {
+                Alert.alert("Error", error.response.data.error.message);
+              } else {
+                Alert.alert(
+                  "Error",
+                  "No se pudo marcar el producto como entregado. Por favor intenta de nuevo."
+                );
+              }
+            }
           },
-        }
-      );
-
-      if (response.data.success) {
-        Alert.alert("Éxito", "Producto marcado como entregado");
-
-        setProductos((prevProductos) =>
-          prevProductos.map((producto) =>
-            producto.comanda_producto_id === comandaProductoId
-              ? { ...producto, estado: "entregado" }
-              : producto
-          )
-        );
-
-        setStats((prev) => ({
-          ...prev,
-          totalProductos: Math.max(0, prev.totalProductos - 1),
-        }));
-      }
-    } catch (error) {
-      console.log("Error al marcar producto como entregado:", error);
-      if (error.response?.status === 401) {
-        navigation.navigate("Login");
-      } else if (error.response?.data?.error) {
-        Alert.alert("Error", error.response.data.error.message);
-      }
-    }
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const getPrioridadInfo = (prioridadNum, prioridadTexto) => {
@@ -241,15 +268,17 @@ export default function CocinaSection() {
         <View style={styles.productoHeaderRow}>
           <Text style={styles.mesaNumber}>Mesa {producto.mesa}</Text>
 
-          <Text style={styles.productoNombre}>
-            {producto.nombre}
-          </Text>
+          <Text style={styles.productoNombre}>{producto.nombre}</Text>
 
           {producto.comensal && (
-            <Text style={styles.comensalDetail}>Comensal: {producto.comensal}</Text>
+            <Text style={styles.comensalDetail}>
+              Comensal: {producto.comensal}
+            </Text>
           )}
 
-          <Text style={styles.meseroDetail}>Mesero: {producto.mesero_nombre}</Text>
+          <Text style={styles.meseroDetail}>
+            Mesero: {producto.mesero_nombre}
+          </Text>
 
           {/* Badge Prioridad */}
           <View
@@ -285,7 +314,9 @@ export default function CocinaSection() {
         {producto.estado !== "entregado" ? (
           <TouchableOpacity
             style={[styles.botonAccion, styles.botonEntregar]}
-            onPress={() => marcarComoEntregado(producto.comanda_producto_id)}
+            onPress={() =>
+              marcarComoEntregado(producto.comanda_producto_id, producto.nombre)
+            }
           >
             <Text style={styles.botonAccionTexto}>✓ Marcar como Entregado</Text>
           </TouchableOpacity>
@@ -392,7 +423,7 @@ export default function CocinaSection() {
                   style={[
                     styles.filterOption,
                     ordenamiento === opcion.value &&
-                    styles.filterOptionSelected,
+                      styles.filterOptionSelected,
                   ]}
                   onPress={() => handleOrdenamientoChange(opcion.value)}
                 >
@@ -400,7 +431,7 @@ export default function CocinaSection() {
                     style={[
                       styles.filterOptionText,
                       ordenamiento === opcion.value &&
-                      styles.filterOptionTextSelected,
+                        styles.filterOptionTextSelected,
                     ]}
                     numberOfLines={2} // ✅ AGREGADO: Permite hasta 2 líneas
                     ellipsizeMode="tail"
@@ -465,8 +496,8 @@ export default function CocinaSection() {
 
                 {/* Sección de ingredientes/materias primas */}
                 {productoSeleccionado.receta &&
-                  productoSeleccionado.receta.materias_primas &&
-                  productoSeleccionado.receta.materias_primas.length > 0 ? (
+                productoSeleccionado.receta.materias_primas &&
+                productoSeleccionado.receta.materias_primas.length > 0 ? (
                   <View style={styles.recetaSection}>
                     <Text style={styles.recetaTitle}>
                       🧾 Ingredientes necesarios:
@@ -716,7 +747,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     flex: 1,
-    maxWidth: '20%',
+    maxWidth: "20%",
     justifyContent: "space-between",
   },
 
@@ -794,22 +825,22 @@ const styles = StyleSheet.create({
   },
 
   productoHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 6,
   },
 
   mesaNumber: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 25,
   },
 
   productoNombre: {
     fontSize: 20,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 
   comensalDetail: {
@@ -822,18 +853,17 @@ const styles = StyleSheet.create({
 
   // Badge de prioridad
   prioridadBadge: {
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
 
   prioridadText: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 12,
-    color: 'white',
+    color: "white",
   },
-
 
   // =============================================================================
   // BOTONES DE ACCIÓN EN PRODUCTOS (MANTENIDOS IGUAL)
@@ -841,12 +871,12 @@ const styles = StyleSheet.create({
 
   // Fila que contiene los botones de acción
   productoBotonesFila: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 7,
     marginTop: 10,
     gap: 12,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
 
   // Estilo base para todos los botones de acción
@@ -854,8 +884,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 4,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flex: 1,
     marginHorizontal: 5,
     minWidth: 0,
