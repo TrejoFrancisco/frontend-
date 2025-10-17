@@ -23,9 +23,11 @@ export default function UsuariosSection({ token, navigation }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [clave, setClave] = useState(""); // NUEVO
   const [selectedRole, setSelectedRole] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [claveError, setClaveError] = useState(""); // NUEVO
 
   useEffect(() => {
     fetchUsuarios();
@@ -69,6 +71,7 @@ export default function UsuariosSection({ token, navigation }) {
       setName(usuario.name);
       setEmail(usuario.email);
       setSelectedRole(usuario.role_id || "");
+      setClave(usuario.clave || ""); // NUEVO
       setPassword("");
     } else {
       setEditMode(false);
@@ -76,20 +79,48 @@ export default function UsuariosSection({ token, navigation }) {
       setName("");
       setEmail("");
       setPassword("");
+      setClave(""); // NUEVO
       setSelectedRole("");
     }
     setModalVisible(true);
   };
 
+  // NUEVA FUNCIÓN: Validar clave
+  const validarClave = (text) => {
+    const sinEspacios = text.trim();
+    if (sinEspacios.length < 4) {
+      setClaveError("La clave debe tener al menos 4 caracteres.");
+    } else if (sinEspacios.length > 50) {
+      setClaveError("La clave no puede exceder 50 caracteres.");
+    } else {
+      setClaveError("");
+    }
+  };
+
   const guardarUsuario = async () => {
     try {
-      if (!name || !email || (!editMode && !password)) {
+      // Validaciones básicas
+      if (
+        !name ||
+        !email ||
+        (!editMode && !password) ||
+        (!editMode && !clave)
+      ) {
         Alert.alert("Error", "Todos los campos son obligatorios.");
         return;
       }
 
       if (!selectedRole) {
         Alert.alert("Error", "Debes seleccionar un rol.");
+        return;
+      }
+
+      // Validar errores de contraseña y clave
+      if (passwordError || claveError) {
+        Alert.alert(
+          "Error",
+          "Por favor corrige los errores antes de continuar."
+        );
         return;
       }
 
@@ -101,6 +132,10 @@ export default function UsuariosSection({ token, navigation }) {
 
       if (!editMode) {
         data.password = password;
+        data.clave = clave.trim().toUpperCase(); // NUEVO - convertir a mayúsculas
+      } else if (clave && clave.trim() !== "") {
+        // Solo enviar clave si se modificó en edición
+        data.clave = clave.trim().toUpperCase(); // NUEVO
       }
 
       let response;
@@ -117,6 +152,7 @@ export default function UsuariosSection({ token, navigation }) {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
+
       if (response.data.success) {
         Alert.alert(
           "Éxito",
@@ -133,11 +169,18 @@ export default function UsuariosSection({ token, navigation }) {
     } catch (error) {
       const backendError = error?.response?.data;
       let message = "Error al guardar usuario.";
+
       if (backendError?.error?.details?.password) {
         message =
           "Contraseña inválida: " +
           backendError.error.details.password.join(", ");
+      } else if (backendError?.error?.details?.clave) {
+        message =
+          "Clave inválida: " + backendError.error.details.clave.join(", ");
+      } else if (backendError?.error?.message) {
+        message = backendError.error.message;
       }
+
       Alert.alert("Error", message);
     }
   };
@@ -262,17 +305,48 @@ export default function UsuariosSection({ token, navigation }) {
                   ]}
                 />
                 {passwordError ? (
-                  <Text style={{ color: "red", fontSize: 12 }}>{passwordError}</Text>
+                  <Text style={styles.errorText}>{passwordError}</Text>
                 ) : null}
               </>
+            )}
+
+            {/* NUEVO CAMPO: Clave */}
+            <TextInput
+              placeholder={
+                editMode ? "Nueva clave (opcional)" : "Clave (requerida)"
+              }
+              placeholderTextColor="#888"
+              value={clave || undefined}
+              onChangeText={(text) => {
+                setClave(text.toUpperCase());
+                validarClave(text);
+              }}
+              autoCapitalize="characters"
+              style={[
+                styles.input,
+                claveError ? { borderColor: "red", borderWidth: 1 } : {},
+              ]}
+            />
+            {claveError ? (
+              <Text style={styles.errorText}>{claveError}</Text>
+            ) : null}
+            {editMode && (
+              <Text style={styles.helperText}>
+                * Dejar vacío si no deseas cambiar la clave
+              </Text>
             )}
 
             <View style={styles.row}>
               <Text style={styles.labelR}>Rol</Text>
               <Picker
                 selectedValue={selectedRole || "default"}
-                onValueChange={(value) => setSelectedRole(value === "default" ? null : value)}
-                style={[styles.picker, { color: selectedRole ? "#000" : "#888" }]}
+                onValueChange={(value) =>
+                  setSelectedRole(value === "default" ? null : value)
+                }
+                style={[
+                  styles.picker,
+                  { color: selectedRole ? "#000" : "#888" },
+                ]}
               >
                 <Picker.Item label="Selecciona un rol" value="default" />
                 {roles.map((rol) => (

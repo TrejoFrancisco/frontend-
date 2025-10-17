@@ -71,7 +71,7 @@ export default function LoginScreen({ navigation }) {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? -120 : -110}
+      enabled={true}
     >
       {/* Fondos decorativos */}
       <View style={styles.backgroundDecoration}>
@@ -83,6 +83,7 @@ export default function LoginScreen({ navigation }) {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        scrollEnabled={false}
       >
         {/* Logo */}
         <View style={styles.headerContainer}>
@@ -181,8 +182,8 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
-    padding: 20,
-    paddingTop: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 40,
   },
 
   /* Decoraciones */
@@ -214,7 +215,6 @@ const styles = StyleSheet.create({
   headerContainer: {
     alignItems: "center",
     marginBottom: 20,
-    marginTop: -80,
   },
   logoContainer: {
     width: 80,
