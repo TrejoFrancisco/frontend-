@@ -63,14 +63,14 @@ export default function ComandaCard({
 
           {comanda.comensal && !isUnificada && comanda.tipo !== "unificada" && (
             <Text style={styles.comandaComensal}>
-              {acortarComensal(comanda.comensal)}
+              Comensal: {acortarComensal(comanda.comensal)}
             </Text>
           )}
 
           {(isUnificada || comanda.tipo === "unificada") &&
             comanda.comensales != null && (
               <Text style={styles.comandaDetail}>
-                Comensales: {comanda.comensales}
+                Comensal: {comanda.comensales}
               </Text>
             )}
 
@@ -118,6 +118,7 @@ export default function ComandaCard({
           <View
             style={[
               styles.estadoBadge,
+              comanda.estado === "pendiente" && styles.estadoPendiente,
               comanda.estado === "pagada" && styles.estadoPagada,
               comanda.estado === "cerrada" && styles.estadoCerrada,
               comanda.estado === "activa" && styles.estadoActiva,
@@ -331,16 +332,19 @@ const styles = StyleSheet.create({
   estadoBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 5,
+  },
+  estadoPendiente: {
+    backgroundColor: "#fdb03cff",
   },
   estadoActiva: {
-    backgroundColor: "#e3f2fd",
+    backgroundColor: "#4CAF50",
   },
   estadoCerrada: {
-    backgroundColor: "#fff3e0",
+    backgroundColor: "#f1574cff",
   },
   estadoPagada: {
-    backgroundColor: "#e8f5e9",
+    backgroundColor: "#2196F3",
   },
   estadoText: {
     fontSize: 12,
@@ -363,7 +367,7 @@ const styles = StyleSheet.create({
   ticketButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#a5eef9ff",
+    backgroundColor: "#cbf3ffff",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,

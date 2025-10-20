@@ -123,9 +123,6 @@ export default function PagoModal({
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.modalTitle}>Procesar Pago</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Información de la comanda */}
@@ -476,7 +473,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#F44336",
   },
   pagarButton: {
     backgroundColor: "#28a745",

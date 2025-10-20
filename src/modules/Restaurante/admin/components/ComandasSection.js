@@ -212,7 +212,7 @@ export default function ComandasPendientesSection({ token, navigation }) {
                     <Text style={styles.productoNombre}>{producto.nombre}</Text>
                     <View style={styles.productoDetails}>
                       <Text style={styles.productoPrice}>
-                        ${product.precio_venta || "0.00"}
+                        ${producto.precio_venta || "0.00"}
                       </Text>
                       <View
                         style={[
@@ -264,7 +264,7 @@ export default function ComandasPendientesSection({ token, navigation }) {
             ) : (
               <Text style={styles.noActionText}>
                 {comanda.estado === "pendiente"
-                  ? "Ya está pendiente"
+                  ? "Está en pendiente"
                   : "No se puede modificar"}
               </Text>
             )}
@@ -486,6 +486,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 15,
+    alignSelf: "flex-start",
   },
   statusText: {
     color: "white",
@@ -591,7 +592,7 @@ const styles = StyleSheet.create({
     height: 20,
   },
   noActionText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#6c757d",
     fontStyle: "italic",
   },

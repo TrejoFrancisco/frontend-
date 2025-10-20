@@ -1,9 +1,8 @@
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
-
 import * as Sharing from "expo-sharing";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -53,7 +52,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
       });
       if (response.data.success) {
         setMateriasPrimas(response.data.data);
-        setPaginaActual(1); // Reset a la primera página
+        setPaginaActual(1);
       }
     } catch (error) {
       console.log("Error al obtener materias primas:", error);
@@ -73,7 +72,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
     );
   };
 
-  // Función para obtener materias paginadas
   const getMateriasPaginadas = () => {
     const filtradas = getMateriasPrimasFiltradas();
     const inicio = (paginaActual - 1) * itemsPorPagina;
@@ -81,10 +79,62 @@ export default function MateriaPrimaSection({ token, navigation }) {
     return filtradas.slice(inicio, fin);
   };
 
-  // Calcular total de páginas
   const getTotalPaginas = () => {
     const filtradas = getMateriasPrimasFiltradas();
     return Math.ceil(filtradas.length / itemsPorPagina);
+  };
+
+  const obtenerNumerosPagina = () => {
+    const totalPaginas = getTotalPaginas();
+    const numeros = [];
+    const maxVisible = 5;
+
+    if (totalPaginas <= maxVisible) {
+      for (let i = 1; i <= totalPaginas; i++) {
+        numeros.push(i);
+      }
+    } else {
+      if (paginaActual <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          numeros.push(i);
+        }
+        numeros.push("...");
+        numeros.push(totalPaginas);
+      } else if (paginaActual >= totalPaginas - 2) {
+        numeros.push(1);
+        numeros.push("...");
+        for (let i = totalPaginas - 3; i <= totalPaginas; i++) {
+          numeros.push(i);
+        }
+      } else {
+        numeros.push(1);
+        numeros.push("...");
+        for (let i = paginaActual - 1; i <= paginaActual + 1; i++) {
+          numeros.push(i);
+        }
+        numeros.push("...");
+        numeros.push(totalPaginas);
+      }
+    }
+
+    return numeros;
+  };
+
+  const cambiarPagina = (numeroPagina) => {
+    setPaginaActual(numeroPagina);
+  };
+
+  const paginaSiguiente = () => {
+    const totalPaginas = getTotalPaginas();
+    if (paginaActual < totalPaginas) {
+      setPaginaActual(paginaActual + 1);
+    }
+  };
+
+  const paginaAnterior = () => {
+    if (paginaActual > 1) {
+      setPaginaActual(paginaActual - 1);
+    }
   };
 
   const resetForm = () => {
@@ -294,10 +344,10 @@ export default function MateriaPrimaSection({ token, navigation }) {
       if (uploadResponse.ok && responseData.success) {
         Alert.alert(
           "Éxito",
-          `Se importaron ${responseData.data.total_procesadas
-          } materias primas.${responseData.data.errores_encontrados > 0
-            ? ` Con ${responseData.data.errores_encontrados} errores.`
-            : ""
+          `Se importaron ${responseData.data.total_procesadas} materias primas.${
+            responseData.data.errores_encontrados > 0
+              ? ` Con ${responseData.data.errores_encontrados} errores.`
+              : ""
           }`
         );
         fetchMateriasPrimas();
@@ -328,22 +378,18 @@ export default function MateriaPrimaSection({ token, navigation }) {
         }
       );
 
-      // Convertir el contenido binario a base64
       const base64String = Buffer.from(response.data, "binary").toString(
         "base64"
       );
 
-      // Crear ruta temporal del archivo
       const fileUri =
         FileSystem.cacheDirectory +
         `plantilla_materias_primas_${Date.now()}.csv`;
 
-      // Guardar el archivo temporalmente
       await FileSystem.writeAsStringAsync(fileUri, base64String, {
-        encoding: "base64", // cambio aquí
+        encoding: "base64",
       });
 
-      // Verificar si Sharing está disponible
       const isAvailable = await Sharing.isAvailableAsync();
       if (isAvailable) {
         await Sharing.shareAsync(fileUri);
@@ -358,14 +404,77 @@ export default function MateriaPrimaSection({ token, navigation }) {
     }
   };
 
+  const renderPaginacion = () => {
+    const materiasFiltradas = getMateriasPrimasFiltradas();
+    const totalPaginas = getTotalPaginas();
+    
+    if (materiasFiltradas.length === 0) return null;
+
+    return (
+      <View style={styles.paginacionContainer}>
+        <TouchableOpacity
+          style={[
+            styles.paginacionBoton,
+            paginaActual === 1 && styles.paginacionBotonDisabled,
+          ]}
+          onPress={paginaAnterior}
+          disabled={paginaActual === 1}
+        >
+          <Text style={styles.paginacionTexto}>←</Text>
+        </TouchableOpacity>
+
+        <View style={styles.paginacionNumeros}>
+          {obtenerNumerosPagina().map((numero, index) => {
+            if (numero === "...") {
+              return (
+                <Text key={`dots-${index}`} style={styles.paginacionPuntos}>
+                  ...
+                </Text>
+              );
+            }
+            return (
+              <TouchableOpacity
+                key={numero}
+                style={[
+                  styles.paginacionNumero,
+                  paginaActual === numero && styles.paginacionNumeroActivo,
+                ]}
+                onPress={() => cambiarPagina(numero)}
+              >
+                <Text
+                  style={[
+                    styles.paginacionNumeroTexto,
+                    paginaActual === numero &&
+                    styles.paginacionNumeroTextoActivo,
+                  ]}
+                >
+                  {numero}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.paginacionBoton,
+            paginaActual === totalPaginas && styles.paginacionBotonDisabled,
+          ]}
+          onPress={paginaSiguiente}
+          disabled={paginaActual === totalPaginas}
+        >
+          <Text style={styles.paginacionTexto}>→</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const materiasPaginadas = getMateriasPaginadas();
-  const totalPaginas = getTotalPaginas();
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gestión de Materias Primas</Text>
 
-      {/* Botón Agregar */}
       <TouchableOpacity style={styles.primaryButton} onPress={openCreateModal}>
         <View style={styles.buttonContent}>
           <Image
@@ -376,7 +485,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
         </View>
       </TouchableOpacity>
 
-      {/* Fila de botones CSV */}
       <View style={styles.csvButtonsRow}>
         <TouchableOpacity
           style={styles.templateButton}
@@ -396,7 +504,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Archivo seleccionado */}
       {archivoCSV && (
         <View style={styles.selectedFileContainer}>
           <Text style={styles.selectedFileText}>
@@ -405,7 +512,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
         </View>
       )}
 
-      {/* Botón Importar */}
       <TouchableOpacity
         style={[
           styles.importButton,
@@ -419,20 +525,18 @@ export default function MateriaPrimaSection({ token, navigation }) {
         </Text>
       </TouchableOpacity>
 
-      {/* Lista de materias primas */}
       <View style={styles.listContainer}>
-        {/* Buscador */}
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar por clave o nombre..."
+          placeholderTextColor="#6B7280"
           value={busquedaMateria}
           onChangeText={(text) => {
             setBusquedaMateria(text);
-            setPaginaActual(1); // Reset a primera página al buscar
+            setPaginaActual(1);
           }}
         />
 
-        {/* Encabezado de tabla */}
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, styles.idColumn]}>ID</Text>
           <Text style={[styles.tableHeaderText, styles.claveColumn]}>
@@ -448,7 +552,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
           </View>
         </View>
 
-        {/* Cuerpo de tabla con ScrollView */}
         <ScrollView style={styles.tableBody} nestedScrollEnabled={true}>
           {materiasPaginadas.map((item) => (
             <View key={item.id} style={styles.tableRow}>
@@ -493,7 +596,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
           ))}
         </ScrollView>
 
-        {/* Mensajes vacíos */}
         {getMateriasPrimasFiltradas().length === 0 && (
           <Text style={styles.emptyText}>
             {busquedaMateria.trim() !== ""
@@ -502,45 +604,9 @@ export default function MateriaPrimaSection({ token, navigation }) {
           </Text>
         )}
 
-        {/* Controles de paginación */}
-        {getMateriasPrimasFiltradas().length > 0 && (
-          <View style={styles.paginationContainer}>
-            <TouchableOpacity
-              style={[
-                styles.paginationButton,
-                paginaActual === 1 && styles.paginationButtonDisabled,
-              ]}
-              onPress={() => setPaginaActual(paginaActual - 1)}
-              disabled={paginaActual === 1}
-            >
-              <Text style={styles.paginationButtonText}>← Anterior</Text>
-            </TouchableOpacity>
-
-            <View style={styles.paginationInfo}>
-              <Text style={styles.paginationText}>
-                Página {paginaActual} de {totalPaginas}
-              </Text>
-              <Text style={styles.paginationSubtext}>
-                ({getMateriasPrimasFiltradas().length} registros)
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.paginationButton,
-                paginaActual === totalPaginas &&
-                styles.paginationButtonDisabled,
-              ]}
-              onPress={() => setPaginaActual(paginaActual + 1)}
-              disabled={paginaActual === totalPaginas}
-            >
-              <Text style={styles.paginationButtonText}>Siguiente →</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {renderPaginacion()}
       </View>
 
-      {/* Modal para crear/editar */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -596,7 +662,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
                 onChangeText={(text) => handleInputChange("existencia", text)}
               />
 
-
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.cancelButton]}
@@ -629,7 +694,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  // === CONTENEDOR PRINCIPAL ===
   container: {
     flex: 1,
     padding: 20,
@@ -642,8 +706,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#1F2937",
   },
-
-  // === BOTONES PRINCIPALES ===
   primaryButton: {
     backgroundColor: "#4CAF50",
     padding: 12,
@@ -667,8 +729,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-
-  // === FILA DE BOTONES CSV ===
   csvButtonsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -677,14 +737,14 @@ const styles = StyleSheet.create({
   },
   templateButton: {
     flex: 1,
-    backgroundColor: "#FF9800",
+    backgroundColor: "#ffb341ff",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
   },
   selectButton: {
     flex: 1,
-    backgroundColor: "#2196F3",
+    backgroundColor: "#4faaf4ff",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
@@ -693,14 +753,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
   selectButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
-
-  // === BOTÓN IMPORTAR ===
   importButton: {
     padding: 12,
     borderRadius: 8,
@@ -712,8 +772,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-
-  // === ARCHIVO SELECCIONADO ===
   selectedFileContainer: {
     backgroundColor: "#E8F5E9",
     padding: 10,
@@ -728,8 +786,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "500",
   },
-
-  // === BÚSQUEDA ===
   searchInput: {
     backgroundColor: "#F0F8F0",
     borderColor: "#28A745",
@@ -739,16 +795,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 18,
   },
-
-  // === CONTENEDOR DE LISTA ===
   listContainer: {
     flex: 1,
     padding: 10,
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
   },
-
-  // === TABLA ===
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#F0F0F0",
@@ -777,8 +829,6 @@ const styles = StyleSheet.create({
     color: "#444444",
     flexWrap: "wrap",
   },
-
-  // === COLUMNAS DE TABLA ===
   idColumn: {
     flex: 1,
     textAlign: "center",
@@ -809,8 +859,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 20,
   },
-
-  // === BOTONES DE ACCIÓN ===
   editButton: {
     padding: 5,
   },
@@ -822,50 +870,57 @@ const styles = StyleSheet.create({
     height: 30,
     resizeMode: "contain",
   },
-
-  // === PAGINACIÓN ===
-  paginationContainer: {
+  paginacionContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    borderTopWidth: 1,
-    borderColor: "#EEEEEE",
-    backgroundColor: "#FAFAFA",
     marginTop: 10,
+    marginBottom: 10,
+    paddingVertical: 10,
   },
-  paginationButton: {
-    backgroundColor: "#2196F3",
+  paginacionBoton: {
+    backgroundColor: "#4CAF50",
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    paddingHorizontal: 15,
     borderRadius: 6,
-    minWidth: 100,
+    marginHorizontal: 4,
   },
-  paginationButtonDisabled: {
-    backgroundColor: "#CCCCCC",
+  paginacionBotonDisabled: {
+    backgroundColor: "#ccc",
   },
-  paginationButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
+  paginacionTexto: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
-  paginationInfo: {
+  paginacionNumeros: {
+    flexDirection: "row",
     alignItems: "center",
+    marginHorizontal: 8,
   },
-  paginationText: {
+  paginacionNumero: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginHorizontal: 2,
+    borderRadius: 6,
+    backgroundColor: "#f0f0f0",
+  },
+  paginacionNumeroActivo: {
+    backgroundColor: "#4CAF50",
+  },
+  paginacionNumeroTexto: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333333",
+    color: "#333",
   },
-  paginationSubtext: {
-    fontSize: 12,
-    color: "#666666",
-    marginTop: 2,
+  paginacionNumeroTextoActivo: {
+    color: "#fff",
+    fontWeight: "bold",
   },
-
-  // === TEXTO VACÍO ===
+  paginacionPuntos: {
+    fontSize: 16,
+    color: "#666",
+    marginHorizontal: 4,
+  },
   emptyText: {
     marginTop: 20,
     textAlign: "center",
@@ -873,8 +928,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     fontSize: 16,
   },
-
-  // === MODAL ===
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -895,8 +948,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: "center",
   },
-
-  // === INPUTS ===
   input: {
     borderWidth: 1,
     borderColor: "#DDDDDD",
@@ -907,8 +958,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: "#FFFFFF",
   },
-
-  // === BOTONES DEL MODAL ===
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",

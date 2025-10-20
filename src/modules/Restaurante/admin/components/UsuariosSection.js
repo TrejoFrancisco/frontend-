@@ -332,7 +332,7 @@ export default function UsuariosSection({ token, navigation }) {
             ) : null}
             {editMode && (
               <Text style={styles.helperText}>
-                * Dejar vacío si no deseas cambiar la clave
+                ~ Dejar vacío si no deseas cambiar la clave
               </Text>
             )}
 
@@ -559,11 +559,11 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   picker: {
-    height: 50, // asegura que se vea el campo
+    height: 60, // asegura que se vea el campo
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    paddingHorizontal: 150,
+    paddingHorizontal: 140,
   },
   labelR: {
     fontWeight: "bold",

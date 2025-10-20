@@ -16,6 +16,113 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import { API } from "../../../../services/api";
 
+// ============================================
+// COMPONENTE BUSCADOR DE RECETAS
+// ============================================
+const BuscadorRecetas = ({
+  recetas = [],
+  selectedRecetaId,
+  onSelectReceta,
+  placeholder = "Buscar receta o dejar vacío para producto directo",
+}) => {
+  const [searchText, setSearchText] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const selectedReceta = recetas.find(
+    (r) => r.id.toString() === selectedRecetaId?.toString()
+  );
+
+  const displayText = selectedReceta
+    ? `${selectedReceta.clave} - ${selectedReceta.nombre}`
+    : '';
+
+  const filteredRecetas = recetas.filter((receta) => {
+    if (!searchText.trim()) return true;
+    const searchLower = searchText.toLowerCase();
+    return (
+      receta.nombre.toLowerCase().includes(searchLower) ||
+      receta.clave.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleSelectReceta = (receta) => {
+    onSelectReceta(receta.id.toString());
+    setSearchText('');
+    setShowDropdown(false);
+  };
+
+  const handleClearReceta = () => {
+    onSelectReceta(null);
+    setSearchText('');
+    setShowDropdown(false);
+  };
+
+  return (
+    <View style={styles.searchRecetaContainer}>
+      <TextInput
+        style={[styles.searchRecetaInput, { color: "#000" }]}
+        placeholder={placeholder}
+        placeholderTextColor="#888"
+        value={showDropdown ? searchText : displayText}
+        onChangeText={(text) => {
+          setSearchText(text);
+          setShowDropdown(true);
+        }}
+        onFocus={() => setShowDropdown(true)}
+      />
+
+      {selectedReceta && !showDropdown && (
+        <TouchableOpacity
+          style={styles.clearRecetaButton}
+          onPress={handleClearReceta}
+        >
+        </TouchableOpacity>
+      )}
+
+      {showDropdown && (
+        <View style={styles.dropdownRecetaContainer}>
+          <ScrollView
+            style={styles.dropdownRecetaScroll}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+          >
+            <TouchableOpacity
+              style={[styles.dropdownRecetaItem, styles.dropdownRecetaItemSpecial]}
+              onPress={handleClearReceta}
+            >
+              <Text style={styles.dropdownRecetaItemTextSpecial}>
+                Sin receta (producto directo)
+              </Text>
+            </TouchableOpacity>
+
+            {filteredRecetas.map((receta) => (
+              <TouchableOpacity
+                key={receta.id}
+                style={styles.dropdownRecetaItem}
+                onPress={() => handleSelectReceta(receta)}
+              >
+                <Text style={styles.dropdownRecetaItemText}>
+                  <Text style={styles.claveReceta}>{receta.clave}</Text> - {receta.nombre}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            {filteredRecetas.length === 0 && (
+              <Text style={styles.dropdownRecetaEmpty}>
+                No se encontraron recetas
+              </Text>
+            )}
+          </ScrollView>
+
+        </View>
+      )}
+    </View>
+  );
+};
+
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
 export default function ProductosSection({ token, navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -44,7 +151,6 @@ export default function ProductosSection({ token, navigation }) {
     estado: "activo",
   });
 
-  // Cargar datos iniciales con manejo de errores mejorado
   useEffect(() => {
     let isMounted = true;
 
@@ -77,7 +183,6 @@ export default function ProductosSection({ token, navigation }) {
     };
   }, []);
 
-  // Filtrar productos cuando cambia el texto de búsqueda
   useEffect(() => {
     if (!Array.isArray(productos)) {
       setProductosFiltrados([]);
@@ -655,7 +760,6 @@ export default function ProductosSection({ token, navigation }) {
     [cambiarEstadoProducto, editarProducto]
   );
 
-  // Pantalla de carga
   if (loading) {
     return (
       <View style={styles.container}>
@@ -667,7 +771,6 @@ export default function ProductosSection({ token, navigation }) {
     );
   }
 
-  // Pantalla de error
   if (error) {
     return (
       <View style={styles.container}>
@@ -745,11 +848,13 @@ export default function ProductosSection({ token, navigation }) {
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: "#000" }]}
               placeholder="Buscar por nombre o clave..."
-              value={textoBusqueda}
+              placeholderTextColor="#999"
+              value={textoBusqueda || ""}
               onChangeText={setTextoBusqueda}
             />
+
             {textoBusqueda.length > 0 && (
               <TouchableOpacity
                 style={styles.clearButton}
@@ -934,22 +1039,11 @@ export default function ProductosSection({ token, navigation }) {
                 </Picker>
 
                 <Text style={styles.label}>Receta (Opcional)</Text>
-                <Picker
-                  selectedValue={productoData.receta_id || "default"}
-                  onValueChange={(value) => {
-                    if (value !== "default") handleInputChange("receta_id", value);
-                  }}
-                  style={[styles.picker, { color: productoData.receta_id ? "#000" : "#888" }]}
-                >
-                  <Picker.Item label="Sin receta (producto directo)" value="default" />
-                  {recetas.map((receta) => (
-                    <Picker.Item
-                      key={receta.id}
-                      label={`${receta.clave} - ${receta.nombre}`}
-                      value={receta.id.toString()}
-                    />
-                  ))}
-                </Picker>
+                <BuscadorRecetas
+                  recetas={recetas}
+                  selectedRecetaId={productoData.receta_id}
+                  onSelectReceta={(value) => handleInputChange("receta_id", value)}
+                />
 
                 <Text style={styles.label}>Prioridad</Text>
                 <Picker
@@ -1530,4 +1624,87 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: "600",
   },
+  // Estilos del Buscador de Recetas
+  searchRecetaContainer: {
+    marginBottom: 15,
+    position: "relative",
+    zIndex: 1000,
+  },
+  searchRecetaInput: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    fontSize: 16,
+  },
+  clearRecetaButton: {
+    position: 'absolute',
+    right: 12,
+    top: 10,
+    padding: 4,
+    zIndex: 2,
+  },
+  clearRecetaButtonText: {
+    fontSize: 20,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  dropdownRecetaContainer: {
+    position: "absolute",
+    top: 45,
+    left: 0,
+    right: 0,
+    maxHeight: 250,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+    borderRadius: 8,
+    zIndex: 2000,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  dropdownRecetaScroll: {
+    maxHeight: 200,
+  },
+  dropdownRecetaItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  dropdownRecetaItemSpecial: {
+    backgroundColor: "#f0f8ff",
+    borderBottomWidth: 2,
+    borderBottomColor: "#4CAF50",
+  },
+  dropdownRecetaItemText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  dropdownRecetaItemTextSpecial: {
+    fontSize: 14,
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
+  dropdownRecetaItemSubtext: {
+    fontSize: 12,
+    color: "#666",
+  },
+  claveReceta: {
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  dropdownRecetaEmpty: {
+    padding: 12,
+    textAlign: "center",
+    color: "#999",
+    fontStyle: "italic",
+  },
+
 });

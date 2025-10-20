@@ -197,29 +197,25 @@ export default function EditarComandaModal({
       return;
     }
 
-    const productosArray = [];
+    const productosConDetalle = [];
+
     Object.entries(productosSeleccionados).forEach(([productoId, cantidad]) => {
       for (let i = 0; i < cantidad; i++) {
-        productosArray.push(parseInt(productoId));
+        const key = `${productoId}_${i}`;
+        productosConDetalle.push({
+          id: parseInt(productoId),
+          detalle: detallesProductos[key] || null,
+        });
       }
     });
 
-    if (productosArray.length === 0) {
+    if (productosConDetalle.length === 0) {
       Alert.alert("Error", "Debe seleccionar al menos un producto");
       return;
     }
 
-    const productosConDetalle = productosArray.map((productoId, index) => {
-      const key = `${productoId}_${index}`;
-      return {
-        id: productoId,
-        detalle: detallesProductos[key] || null,
-      };
-    });
-
     try {
-      const response = await API.put(
-        `/restaurante/mesero/comanda/${comanda.id}`,
+      const response = await API.put(`/restaurante/mesero/comanda/${comanda.id}`,
         {
           mesa: formData.mesa,
           personas: parseInt(formData.personas),
@@ -228,151 +224,151 @@ export default function EditarComandaModal({
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  }
+    );
 
-      if (response.data.success) {
-        Alert.alert("Éxito", response.data.message);
-        resetForm();
-        onSuccess();
-        onClose();
-      }
-    } catch (error) {
-      console.log("Error al editar comanda:", error);
-      if (error.response?.data?.error) {
-        Alert.alert("Error", error.response.data.error.message);
-      } else {
-        Alert.alert("Error", "Ocurrió un error al editar la comanda");
-      }
-    }
-  };
+  if (response.data.success) {
+    Alert.alert("Éxito", response.data.message);
+    resetForm();
+    onSuccess();
+    onClose();
+  }
+} catch (error) {
+  console.log("Error al editar comanda:", error);
+  if (error.response?.data?.error) {
+    Alert.alert("Error", error.response.data.error.message);
+  } else {
+    Alert.alert("Error", "Ocurrió un error al editar la comanda");
+  }
+}
+};
 
-  return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.modalContainer}>
-        <View style={styles.modalWrapper}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Editar Comanda</Text>
+return (
+  <Modal visible={visible} animationType="slide" transparent>
+    <View style={styles.modalContainer}>
+      <View style={styles.modalWrapper}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Editar Comanda</Text>
 
-            <ScrollView style={styles.formScrollView}>
-              {/* Formulario básico */}
-              <TextInput
-                style={styles.input}
-                placeholder="Mesa"
-                placeholderTextColor="#999"
-                value={formData.mesa}
-                onChangeText={(value) => handleChange("mesa", value)}
-              />
+          <ScrollView style={styles.formScrollView}>
+            {/* Formulario básico */}
+            <TextInput
+              style={styles.input}
+              placeholder="Mesa"
+              placeholderTextColor="#999"
+              value={formData.mesa}
+              onChangeText={(value) => handleChange("mesa", value)}
+            />
 
-              <TextInput
-                style={styles.input}
-                placeholder="Número de personas"
-                placeholderTextColor="#999"
-                value={formData.personas}
-                onChangeText={(value) => handleChange("personas", value)}
-                keyboardType="numeric"
-              />
+            <TextInput
+              style={styles.input}
+              placeholder="Número de personas"
+              placeholderTextColor="#999"
+              value={formData.personas}
+              onChangeText={(value) => handleChange("personas", value)}
+              keyboardType="numeric"
+            />
 
-              <TextInput
-                style={styles.input}
-                placeholder="Nombre del comensal"
-                placeholderTextColor="#999"
-                value={formData.comensal}
-                onChangeText={(value) => handleChange("comensal", value)}
-              />
+            <TextInput
+              style={styles.input}
+              placeholder="Nombre del comensal"
+              placeholderTextColor="#999"
+              value={formData.comensal}
+              onChangeText={(value) => handleChange("comensal", value)}
+            />
 
-              {/* Productos actuales */}
-              <Text style={styles.sectionTitle}>Productos de la Comanda:</Text>
+            {/* Productos actuales */}
+            <Text style={styles.sectionTitle}>Productos de la Comanda:</Text>
 
-              {Object.keys(productosSeleccionados).length > 0 && (
-                <View style={styles.totalContainer}>
-                  <Text style={styles.totalLabel}>Total:</Text>
-                  <Text style={styles.totalMonto}>${calcularTotal()}</Text>
-                </View>
-              )}
-
-              {getProductosComandaActual().length === 0 ? (
-                <Text style={styles.noProductosText}>
-                  No hay productos en esta comanda
-                </Text>
-              ) : (
-                getProductosComandaActual().map((producto) => (
-                  <ProductoItem
-                    key={`actual-${producto.id}`}
-                    producto={producto}
-                    cantidad={productosSeleccionados[producto.id] || 0}
-                    onAgregar={() => agregarProducto(producto.id)}
-                    onQuitar={() => quitarProducto(producto.id)}
-                    detalles={detallesProductos}
-                    onAgregarDetalle={agregarDetalle}
-                  />
-                ))
-              )}
-
-              {/* Separador */}
-              <View style={styles.separador}>
-                <Text style={styles.separadorTexto}>
-                  Agregar más productos:
-                </Text>
+            {Object.keys(productosSeleccionados).length > 0 && (
+              <View style={styles.totalContainer}>
+                <Text style={styles.totalLabel}>Total:</Text>
+                <Text style={styles.totalMonto}>${calcularTotal()}</Text>
               </View>
+            )}
 
-              {/* Buscador de productos nuevos */}
-              <TextInput
-                style={styles.buscadorInput}
-                placeholder="Buscar productos para agregar..."
-                placeholderTextColor="#666"
-                value={busquedaProducto}
-                onChangeText={setBusquedaProducto}
-              />
+            {getProductosComandaActual().length === 0 ? (
+              <Text style={styles.noProductosText}>
+                No hay productos en esta comanda
+              </Text>
+            ) : (
+              getProductosComandaActual().map((producto) => (
+                <ProductoItem
+                  key={`actual-${producto.id}`}
+                  producto={producto}
+                  cantidad={productosSeleccionados[producto.id] || 0}
+                  onAgregar={() => agregarProducto(producto.id)}
+                  onQuitar={() => quitarProducto(producto.id)}
+                  detalles={detallesProductos}
+                  onAgregarDetalle={agregarDetalle}
+                />
+              ))
+            )}
 
-              {busquedaProducto.trim() !== "" && (
-                <>
-                  {getProductosBusqueda().length === 0 ? (
-                    <Text style={styles.noProductosText}>
-                      No se encontraron productos nuevos
-                    </Text>
-                  ) : (
-                    getProductosBusqueda().map((producto) => (
-                      <ProductoItem
-                        key={`nuevo-${producto.id}`}
-                        producto={producto}
-                        cantidad={productosSeleccionados[producto.id] || 0}
-                        onAgregar={() => agregarProducto(producto.id)}
-                        onQuitar={() => quitarProducto(producto.id)}
-                        detalles={detallesProductos}
-                        onAgregarDetalle={agregarDetalle}
-                        esNuevo={true}
-                      />
-                    ))
-                  )}
-                </>
-              )}
-            </ScrollView>
-
-            {/* Botones */}
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  resetForm();
-                  onClose();
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={editarComanda}
-              >
-                <Text style={styles.saveButtonText}>Guardar</Text>
-              </TouchableOpacity>
+            {/* Separador */}
+            <View style={styles.separador}>
+              <Text style={styles.separadorTexto}>
+                Agregar más productos:
+              </Text>
             </View>
+
+            {/* Buscador de productos nuevos */}
+            <TextInput
+              style={styles.buscadorInput}
+              placeholder="Buscar productos para agregar..."
+              placeholderTextColor="#666"
+              value={busquedaProducto}
+              onChangeText={setBusquedaProducto}
+            />
+
+            {busquedaProducto.trim() !== "" && (
+              <>
+                {getProductosBusqueda().length === 0 ? (
+                  <Text style={styles.noProductosText}>
+                    No se encontraron productos nuevos
+                  </Text>
+                ) : (
+                  getProductosBusqueda().map((producto) => (
+                    <ProductoItem
+                      key={`nuevo-${producto.id}`}
+                      producto={producto}
+                      cantidad={productosSeleccionados[producto.id] || 0}
+                      onAgregar={() => agregarProducto(producto.id)}
+                      onQuitar={() => quitarProducto(producto.id)}
+                      detalles={detallesProductos}
+                      onAgregarDetalle={agregarDetalle}
+                      esNuevo={true}
+                    />
+                  ))
+                )}
+              </>
+            )}
+          </ScrollView>
+
+          {/* Botones */}
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={() => {
+                resetForm();
+                onClose();
+              }}
+            >
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalButton, styles.saveButton]}
+              onPress={editarComanda}
+            >
+              <Text style={styles.saveButtonText}>Guardar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
-    </Modal>
-  );
+    </View>
+  </Modal>
+);
 }
 
 // Componente ProductoItem (reutilizable)
@@ -615,7 +611,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   productoPrecio: {
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: "bold",
     color: "#28a745",
   },
