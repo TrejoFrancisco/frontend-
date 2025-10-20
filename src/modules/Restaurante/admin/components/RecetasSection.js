@@ -55,7 +55,6 @@ export default function RecetasSection({ token, navigation }) {
       });
       if (response.data.success) {
         setRecetas(response.data.data);
-        // El backend ya recalcula los costos automáticamente
         if (response.data.costos_recalculados) {
         }
       }
@@ -100,7 +99,6 @@ export default function RecetasSection({ token, navigation }) {
     return null;
   };
 
-  // Función para obtener la unidad de una materia prima
   const getUnidadMateriaPrima = (materiaPrimaId) => {
     const materiaPrima = materiasPrimas.find(
       (mp) => mp.id === parseInt(materiaPrimaId)
@@ -108,7 +106,6 @@ export default function RecetasSection({ token, navigation }) {
     return materiaPrima ? materiaPrima.unidad : "";
   };
 
-  // Función para filtrar materias primas en el buscador
   const getMateriasPrimasFiltradas = (searchText) => {
     if (!searchText.trim()) return [];
 
@@ -119,18 +116,15 @@ export default function RecetasSection({ token, navigation }) {
     );
   };
 
-  // Función para filtrar recetas por búsqueda y estado
   const getRecetasFiltradas = () => {
     let recetasFiltradas = recetas;
 
-    // Filtrar por estado
     if (filtroEstado !== "todos") {
       recetasFiltradas = recetasFiltradas.filter(
         (receta) => receta.estado === filtroEstado
       );
     }
 
-    // Filtrar por búsqueda
     if (busquedaReceta.trim()) {
       recetasFiltradas = recetasFiltradas.filter(
         (receta) =>
@@ -142,7 +136,6 @@ export default function RecetasSection({ token, navigation }) {
     return recetasFiltradas;
   };
 
-  // Función para obtener recetas paginadas
   const getRecetasPaginadas = () => {
     const recetasFiltradas = getRecetasFiltradas();
     const inicio = (paginaActual - 1) * ITEMS_POR_PAGINA;
@@ -150,13 +143,61 @@ export default function RecetasSection({ token, navigation }) {
     return recetasFiltradas.slice(inicio, fin);
   };
 
-  // Calcular total de páginas
   const getTotalPaginas = () => {
     const recetasFiltradas = getRecetasFiltradas();
     return Math.ceil(recetasFiltradas.length / ITEMS_POR_PAGINA);
   };
 
-  // Función para formatear moneda
+  // Función para obtener números de página
+  const obtenerNumerosPagina = () => {
+    const totalPaginas = getTotalPaginas();
+    const numeros = [];
+    const maxVisible = 5;
+
+    if (totalPaginas <= maxVisible) {
+      for (let i = 1; i <= totalPaginas; i++) {
+        numeros.push(i);
+      }
+    } else {
+      if (paginaActual <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          numeros.push(i);
+        }
+        numeros.push("...");
+        numeros.push(totalPaginas);
+      } else if (paginaActual >= totalPaginas - 2) {
+        numeros.push(1);
+        numeros.push("...");
+        for (let i = totalPaginas - 3; i <= totalPaginas; i++) {
+          numeros.push(i);
+        }
+      } else {
+        numeros.push(1);
+        numeros.push("...");
+        for (let i = paginaActual - 1; i <= paginaActual + 1; i++) {
+          numeros.push(i);
+        }
+        numeros.push("...");
+        numeros.push(totalPaginas);
+      }
+    }
+
+    return numeros;
+  };
+
+  const paginaAnterior = () => {
+    if (paginaActual > 1) {
+      cambiarPagina(paginaActual - 1);
+    }
+  };
+
+  const paginaSiguiente = () => {
+    const totalPaginas = getTotalPaginas();
+    if (paginaActual < totalPaginas) {
+      cambiarPagina(paginaActual + 1);
+    }
+  };
+
   const formatCurrency = (value) => {
     return `$${parseFloat(value || 0).toFixed(2)}`;
   };
@@ -368,7 +409,6 @@ export default function RecetasSection({ token, navigation }) {
         }
       );
 
-      // Mostrar mensaje con información del producto afectado si existe
       let mensaje = response.data.message;
       if (response.data.data?.producto_afectado) {
         const producto = response.data.data.producto_afectado;
@@ -443,11 +483,11 @@ export default function RecetasSection({ token, navigation }) {
       </TouchableOpacity>
 
       <View style={styles.listContainer}>
-        {/* Buscador y filtros */}
         <View style={styles.filtrosContainer}>
           <TextInput
-            style={[styles.buscadorInput, { flex: 2, marginRight: 8 }]}
+            style={styles.buscadorInput}
             placeholder="Buscar por clave o nombre..."
+            placeholderTextColor="#888"
             value={busquedaReceta}
             onChangeText={(text) => {
               setBusquedaReceta(text);
@@ -475,6 +515,7 @@ export default function RecetasSection({ token, navigation }) {
                 Todos
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[
                 styles.filtroBoton,
@@ -494,6 +535,7 @@ export default function RecetasSection({ token, navigation }) {
                 Activos
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[
                 styles.filtroBoton,
@@ -516,7 +558,6 @@ export default function RecetasSection({ token, navigation }) {
           </View>
         </View>
 
-        {/* Indicador de carga */}
         {isLoadingRecetas && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#4CAF50" />
@@ -528,7 +569,6 @@ export default function RecetasSection({ token, navigation }) {
 
         {!isLoadingRecetas && (
           <>
-            {/* Encabezado de la tabla */}
             <View style={styles.tableHeader1}>
               <Text style={[styles.tableHeaderText1, styles.idColumn]}>ID</Text>
               <Text style={[styles.tableHeaderText1, styles.claveColumn]}>
@@ -549,7 +589,6 @@ export default function RecetasSection({ token, navigation }) {
               </View>
             </View>
 
-            {/* Filas de la tabla */}
             <ScrollView style={styles.tableBody}>
               {recetasPaginadas.map((item) => (
                 <View key={item.id} style={styles.tableRow1}>
@@ -589,7 +628,6 @@ export default function RecetasSection({ token, navigation }) {
               ))}
             </ScrollView>
 
-            {/* Mensajes si no hay resultados */}
             {recetasPaginadas.length === 0 && busquedaReceta.trim() !== "" && (
               <Text style={styles.emptyText}>
                 No se encontraron recetas que coincidan con la búsqueda.
@@ -603,7 +641,7 @@ export default function RecetasSection({ token, navigation }) {
               </Text>
             )}
 
-            {/* Paginación */}
+            {/* Paginación mejorada */}
             {totalPaginas > 1 && (
               <View style={styles.paginacionContainer}>
                 <TouchableOpacity
@@ -611,66 +649,49 @@ export default function RecetasSection({ token, navigation }) {
                     styles.paginacionBoton,
                     paginaActual === 1 && styles.paginacionBotonDisabled,
                   ]}
-                  onPress={() => cambiarPagina(paginaActual - 1)}
+                  onPress={paginaAnterior}
                   disabled={paginaActual === 1}
                 >
                   <Text style={styles.paginacionTexto}>←</Text>
                 </TouchableOpacity>
 
                 <View style={styles.paginacionNumeros}>
-                  {[...Array(totalPaginas)].map((_, index) => {
-                    const numeroPagina = index + 1;
-                    if (
-                      numeroPagina === 1 ||
-                      numeroPagina === totalPaginas ||
-                      (numeroPagina >= paginaActual - 1 &&
-                        numeroPagina <= paginaActual + 1)
-                    ) {
+                  {obtenerNumerosPagina().map((numero, index) => {
+                    if (numero === "...") {
                       return (
-                        <TouchableOpacity
-                          key={numeroPagina}
-                          style={[
-                            styles.paginacionNumero,
-                            paginaActual === numeroPagina &&
-                            styles.paginacionNumeroActivo,
-                          ]}
-                          onPress={() => cambiarPagina(numeroPagina)}
-                        >
-                          <Text
-                            style={[
-                              styles.paginacionNumeroTexto,
-                              paginaActual === numeroPagina &&
-                              styles.paginacionNumeroTextoActivo,
-                            ]}
-                          >
-                            {numeroPagina}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    } else if (
-                      numeroPagina === paginaActual - 2 ||
-                      numeroPagina === paginaActual + 2
-                    ) {
-                      return (
-                        <Text
-                          key={numeroPagina}
-                          style={styles.paginacionPuntos}
-                        >
+                        <Text key={`dots-${index}`} style={styles.paginacionPuntos}>
                           ...
                         </Text>
                       );
                     }
-                    return null;
+                    return (
+                      <TouchableOpacity
+                        key={numero}
+                        style={[
+                          styles.paginacionNumero,
+                          paginaActual === numero && styles.paginacionNumeroActivo,
+                        ]}
+                        onPress={() => cambiarPagina(numero)}
+                      >
+                        <Text
+                          style={[
+                            styles.paginacionNumeroTexto,
+                            paginaActual === numero && styles.paginacionNumeroTextoActivo,
+                          ]}
+                        >
+                          {numero}
+                        </Text>
+                      </TouchableOpacity>
+                    );
                   })}
                 </View>
 
                 <TouchableOpacity
                   style={[
                     styles.paginacionBoton,
-                    paginaActual === totalPaginas &&
-                    styles.paginacionBotonDisabled,
+                    paginaActual === totalPaginas && styles.paginacionBotonDisabled,
                   ]}
-                  onPress={() => cambiarPagina(paginaActual + 1)}
+                  onPress={paginaSiguiente}
                   disabled={paginaActual === totalPaginas}
                 >
                   <Text style={styles.paginacionTexto}>→</Text>
@@ -711,8 +732,6 @@ export default function RecetasSection({ token, navigation }) {
                 onChangeText={(text) => handleInputChange("nombre", text)}
               />
 
-
-              {/* Selector de estado */}
               <View style={styles.estadoSelectorContainer}>
                 <Text style={styles.estadoSelectorLabel}>Estado:</Text>
                 <View style={styles.estadoSelectorButtons}>
@@ -755,7 +774,6 @@ export default function RecetasSection({ token, navigation }) {
                 </View>
               </View>
 
-              {/* Advertencia si se va a desactivar */}
               {modalType === "editar" &&
                 recetaData.estado === "inactivo" &&
                 recetaDetalle?.estado === "activo" && (
@@ -767,7 +785,6 @@ export default function RecetasSection({ token, navigation }) {
                   </View>
                 )}
 
-              {/* COSTO DE LA RECETA (SOLO EN EDICIÓN) */}
               {modalType === "editar" && recetaDetalle && (
                 <View style={styles.costoRecetaContainer}>
                   <View style={styles.costoRow}>
@@ -785,7 +802,6 @@ export default function RecetasSection({ token, navigation }) {
                 </View>
               )}
 
-              {/* MATERIAS PRIMAS ACTUALES */}
               {modalType === "editar" &&
                 recetaDetalle?.materias_primas &&
                 recetaDetalle.materias_primas.length > 0 && (
@@ -840,7 +856,6 @@ export default function RecetasSection({ token, navigation }) {
                   </>
                 )}
 
-              {/* NUEVAS MATERIAS PRIMAS CON BUSCADOR */}
               <Text style={styles.sectionTitle}>
                 {modalType === "editar"
                   ? "Agregar Nuevas Materias Primas"
@@ -858,7 +873,7 @@ export default function RecetasSection({ token, navigation }) {
                         <Text style={{ fontWeight: "bold", flex: 2 }}>
                           Materia Prima
                         </Text>
-                        <Text style={{ fontWeight: "bold", flex: 1.5 }}>
+                        <Text style={{ fontWeight: "bold", flex: 1.6 }}>
                           Cantidad
                         </Text>
                       </View>
@@ -866,8 +881,9 @@ export default function RecetasSection({ token, navigation }) {
                       <View style={styles.newRowControls}>
                         <View style={styles.searchMateriaPrimaContainer}>
                           <TextInput
-                            style={styles.searchMateriaPrimaInput}
+                            style={[styles.searchMateriaPrimaInput, { color: "#000" }]}
                             placeholder="Buscar materia prima..."
+                            placeholderTextColor="#999"
                             value={mp.searchText || ""}
                             onChangeText={(text) => {
                               const updated = [...recetaData.materias_primas];
@@ -921,10 +937,11 @@ export default function RecetasSection({ token, navigation }) {
 
                         <View style={styles.newCantidadWrapper}>
                           <TextInput
-                            style={styles.newCantidadInput}
+                            style={[styles.newCantidadInput, { color: "#000" }]}
                             placeholder="Cantidad"
+                            placeholderTextColor="#999"
                             keyboardType="decimal-pad"
-                            value={mp.cantidad}
+                            value={mp.cantidad || ""}
                             onChangeText={(text) =>
                               handleMateriaPrimaChange(index, "cantidad", text)
                             }
@@ -962,7 +979,6 @@ export default function RecetasSection({ token, navigation }) {
               </TouchableOpacity>
             </ScrollView>
 
-            {/* BOTONES FIJOS */}
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
@@ -1023,27 +1039,27 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   listContainer: {
-    flex: 1,
-    padding: 10,
-    backgroundColor: "#fff",
+    marginTop: 5,
   },
   filtrosContainer: {
-    flexDirection: "row",
-    marginBottom: 12,
-    alignItems: "center",
+    flexDirection: "column", // <-- antes horizontal, ahora vertical
+    alignItems: "stretch",
   },
   buscadorInput: {
+    backgroundColor: "#F0F8F0",
+    borderColor: "#28A745",
     borderWidth: 1,
-    borderColor: "#2D9966",
     borderRadius: 20,
     padding: 10,
+    marginBottom: 12,
     fontSize: 18,
-    backgroundColor: "#ECFDF5",
+    marginBottom: 10, // espacio debajo del buscador
+    marginTop: 2, // lo empuja debajo del botón
   },
   filtroEstadoContainer: {
-    flex: 1,
     flexDirection: "row",
     justifyContent: "space-around",
+    marginBottom: 5,
   },
   filtroBoton: {
     paddingVertical: 8,
@@ -1113,22 +1129,29 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   idColumn: {
-    flex: 0.5,
+    flex: 0.7,          // un poco más ancho que antes para que no se vea apretado
     textAlign: "center",
+    paddingHorizontal: 4,
   },
+
   claveColumn: {
-    flex: 1.5,
-    paddingHorizontal: 4,
+    flex: 1.5,          // mantiene suficiente espacio para claves
+    textAlign: "left",  // generalmente las claves se leen mejor alineadas a la izquierda
+    paddingHorizontal: 6,
   },
+
   nombreColumn: {
-    flex: 2.5,
-    paddingHorizontal: 4,
+    flex: 2,            // un poco más ancho para nombres largos
+    textAlign: "left",
+    paddingHorizontal: 6,
   },
+
   costoColumn: {
-    flex: 1.2,
-    paddingHorizontal: 4,
-    textAlign: "right",
+    flex: 1.5,            // igual que antes
+    textAlign: "right", // los números se alinean a la derecha
+    paddingHorizontal: 6,
   },
+
   costoText: {
     fontWeight: "600",
     color: "#28a745",
@@ -1138,11 +1161,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  // === PAGINACIÓN ===
   paginacionContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 16,
+    marginTop: 10,
+    marginBottom: 10,
     paddingVertical: 10,
   },
   paginacionBoton: {
@@ -1188,6 +1213,7 @@ const styles = StyleSheet.create({
     color: "#666",
     marginHorizontal: 4,
   },
+
   actionsContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -1457,8 +1483,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffaa29ff",
     padding: 12,
     borderRadius: 4,
-    marginBottom: 16,
-    marginTop: 12,
+    marginBottom: 1,
+    marginTop: 3,
   },
   addButtonText: {
     fontSize: 17,
@@ -1508,6 +1534,7 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   emptyText: {
+    fontSize: 16,
     marginTop: 20,
     textAlign: "center",
     color: "#888",

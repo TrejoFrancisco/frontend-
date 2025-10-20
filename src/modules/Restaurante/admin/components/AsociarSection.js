@@ -376,17 +376,19 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               <Picker
                 selectedValue={selectedCategoriaId}
                 onValueChange={(value) => setSelectedCategoriaId(value)}
-                style={styles.picker}
+                style={[styles.picker, { color: "#000" }]}
               >
-                <Picker.Item label="Selecciona una categoría" value={undefined} />
+                <Picker.Item label="Selecciona una categoría" value="" color="#999" />
                 {categorias.map((categoria) => (
                   <Picker.Item
                     key={categoria.id}
                     label={categoria.nombre}
                     value={categoria.id.toString()}
+                    color="#000"
                   />
                 ))}
               </Picker>
+
 
 
               <View style={styles.modalButtons}>

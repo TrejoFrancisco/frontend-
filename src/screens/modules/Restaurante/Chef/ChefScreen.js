@@ -164,6 +164,20 @@ export default function ChefComandasSection() {
     return estado.charAt(0).toUpperCase() + estado.slice(1);
   };
 
+  const getBadgeColor = (estado) => {
+    switch (estado?.toLowerCase()) {
+      case "pendiente":
+        return { backgroundColor: "#cfcfcfff" };
+      case "listo":
+        return { backgroundColor: "#cfcfcfff" };
+      case "cancelado":
+        return { backgroundColor: "#cfcfcfff" };
+      default:
+        return { backgroundColor: "#6b7280" }; 
+    }
+  };
+
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -247,14 +261,46 @@ export default function ChefComandasSection() {
                           Comensal: {comanda.comensal}
                         </Text>
                       )}
-
                       {/* Lista de productos */}
                       <View style={styles.productosContainer}>
-                        {!comanda.productos ||
-                        comanda.productos.length === 0 ? (
-                          <Text style={styles.sinProductosText}>
-                            Sin productos
-                          </Text>
+                        {!comanda.productos || comanda.productos.length === 0 ? (
+                          <Text style={styles.sinProductosText}>Sin productos</Text>
+                        ) : comanda.productos.length > 3 ? (
+                          <ScrollView style={{ maxHeight: 200 }} showsVerticalScrollIndicator={true}>
+                            {comanda.productos.map((producto, index) => (
+                              <View
+                                key={`${producto.id || index}-${index}`}
+                                style={[
+                                  styles.productoContainer,
+                                  getProductoEstadoStyle(producto.estado),
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.productoNombre,
+                                    getProductoTextStyle(producto.estado),
+                                  ]}
+                                >
+                                  {producto.nombre}
+                                </Text>
+
+                                {producto.detalle && (
+                                  <Text style={styles.productoDetalle}>
+                                    Detalle: {producto.detalle}
+                                  </Text>
+                                )}
+
+                                <View style={styles.productoFooter}>
+                                  {/* Aquí el badge */}
+                                  <View style={[styles.statusBadge, getBadgeColor(producto.estado)]}>
+                                    <Text style={styles.statusBadgeText}>
+                                      {capitalizeEstado(producto.estado)}
+                                    </Text>
+                                  </View>
+                                </View>
+                              </View>
+                            ))}
+                          </ScrollView>
                         ) : (
                           comanda.productos.map((producto, index) => (
                             <View
@@ -280,14 +326,19 @@ export default function ChefComandasSection() {
                               )}
 
                               <View style={styles.productoFooter}>
-                                <Text style={styles.productoEstado}>
-                                  {capitalizeEstado(producto.estado)}
-                                </Text>
+                                {/* Aquí el badge */}
+                                <View style={[styles.statusBadge, getBadgeColor(producto.estado)]}>
+                                  <Text style={styles.statusBadgeText}>
+                                    {capitalizeEstado(producto.estado)}
+                                  </Text>
+                                </View>
                               </View>
                             </View>
                           ))
                         )}
                       </View>
+
+
 
                       {/* Información pie de comanda */}
                       <View style={styles.footerInfo}>
@@ -383,10 +434,10 @@ const styles = StyleSheet.create({
       screenWidth <= 600
         ? "95%"
         : screenWidth <= 768
-        ? "45%"
-        : screenWidth <= 1024
-        ? "30%"
-        : "280px",
+          ? "45%"
+          : screenWidth <= 1024
+            ? "30%"
+            : "280px",
     maxWidth: 500, // Ancho máximo
     minWidth: 300, // Ancho mínimo
     marginBottom: 15,
@@ -449,6 +500,7 @@ const styles = StyleSheet.create({
 
   // ===== PRODUCTOS =====
   productosContainer: {
+    marginTop: 10,
     marginBottom: 12,
     flex: 1,
   },
@@ -487,23 +539,24 @@ const styles = StyleSheet.create({
     right: 8,
     top: 8,
   },
-
-  productoEstado: {
-    fontSize: 14,
-    fontWeight: "bold",
-    textAlign: "center",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    minWidth: 70,
-  },
-
   sinProductosText: {
     fontSize: 15,
     color: "#999",
     textAlign: "center",
     fontStyle: "italic",
     paddingVertical: 20,
+  },
+
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    alignSelf: "flex-start",
+  },
+  statusBadgeText: {
+    color: "#000000ff",
+    fontWeight: "bold",
+    fontSize: 12
   },
 
   // ===== ESTILOS DE ESTADO DE PRODUCTO =====

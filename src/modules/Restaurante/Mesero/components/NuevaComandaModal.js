@@ -215,7 +215,7 @@ export default function NuevaComandaModal({
 
               <TextInput
                 style={styles.buscadorInput}
-                placeholder="Buscar productos por nombre o clave..."
+                placeholder="Buscar productos..."
                 placeholderTextColor="#999999"
                 value={busquedaProducto}
                 onChangeText={setBusquedaProducto}
@@ -348,11 +348,13 @@ function ProductoItem({
           <View style={styles.detalleModalContent}>
             <Text style={styles.detalleModalTitle}>Detalle del Producto</Text>
             <TextInput
-              style={styles.detalleInput}
+              style={[styles.detalleInput, { color: "#000", textAlignVertical: "top" }]}
               placeholder="Ej: Sin cebolla, con hielos..."
-              value={detalleTemp}
+              placeholderTextColor="#999"
+              value={detalleTemp || undefined}
               onChangeText={setDetalleTemp}
-              multiline
+              multiline={true}
+              numberOfLines={3}
             />
             <View style={styles.detalleModalActions}>
               <TouchableOpacity
@@ -483,7 +485,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   productoPrecio: {
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: "bold",
     color: "#28a745",
   },

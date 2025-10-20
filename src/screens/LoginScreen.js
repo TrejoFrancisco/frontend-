@@ -128,18 +128,19 @@ export default function LoginScreen({ navigation }) {
                 ]}
               >
                 <TextInput
-                  placeholder="Ingresa tu clave de acceso"
-                  placeholderTextColor="#9CA3AF"
+                  placeholder="Ingresa tu clave"
+                  placeholderTextColor="#6B7280" 
                   value={clave}
                   onChangeText={setClave}
                   onFocus={() => setFocusedInput("clave")}
                   onBlur={() => setFocusedInput(null)}
                   autoCapitalize="characters"
                   secureTextEntry={true}
-                  style={styles.input}
+                  style={[styles.input, { color: "#000" }]} 
                   onSubmitEditing={handleLogin}
                   returnKeyType="done"
                 />
+
               </View>
             </View>
 

@@ -62,9 +62,6 @@ export default function TicketModal({
                 style={styles.ticketIcon}
               />
               <Text style={styles.modalTitle}>Ticket de Cuenta</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Contenido del ticket */}
@@ -238,21 +235,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#2c3e50",
   },
-  closeButton: {
-    position: "absolute",
-    right: 0,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#f0f0f0",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  closeButtonText: {
-    fontSize: 24,
-    color: "#999",
-    fontWeight: "bold",
-  },
   ticketScroll: {
     maxHeight: 500,
   },
@@ -365,7 +347,7 @@ const styles = StyleSheet.create({
     color: "#999",
   },
   cerrarButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#F44336",
     paddingVertical: 12,
     marginTop: 16,
     borderRadius: 8,
