@@ -47,7 +47,6 @@ export default function CategoriasScreen({ token, navigation }) {
         setCategorias(response.data.data);
       }
     } catch (error) {
-      console.log("Error al obtener categorías:", error);
       if (error.response?.status === 401) {
         navigation.navigate("Login");
       }
@@ -107,8 +106,6 @@ export default function CategoriasScreen({ token, navigation }) {
       resetForm();
       fetchCategorias();
     } catch (error) {
-      console.log("Error:", error.response?.data || error.message);
-
       if (error.response?.status === 401) {
         Alert.alert("Error", "Sesión expirada. Inicia sesión nuevamente.");
         navigation.navigate("Login");
@@ -150,8 +147,6 @@ export default function CategoriasScreen({ token, navigation }) {
       resetForm();
       fetchCategorias();
     } catch (error) {
-      console.log("Error:", error.response?.data || error.message);
-
       if (error.response?.status === 401) {
         Alert.alert("Error", "Sesión expirada. Inicia sesión nuevamente.");
         navigation.navigate("Login");
@@ -190,8 +185,66 @@ export default function CategoriasScreen({ token, navigation }) {
 
               fetchCategorias();
             } catch (error) {
-              console.log("Error:", error.response?.data || error.message);
-              Alert.alert("Error", "Error al eliminar la categoría");
+              // Manejo específico para categoría en uso
+              if (
+                error.response?.status === 409 &&
+                error.response?.data?.error?.code === "CATEGORIA_EN_USO"
+              ) {
+                const errorData = error.response.data.error;
+                const relaciones = errorData.relaciones || {};
+
+                // Construir mensaje detallado
+                let mensajeDetallado = errorData.message + "\n\n";
+
+                // Agregar detalles de productos
+                if (relaciones.productos && relaciones.productos.length > 0) {
+                  mensajeDetallado += "📦 Productos:\n";
+                  relaciones.productos.forEach((producto, index) => {
+                    if (index < 3) {
+                      // Mostrar máximo 3 productos
+                      mensajeDetallado += `  • ${producto.producto_nombre} (${producto.producto_clave})\n`;
+                    }
+                  });
+                  if (relaciones.productos.length > 3) {
+                    mensajeDetallado += `  ... y ${
+                      relaciones.productos.length - 3
+                    } más\n`;
+                  }
+                  mensajeDetallado += "\n";
+                }
+
+                // Agregar detalles de encargados
+                if (relaciones.encargados && relaciones.encargados.length > 0) {
+                  mensajeDetallado += "👤 Encargados:\n";
+                  relaciones.encargados.forEach((encargado, index) => {
+                    if (index < 3) {
+                      // Mostrar máximo 3 encargados
+                      mensajeDetallado += `  • ${encargado.user_name} (${encargado.user_email})\n`;
+                    }
+                  });
+                  if (relaciones.encargados.length > 3) {
+                    mensajeDetallado += `  ... y ${
+                      relaciones.encargados.length - 3
+                    } más\n`;
+                  }
+                }
+
+                Alert.alert("No se puede eliminar", mensajeDetallado.trim(), [
+                  { text: "Entendido", style: "default" },
+                ]);
+              } else if (error.response?.status === 401) {
+                Alert.alert(
+                  "Error",
+                  "Sesión expirada. Inicia sesión nuevamente."
+                );
+                navigation.navigate("Login");
+              } else {
+                Alert.alert(
+                  "Error",
+                  error.response?.data?.message ||
+                    "Error al eliminar la categoría"
+                );
+              }
             }
           },
         },
@@ -465,8 +518,8 @@ export default function CategoriasScreen({ token, navigation }) {
                         ? "Creando..."
                         : "Actualizando..."
                       : modalType === "crear"
-                        ? "Crear"
-                        : "Actualizar"}
+                      ? "Crear"
+                      : "Actualizar"}
                   </Text>
                 </TouchableOpacity>
               </View>

@@ -23,20 +23,21 @@ export default function EditarComandaModal({
   const [productosSeleccionados, setProductosSeleccionados] = useState({});
   const [detallesProductos, setDetallesProductos] = useState({});
 
+  // 🔥 NUEVO: Separar productos entregados
+  const [productosEntregados, setProductosEntregados] = useState([]);
+
   const [formData, setFormData] = useState({
     mesa: "",
     personas: "",
     comensal: "",
   });
 
-  // Cargar datos de la comanda cuando se abre el modal
   useEffect(() => {
     if (visible && comanda) {
       cargarDatosComanda();
     }
   }, [visible, comanda]);
 
-  // Obtener productos
   useEffect(() => {
     if (visible && token) {
       fetchProductos();
@@ -58,19 +59,34 @@ export default function EditarComandaModal({
   };
 
   const cargarDatosComanda = () => {
-    // Cargar datos básicos
     setFormData({
       mesa: comanda.mesa || "",
       personas: comanda.personas?.toString() || "",
       comensal: comanda.comensal || "",
     });
 
-    // Procesar productos existentes
+    // 🔥 SEPARAR productos entregados de pendientes
+    const entregados = [];
+    const pendientes = [];
+
+    comanda.productos?.forEach((producto) => {
+      if (producto.pivot?.estado === "entregado") {
+        entregados.push(producto);
+      } else if (
+        ["pendiente", "en preparación"].includes(producto.pivot?.estado)
+      ) {
+        pendientes.push(producto);
+      }
+    });
+
+    setProductosEntregados(entregados);
+
+    // Solo cargar productos pendientes para editar
     const productosContados = {};
     const detallesIniciales = {};
     const contadorPorProducto = {};
 
-    comanda.productos?.forEach((producto) => {
+    pendientes.forEach((producto) => {
       productosContados[producto.id] =
         (productosContados[producto.id] || 0) + 1;
 
@@ -93,20 +109,18 @@ export default function EditarComandaModal({
     setBusquedaProducto("");
   };
 
-  // Resetear formulario
   const resetForm = useCallback(() => {
     setFormData({ mesa: "", personas: "", comensal: "" });
     setProductosSeleccionados({});
     setDetallesProductos({});
+    setProductosEntregados([]);
     setBusquedaProducto("");
   }, []);
 
-  // Manejar cambios en el formulario
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Agregar/quitar productos
   const agregarProducto = useCallback((productoId) => {
     setProductosSeleccionados((prev) => ({
       ...prev,
@@ -120,7 +134,6 @@ export default function EditarComandaModal({
       if (nuevaCantidad <= 0) {
         const { [productoId]: removed, ...rest } = prev;
 
-        // Limpiar detalles
         setDetallesProductos((prevDetalles) => {
           const nuevosDetalles = { ...prevDetalles };
           Object.keys(nuevosDetalles).forEach((key) => {
@@ -137,7 +150,6 @@ export default function EditarComandaModal({
     });
   }, []);
 
-  // Agregar detalle a producto
   const agregarDetalle = (productoId, indice, detalle) => {
     const key = `${productoId}_${indice}`;
     setDetallesProductos((prev) => ({
@@ -146,35 +158,45 @@ export default function EditarComandaModal({
     }));
   };
 
-  // Calcular total
   const calcularTotal = useCallback(() => {
     let total = 0;
+
+    // Total de productos entregados (solo lectura)
+    productosEntregados.forEach((p) => {
+      total += parseFloat(p.precio_venta);
+    });
+
+    // Total de productos pendientes/editables
     Object.entries(productosSeleccionados).forEach(([productoId, cantidad]) => {
       const producto = productos.find((p) => p.id === parseInt(productoId));
       if (producto) {
         total += parseFloat(producto.precio_venta) * cantidad;
       }
     });
-    return total.toFixed(2);
-  }, [productosSeleccionados, productos]);
 
-  // Obtener productos de la comanda actual
+    return total.toFixed(2);
+  }, [productosSeleccionados, productos, productosEntregados]);
+
   const getProductosComandaActual = useCallback(() => {
     if (!comanda || !comanda.productos) return [];
 
-    const productosIds = [...new Set(comanda.productos.map((p) => p.id))];
+    // Solo productos pendientes (los que se pueden editar)
+    const productosPendientes = comanda.productos.filter((p) =>
+      ["pendiente", "en preparación"].includes(p.pivot?.estado)
+    );
+
+    const productosIds = [...new Set(productosPendientes.map((p) => p.id))];
 
     return productosIds
       .map((id) => {
         const producto =
           productos.find((p) => p.id === id) ||
-          comanda.productos.find((p) => p.id === id);
+          productosPendientes.find((p) => p.id === id);
         return producto;
       })
       .filter(Boolean);
   }, [comanda, productos]);
 
-  // Obtener productos de búsqueda (nuevos)
   const getProductosBusqueda = useCallback(() => {
     if (!busquedaProducto.trim()) return [];
 
@@ -190,7 +212,6 @@ export default function EditarComandaModal({
     );
   }, [busquedaProducto, comanda, productos]);
 
-  // Editar comanda
   const editarComanda = async () => {
     if (!formData.mesa || !formData.personas) {
       Alert.alert("Error", "Mesa y número de personas son obligatorios");
@@ -209,13 +230,14 @@ export default function EditarComandaModal({
       }
     });
 
-    if (productosConDetalle.length === 0) {
-      Alert.alert("Error", "Debe seleccionar al menos un producto");
+    if (productosConDetalle.length === 0 && productosEntregados.length === 0) {
+      Alert.alert("Error", "Debe tener al menos un producto en la comanda");
       return;
     }
 
     try {
-      const response = await API.put(`/restaurante/mesero/comanda/${comanda.id}`,
+      const response = await API.put(
+        `/restaurante/mesero/comanda/${comanda.id}`,
         {
           mesa: formData.mesa,
           personas: parseInt(formData.personas),
@@ -224,154 +246,177 @@ export default function EditarComandaModal({
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-  }
-    );
+        }
+      );
 
-  if (response.data.success) {
-    Alert.alert("Éxito", response.data.message);
-    resetForm();
-    onSuccess();
-    onClose();
-  }
-} catch (error) {
-  console.log("Error al editar comanda:", error);
-  if (error.response?.data?.error) {
-    Alert.alert("Error", error.response.data.error.message);
-  } else {
-    Alert.alert("Error", "Ocurrió un error al editar la comanda");
-  }
-}
-};
+      if (response.data.success) {
+        Alert.alert("Éxito", response.data.message);
+        resetForm();
+        onSuccess();
+        onClose();
+      }
+    } catch (error) {
+      if (error.response?.data?.error) {
+        Alert.alert("Error", error.response.data.error.message);
+      } else {
+        Alert.alert("Error", "Ocurrió un error al editar la comanda");
+      }
+    }
+  };
 
-return (
-  <Modal visible={visible} animationType="slide" transparent>
-    <View style={styles.modalContainer}>
-      <View style={styles.modalWrapper}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Editar Comanda</Text>
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalWrapper}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar Comanda</Text>
 
-          <ScrollView style={styles.formScrollView}>
-            {/* Formulario básico */}
-            <TextInput
-              style={styles.input}
-              placeholder="Mesa"
-              placeholderTextColor="#999"
-              value={formData.mesa}
-              onChangeText={(value) => handleChange("mesa", value)}
-            />
+            <ScrollView style={styles.formScrollView}>
+              {/* Formulario básico */}
+              <TextInput
+                style={styles.input}
+                placeholder="Mesa"
+                placeholderTextColor="#999"
+                value={formData.mesa}
+                onChangeText={(value) => handleChange("mesa", value)}
+              />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Número de personas"
-              placeholderTextColor="#999"
-              value={formData.personas}
-              onChangeText={(value) => handleChange("personas", value)}
-              keyboardType="numeric"
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Número de personas"
+                placeholderTextColor="#999"
+                value={formData.personas}
+                onChangeText={(value) => handleChange("personas", value)}
+                keyboardType="numeric"
+              />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre del comensal"
-              placeholderTextColor="#999"
-              value={formData.comensal}
-              onChangeText={(value) => handleChange("comensal", value)}
-            />
+              <TextInput
+                style={styles.input}
+                placeholder="Nombre del comensal"
+                placeholderTextColor="#999"
+                value={formData.comensal}
+                onChangeText={(value) => handleChange("comensal", value)}
+              />
 
-            {/* Productos actuales */}
-            <Text style={styles.sectionTitle}>Productos de la Comanda:</Text>
-
-            {Object.keys(productosSeleccionados).length > 0 && (
-              <View style={styles.totalContainer}>
-                <Text style={styles.totalLabel}>Total:</Text>
-                <Text style={styles.totalMonto}>${calcularTotal()}</Text>
-              </View>
-            )}
-
-            {getProductosComandaActual().length === 0 ? (
-              <Text style={styles.noProductosText}>
-                No hay productos en esta comanda
-              </Text>
-            ) : (
-              getProductosComandaActual().map((producto) => (
-                <ProductoItem
-                  key={`actual-${producto.id}`}
-                  producto={producto}
-                  cantidad={productosSeleccionados[producto.id] || 0}
-                  onAgregar={() => agregarProducto(producto.id)}
-                  onQuitar={() => quitarProducto(producto.id)}
-                  detalles={detallesProductos}
-                  onAgregarDetalle={agregarDetalle}
-                />
-              ))
-            )}
-
-            {/* Separador */}
-            <View style={styles.separador}>
-              <Text style={styles.separadorTexto}>
-                Agregar más productos:
-              </Text>
-            </View>
-
-            {/* Buscador de productos nuevos */}
-            <TextInput
-              style={styles.buscadorInput}
-              placeholder="Buscar productos para agregar..."
-              placeholderTextColor="#666"
-              value={busquedaProducto}
-              onChangeText={setBusquedaProducto}
-            />
-
-            {busquedaProducto.trim() !== "" && (
-              <>
-                {getProductosBusqueda().length === 0 ? (
-                  <Text style={styles.noProductosText}>
-                    No se encontraron productos nuevos
+              {/* 🔥 PRODUCTOS ENTREGADOS (SOLO LECTURA) */}
+              {productosEntregados.length > 0 && (
+                <>
+                  <Text style={[styles.sectionTitle, styles.entregadosTitle]}>
+                    Productos Entregados:
                   </Text>
-                ) : (
-                  getProductosBusqueda().map((producto) => (
-                    <ProductoItem
-                      key={`nuevo-${producto.id}`}
-                      producto={producto}
-                      cantidad={productosSeleccionados[producto.id] || 0}
-                      onAgregar={() => agregarProducto(producto.id)}
-                      onQuitar={() => quitarProducto(producto.id)}
-                      detalles={detallesProductos}
-                      onAgregarDetalle={agregarDetalle}
-                      esNuevo={true}
-                    />
-                  ))
-                )}
-              </>
-            )}
-          </ScrollView>
+                  {productosEntregados.map((producto, index) => (
+                    <View
+                      key={`entregado-${index}`}
+                      style={styles.productoEntregado}
+                    >
+                      <Text style={styles.productoEntregadoTexto}>
+                        {producto.clave} - {producto.nombre}
+                        {producto.pivot?.detalle &&
+                          ` (${producto.pivot.detalle})`}
+                      </Text>
+                      <Text style={styles.productoEntregadoPrecio}>
+                        ${producto.precio_venta}
+                      </Text>
+                    </View>
+                  ))}
+                </>
+              )}
 
-          {/* Botones */}
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={() => {
-                resetForm();
-                onClose();
-              }}
-            >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
-            </TouchableOpacity>
+              {/* Productos editables */}
+              <Text style={styles.sectionTitle}>Productos Pendientes:</Text>
 
-            <TouchableOpacity
-              style={[styles.modalButton, styles.saveButton]}
-              onPress={editarComanda}
-            >
-              <Text style={styles.saveButtonText}>Guardar</Text>
-            </TouchableOpacity>
+              {Object.keys(productosSeleccionados).length > 0 && (
+                <View style={styles.totalContainer}>
+                  <Text style={styles.totalLabel}>Total:</Text>
+                  <Text style={styles.totalMonto}>${calcularTotal()}</Text>
+                </View>
+              )}
+
+              {getProductosComandaActual().length === 0 ? (
+                <Text style={styles.noProductosText}>
+                  No hay productos pendientes en esta comanda
+                </Text>
+              ) : (
+                getProductosComandaActual().map((producto) => (
+                  <ProductoItem
+                    key={`actual-${producto.id}`}
+                    producto={producto}
+                    cantidad={productosSeleccionados[producto.id] || 0}
+                    onAgregar={() => agregarProducto(producto.id)}
+                    onQuitar={() => quitarProducto(producto.id)}
+                    detalles={detallesProductos}
+                    onAgregarDetalle={agregarDetalle}
+                  />
+                ))
+              )}
+
+              {/* Separador */}
+              <View style={styles.separador}>
+                <Text style={styles.separadorTexto}>
+                  Agregar más productos:
+                </Text>
+              </View>
+
+              {/* Buscador */}
+              <TextInput
+                style={styles.buscadorInput}
+                placeholder="Buscar productos para agregar..."
+                placeholderTextColor="#666"
+                value={busquedaProducto}
+                onChangeText={setBusquedaProducto}
+              />
+
+              {busquedaProducto.trim() !== "" && (
+                <>
+                  {getProductosBusqueda().length === 0 ? (
+                    <Text style={styles.noProductosText}>
+                      No se encontraron productos nuevos
+                    </Text>
+                  ) : (
+                    getProductosBusqueda().map((producto) => (
+                      <ProductoItem
+                        key={`nuevo-${producto.id}`}
+                        producto={producto}
+                        cantidad={productosSeleccionados[producto.id] || 0}
+                        onAgregar={() => agregarProducto(producto.id)}
+                        onQuitar={() => quitarProducto(producto.id)}
+                        detalles={detallesProductos}
+                        onAgregarDetalle={agregarDetalle}
+                        esNuevo={true}
+                      />
+                    ))
+                  )}
+                </>
+              )}
+            </ScrollView>
+
+            {/* Botones */}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  resetForm();
+                  onClose();
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={editarComanda}
+              >
+                <Text style={styles.saveButtonText}>Guardar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
-    </View>
-  </Modal>
-);
+    </Modal>
+  );
 }
 
-// Componente ProductoItem (reutilizable)
+// Componente ProductoItem (sin cambios)
 function ProductoItem({
   producto,
   cantidad,
@@ -423,7 +468,6 @@ function ProductoItem({
         </View>
       </View>
 
-      {/* Detalles */}
       {cantidad > 0 && (
         <View style={styles.detallesContainer}>
           {Array.from({ length: cantidad }, (_, index) => {
@@ -452,7 +496,6 @@ function ProductoItem({
         </View>
       )}
 
-      {/* Modal detalle */}
       <Modal visible={mostrarDetalles} animationType="fade" transparent>
         <View style={styles.detalleModalContainer}>
           <View style={styles.detalleModalContent}>
@@ -493,6 +536,7 @@ function ProductoItem({
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
@@ -515,12 +559,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: "center",
   },
-  modalSubtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 16,
-    textAlign: "center",
-  },
   formScrollView: {
     maxHeight: 400,
   },
@@ -538,6 +576,30 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 16,
     marginBottom: 8,
+  },
+  entregadosTitle: {
+    color: "#28a745",
+  },
+  productoEntregado: {
+    backgroundColor: "#d4edda",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#c3e6cb",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  productoEntregadoTexto: {
+    fontSize: 14,
+    color: "#155724",
+    flex: 1,
+  },
+  productoEntregadoPrecio: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#155724",
   },
   buscadorInput: {
     borderWidth: 1,
@@ -734,22 +796,11 @@ const styles = StyleSheet.create({
   saveButton: {
     backgroundColor: "#28a745",
   },
-  unificarButton: {
-    backgroundColor: "#6c757d",
-  },
-  unificarButtonDisabled: {
-    backgroundColor: "#cccccc",
-    opacity: 0.6,
-  },
   cancelButtonText: {
     color: "white",
     fontWeight: "bold",
   },
   saveButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  unificarButtonText: {
     color: "white",
     fontWeight: "bold",
   },

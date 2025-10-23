@@ -25,7 +25,7 @@ const BuscadorRecetas = ({
   onSelectReceta,
   placeholder = "Buscar receta o dejar vacío para producto directo",
 }) => {
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
   const selectedReceta = recetas.find(
@@ -34,7 +34,7 @@ const BuscadorRecetas = ({
 
   const displayText = selectedReceta
     ? `${selectedReceta.clave} - ${selectedReceta.nombre}`
-    : '';
+    : "";
 
   const filteredRecetas = recetas.filter((receta) => {
     if (!searchText.trim()) return true;
@@ -47,13 +47,13 @@ const BuscadorRecetas = ({
 
   const handleSelectReceta = (receta) => {
     onSelectReceta(receta.id.toString());
-    setSearchText('');
+    setSearchText("");
     setShowDropdown(false);
   };
 
   const handleClearReceta = () => {
     onSelectReceta(null);
-    setSearchText('');
+    setSearchText("");
     setShowDropdown(false);
   };
 
@@ -75,8 +75,7 @@ const BuscadorRecetas = ({
         <TouchableOpacity
           style={styles.clearRecetaButton}
           onPress={handleClearReceta}
-        >
-        </TouchableOpacity>
+        ></TouchableOpacity>
       )}
 
       {showDropdown && (
@@ -87,7 +86,10 @@ const BuscadorRecetas = ({
             keyboardShouldPersistTaps="handled"
           >
             <TouchableOpacity
-              style={[styles.dropdownRecetaItem, styles.dropdownRecetaItemSpecial]}
+              style={[
+                styles.dropdownRecetaItem,
+                styles.dropdownRecetaItemSpecial,
+              ]}
               onPress={handleClearReceta}
             >
               <Text style={styles.dropdownRecetaItemTextSpecial}>
@@ -102,7 +104,8 @@ const BuscadorRecetas = ({
                 onPress={() => handleSelectReceta(receta)}
               >
                 <Text style={styles.dropdownRecetaItemText}>
-                  <Text style={styles.claveReceta}>{receta.clave}</Text> - {receta.nombre}
+                  <Text style={styles.claveReceta}>{receta.clave}</Text> -{" "}
+                  {receta.nombre}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -113,7 +116,6 @@ const BuscadorRecetas = ({
               </Text>
             )}
           </ScrollView>
-
         </View>
       )}
     </View>
@@ -578,7 +580,8 @@ export default function ProductosSection({ token, navigation }) {
 
       Alert.alert(
         "Cambiar Estado",
-        `¿Deseas ${nuevoEstado === "activo" ? "activar" : "desactivar"
+        `¿Deseas ${
+          nuevoEstado === "activo" ? "activar" : "desactivar"
         } el producto "${nombre}"?`,
         [
           { text: "Cancelar", style: "cancel" },
@@ -604,7 +607,7 @@ export default function ProductosSection({ token, navigation }) {
                 Alert.alert(
                   "Error",
                   error.response?.data?.error?.message ||
-                  "Error al cambiar el estado del producto"
+                    "Error al cambiar el estado del producto"
                 );
               }
             },
@@ -658,7 +661,7 @@ export default function ProductosSection({ token, navigation }) {
                   style={[
                     styles.paginacionNumeroTexto,
                     paginaActual === numero &&
-                    styles.paginacionNumeroTextoActivo,
+                      styles.paginacionNumeroTextoActivo,
                   ]}
                 >
                   {numero}
@@ -1024,11 +1027,18 @@ export default function ProductosSection({ token, navigation }) {
                 <Picker
                   selectedValue={productoData.categoria_id || "default"}
                   onValueChange={(value) => {
-                    if (value !== "default") handleInputChange("categoria_id", value);
+                    if (value !== "default")
+                      handleInputChange("categoria_id", value);
                   }}
-                  style={[styles.picker, { color: productoData.categoria_id ? "#000" : "#888" }]}
+                  style={[
+                    styles.picker,
+                    { color: productoData.categoria_id ? "#000" : "#888" },
+                  ]}
                 >
-                  <Picker.Item label="Selecciona una categoría" value="default" />
+                  <Picker.Item
+                    label="Selecciona una categoría"
+                    value="default"
+                  />
                   {categorias.map((categoria) => (
                     <Picker.Item
                       key={categoria.id}
@@ -1042,18 +1052,27 @@ export default function ProductosSection({ token, navigation }) {
                 <BuscadorRecetas
                   recetas={recetas}
                   selectedRecetaId={productoData.receta_id}
-                  onSelectReceta={(value) => handleInputChange("receta_id", value)}
+                  onSelectReceta={(value) =>
+                    handleInputChange("receta_id", value)
+                  }
                 />
 
                 <Text style={styles.label}>Prioridad</Text>
                 <Picker
                   selectedValue={productoData.prioridad || "default"}
                   onValueChange={(value) => {
-                    if (value !== "default") handleInputChange("prioridad", value);
+                    if (value !== "default")
+                      handleInputChange("prioridad", value);
                   }}
-                  style={[styles.picker, { color: productoData.prioridad ? "#000" : "#888" }]}
+                  style={[
+                    styles.picker,
+                    { color: productoData.prioridad ? "#000" : "#888" },
+                  ]}
                 >
-                  <Picker.Item label="Selecciona una prioridad" value="default" />
+                  <Picker.Item
+                    label="Selecciona una prioridad"
+                    value="default"
+                  />
                   <Picker.Item label="1 - Alta" value="1" />
                   <Picker.Item label="2 - Media" value="2" />
                   <Picker.Item label="3 - Baja" value="3" />
@@ -1077,7 +1096,9 @@ export default function ProductosSection({ token, navigation }) {
                     placeholderTextColor="#888"
                     keyboardType="decimal-pad"
                     value={productoData.costo_unitario || undefined}
-                    onChangeText={(text) => handleInputChange("costo_unitario", text)}
+                    onChangeText={(text) =>
+                      handleInputChange("costo_unitario", text)
+                    }
                     editable={!productoData.receta_id}
                   />
                   {productoData.receta_id && productoData.costo_unitario && (
@@ -1094,7 +1115,9 @@ export default function ProductosSection({ token, navigation }) {
                   placeholderTextColor="#888"
                   keyboardType="decimal-pad"
                   value={productoData.precio_venta || undefined}
-                  onChangeText={(text) => handleInputChange("precio_venta", text)}
+                  onChangeText={(text) =>
+                    handleInputChange("precio_venta", text)
+                  }
                 />
 
                 {!productoData.receta_id && (
@@ -1116,11 +1139,18 @@ export default function ProductosSection({ token, navigation }) {
                     <Picker
                       selectedValue={productoData.unidad || "default"}
                       onValueChange={(value) => {
-                        if (value !== "default") handleInputChange("unidad", value);
+                        if (value !== "default")
+                          handleInputChange("unidad", value);
                       }}
-                      style={[styles.picker, { color: productoData.unidad ? "#000" : "#888" }]}
+                      style={[
+                        styles.picker,
+                        { color: productoData.unidad ? "#000" : "#888" },
+                      ]}
                     >
-                      <Picker.Item label="Selecciona una unidad" value="default" />
+                      <Picker.Item
+                        label="Selecciona una unidad"
+                        value="default"
+                      />
                       <Picker.Item label="Pieza" value="pieza" />
                       <Picker.Item label="Kilogramo" value="kg" />
                       <Picker.Item label="Gramo" value="g" />
@@ -1140,7 +1170,10 @@ export default function ProductosSection({ token, navigation }) {
                   onValueChange={(value) => {
                     if (value !== "default") handleInputChange("estado", value);
                   }}
-                  style={[styles.picker, { color: productoData.estado ? "#000" : "#888" }]}
+                  style={[
+                    styles.picker,
+                    { color: productoData.estado ? "#000" : "#888" },
+                  ]}
                 >
                   <Picker.Item label="Selecciona un estado" value="default" />
                   <Picker.Item label="Activo" value="activo" />
@@ -1568,7 +1601,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 20,
     paddingVertical: 10,
   },
   paginacionBoton: {
@@ -1640,7 +1673,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   clearRecetaButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 12,
     top: 10,
     padding: 4,
@@ -1648,8 +1681,8 @@ const styles = StyleSheet.create({
   },
   clearRecetaButtonText: {
     fontSize: 20,
-    color: '#666',
-    fontWeight: 'bold',
+    color: "#666",
+    fontWeight: "bold",
   },
   dropdownRecetaContainer: {
     position: "absolute",
@@ -1697,8 +1730,8 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   claveReceta: {
-    fontWeight: 'bold',
-    color: '#4CAF50',
+    fontWeight: "bold",
+    color: "#4CAF50",
   },
   dropdownRecetaEmpty: {
     padding: 12,
@@ -1706,5 +1739,4 @@ const styles = StyleSheet.create({
     color: "#999",
     fontStyle: "italic",
   },
-
 });
