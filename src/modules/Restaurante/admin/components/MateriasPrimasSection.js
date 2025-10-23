@@ -55,7 +55,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
         setPaginaActual(1);
       }
     } catch (error) {
-      console.log("Error al obtener materias primas:", error);
       if (error.response?.status === 401) {
         navigation.navigate("Login");
       }
@@ -189,7 +188,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
       resetForm();
       fetchMateriasPrimas();
     } catch (error) {
-      console.log("Error al crear:", error.response?.data || error.message);
       Alert.alert("Error", "No se pudo crear la materia prima");
     } finally {
       setIsLoading(false);
@@ -215,36 +213,98 @@ export default function MateriaPrimaSection({ token, navigation }) {
       resetForm();
       fetchMateriasPrimas();
     } catch (error) {
-      console.log("Error al editar:", error.response?.data || error.message);
       Alert.alert("Error", "No se pudo actualizar la materia prima");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const construirMensajeDetalladoEliminacion = (errorData) => {
+    if (!errorData || !errorData.relaciones) {
+      return "La materia prima está siendo utilizada y no puede ser eliminada.";
+    }
+
+    let mensaje = errorData.details + "\n\n";
+    const relaciones = errorData.relaciones;
+
+    // Detallar recetas
+    if (relaciones.recetas && relaciones.recetas.length > 0) {
+      mensaje += "📋 RECETAS:\n";
+      relaciones.recetas.forEach((receta, index) => {
+        mensaje += `${index + 1}. ${receta.receta_nombre} (${
+          receta.receta_clave
+        })\n`;
+      });
+      mensaje += "\n";
+    }
+
+    // Detallar productos
+    if (relaciones.productos && relaciones.productos.length > 0) {
+      mensaje += "🍽️ PRODUCTOS:\n";
+      relaciones.productos.forEach((producto, index) => {
+        mensaje += `${index + 1}. ${producto.producto_nombre} (${
+          producto.producto_clave
+        })\n`;
+      });
+      mensaje += "\n";
+    }
+
+    // Detallar movimientos de inventario
+    if (relaciones.movimientos_inventario) {
+      mensaje += `📦 INVENTARIO:\n${relaciones.movimientos_inventario.total_movimientos} movimiento(s) registrado(s)\n\n`;
+    }
+
+    mensaje +=
+      "⚠️ Debes eliminar primero estas referencias antes de eliminar la materia prima.";
+
+    return mensaje;
+  };
+
   const handleDelete = async (id) => {
-    Alert.alert("Eliminar", "¿Deseas eliminar esta materia prima?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await API.delete(`/restaurante/admin/materias-primas/${id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            Alert.alert("Éxito", "Materia prima eliminada exitosamente");
-            fetchMateriasPrimas();
-          } catch (error) {
-            console.log(
-              "Error al eliminar:",
-              error.response?.data || error.message
-            );
-            Alert.alert("Error", "No se pudo eliminar la materia prima");
-          }
+    Alert.alert(
+      "Confirmar eliminación",
+      "¿Estás seguro de que deseas eliminar esta materia prima?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await API.delete(`/restaurante/admin/materias-primas/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              Alert.alert("Éxito", "Materia prima eliminada exitosamente");
+              fetchMateriasPrimas();
+            } catch (error) {
+              // Verificar si es el error específico de materia prima en uso
+              if (
+                error.response?.status === 409 &&
+                error.response?.data?.error?.code === "MATERIA_PRIMA_EN_USO"
+              ) {
+                const errorData = error.response.data.error;
+                const mensajeDetallado =
+                  construirMensajeDetalladoEliminacion(errorData);
+
+                Alert.alert(
+                  "No se puede eliminar",
+                  mensajeDetallado,
+                  [{ text: "Entendido", style: "default" }],
+                  { cancelable: true }
+                );
+              } else {
+                // Error genérico
+                Alert.alert(
+                  "Error",
+                  error.response?.data?.error?.message ||
+                    "No se pudo eliminar la materia prima"
+                );
+              }
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const openCreateModal = () => {
@@ -279,7 +339,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
       });
 
       if (res.canceled || !res.assets || res.assets.length === 0) {
-        console.log("Selección cancelada");
         return;
       }
 
@@ -302,7 +361,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
         `${archivo.name} (${(archivo.size / 1024).toFixed(2)} KB)`
       );
     } catch (error) {
-      console.log("Error al seleccionar archivo:", error);
       Alert.alert("Error", "No se pudo seleccionar el archivo.");
     }
   };
@@ -318,11 +376,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
     try {
       const response = await fetch(archivoCSV.uri);
       const fileContent = await response.text();
-
-      console.log(
-        "Contenido del archivo (primeras 200 chars):",
-        fileContent.substring(0, 200)
-      );
 
       const blob = new Blob([fileContent], { type: "text/csv" });
       const formData = new FormData();
@@ -344,7 +397,9 @@ export default function MateriaPrimaSection({ token, navigation }) {
       if (uploadResponse.ok && responseData.success) {
         Alert.alert(
           "Éxito",
-          `Se importaron ${responseData.data.total_procesadas} materias primas.${
+          `Se importaron ${
+            responseData.data.total_procesadas
+          } materias primas.${
             responseData.data.errores_encontrados > 0
               ? ` Con ${responseData.data.errores_encontrados} errores.`
               : ""
@@ -360,7 +415,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
 
       setArchivoCSV(null);
     } catch (error) {
-      console.log("Error al importar:", error);
       Alert.alert("Error", "No se pudo importar el archivo CSV.");
     } finally {
       setIsLoading(false);
@@ -397,7 +451,6 @@ export default function MateriaPrimaSection({ token, navigation }) {
         Alert.alert("Éxito", "Plantilla descargada correctamente");
       }
     } catch (error) {
-      console.log("Error al descargar plantilla:", error);
       Alert.alert("Error", "No se pudo descargar la plantilla CSV");
     } finally {
       setIsLoading(false);
@@ -407,7 +460,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
   const renderPaginacion = () => {
     const materiasFiltradas = getMateriasPrimasFiltradas();
     const totalPaginas = getTotalPaginas();
-    
+
     if (materiasFiltradas.length === 0) return null;
 
     return (
@@ -445,7 +498,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
                   style={[
                     styles.paginacionNumeroTexto,
                     paginaActual === numero &&
-                    styles.paginacionNumeroTextoActivo,
+                      styles.paginacionNumeroTextoActivo,
                   ]}
                 >
                   {numero}
@@ -650,7 +703,9 @@ export default function MateriaPrimaSection({ token, navigation }) {
                 placeholderTextColor="#888"
                 keyboardType="decimal-pad"
                 value={formData.costo_unitario || undefined}
-                onChangeText={(text) => handleInputChange("costo_unitario", text)}
+                onChangeText={(text) =>
+                  handleInputChange("costo_unitario", text)
+                }
               />
 
               <TextInput
@@ -680,8 +735,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
                         ? "Creando..."
                         : "Actualizando..."
                       : modalType === "crear"
-                        ? "Crear"
-                        : "Actualizar"}
+                      ? "Crear"
+                      : "Actualizar"}
                   </Text>
                 </TouchableOpacity>
               </View>
