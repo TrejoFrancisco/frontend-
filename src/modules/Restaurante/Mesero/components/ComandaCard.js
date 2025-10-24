@@ -26,16 +26,14 @@ export default function ComandaCard({
     comanda.estado !== "pagada" &&
     comanda.estado !== "cerrada";
 
-  // Determinar estado visual para unificadas
-  const getEstadoUnificada = () => {
-    if (comanda.tipo === "unificada" || isUnificada) {
-      return comanda.estado || "pendiente";
-    }
-    return comanda.estado;
-  };
+  // Obtener el estado correcto (ya sea comanda regular o unificada)
+  const estadoActual = comanda.estado || "pendiente";
 
   // Mostrar botón de pagar solo si está cerrada
-  const puedePagar = getEstadoUnificada() === "cerrada";
+  const puedePagar = estadoActual === "cerrada";
+
+  // Debug: Descomentar para ver los valores
+  // console.log('Comanda:', comanda.id, 'isUnificada:', isUnificada, 'estado:', estadoActual, 'puedePagar:', puedePagar);
 
   return (
     <>
@@ -114,18 +112,18 @@ export default function ComandaCard({
 
         {/* Estado y acciones */}
         <View style={styles.footerRow}>
-          {/* Estado de la comanda */}
+          {/* Estado de la comanda - USAR estadoActual */}
           <View
             style={[
               styles.estadoBadge,
-              comanda.estado === "pendiente" && styles.estadoPendiente,
-              comanda.estado === "pagada" && styles.estadoPagada,
-              comanda.estado === "cerrada" && styles.estadoCerrada,
-              comanda.estado === "activa" && styles.estadoActiva,
+              estadoActual === "pendiente" && styles.estadoPendiente,
+              estadoActual === "pagada" && styles.estadoPagada,
+              estadoActual === "cerrada" && styles.estadoCerrada,
+              estadoActual === "activa" && styles.estadoActiva,
             ]}
           >
             <Text style={styles.estadoText}>
-              {comanda.estado?.toUpperCase() || "ACTIVA"}
+              {estadoActual?.toUpperCase() || "ACTIVA"}
             </Text>
           </View>
 
@@ -151,7 +149,7 @@ export default function ComandaCard({
                 {puedePagar && (
                   <TouchableOpacity
                     style={styles.pagoButton}
-                    onPress={() => onPagar(comanda)}
+                    onPress={() => onPagar(comanda, true)}
                     activeOpacity={0.7}
                   >
                     <Image
@@ -180,15 +178,6 @@ export default function ComandaCard({
                   </TouchableOpacity>
                 )}
 
-                {/* Mensaje informativo si es una comanda unificada */}
-                {(isUnificada || comanda.tipo === "unificada") && (
-                  <View style={styles.infoUnificada}>
-                    <Text style={styles.infoUnificadaText}>
-                      ⓘ Las comandas unificadas no se pueden editar
-                    </Text>
-                  </View>
-                )}
-
                 {/* Ticket individual - BLOQUEADO si está en una unificada */}
                 {perteneceAUnificada ? (
                   <View style={styles.botonBloqueado}>
@@ -213,10 +202,10 @@ export default function ComandaCard({
                 )}
 
                 {/* Pagar individual - BLOQUEADO si está en una unificada */}
-                {!perteneceAUnificada && comanda.estado === "cerrada" && (
+                {!perteneceAUnificada && estadoActual === "cerrada" && (
                   <TouchableOpacity
                     style={styles.pagoButton}
-                    onPress={() => onPagar(comanda)}
+                    onPress={() => onPagar(comanda, false)}
                     activeOpacity={0.7}
                   >
                     <Image
