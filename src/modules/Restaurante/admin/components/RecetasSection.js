@@ -32,7 +32,7 @@ export default function RecetasSection({ token, navigation }) {
 
   // Estados para la paginación
   const [paginaActual, setPaginaActual] = useState(1);
-  const ITEMS_POR_PAGINA = 8;
+  const ITEMS_POR_PAGINA = 10;
 
   const [recetaData, setRecetaData] = useState({
     clave: "",
@@ -294,7 +294,7 @@ export default function RecetasSection({ token, navigation }) {
 
   const handleCreate = async () => {
     if (!recetaData.clave || !recetaData.nombre) {
-      Alert.alert("Error", "Por favor completa clave y nombre de la receta");
+      Alert.alert("Error", "Por favor completa los campos requeridos");
       return;
     }
 

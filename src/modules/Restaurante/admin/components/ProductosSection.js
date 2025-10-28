@@ -23,7 +23,7 @@ const BuscadorRecetas = ({
   recetas = [],
   selectedRecetaId,
   onSelectReceta,
-  placeholder = "Buscar receta o dejar vacío para producto directo",
+  placeholder = "Buscar receta",
 }) => {
   const [searchText, setSearchText] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -93,7 +93,7 @@ const BuscadorRecetas = ({
               onPress={handleClearReceta}
             >
               <Text style={styles.dropdownRecetaItemTextSpecial}>
-                Sin receta (producto directo)
+                Vacio (producto directo)
               </Text>
             </TouchableOpacity>
 
@@ -479,10 +479,8 @@ export default function ProductosSection({ token, navigation }) {
       const dataToSend = {
         clave: productoData.clave.trim(),
         nombre: productoData.nombre.trim(),
-        categoria_id: parseInt(productoData.categoria_id),
-        receta_id: productoData.receta_id
-          ? parseInt(productoData.receta_id)
-          : null,
+        categoria_id: parseInt(productoData.categoria_id, 10),
+        receta_id: productoData.receta_id ? parseInt(productoData.receta_id, 10) : null,
         prioridad: parseFloat(productoData.prioridad),
         precio_venta: parseFloat(productoData.precio_venta),
         estado: productoData.estado,
@@ -491,16 +489,15 @@ export default function ProductosSection({ token, navigation }) {
       if (productoData.receta_id) {
         dataToSend.costo_unitario = parseFloat(productoData.costo_unitario);
       } else {
-        if (productoData.costo_unitario && productoData.costo_unitario.trim()) {
-          dataToSend.costo_unitario = parseFloat(productoData.costo_unitario);
-        }
+        dataToSend.costo_unitario =
+          productoData.costo_unitario && productoData.costo_unitario.trim()
+            ? parseFloat(productoData.costo_unitario)
+            : null;
       }
 
       if (!productoData.receta_id) {
-        dataToSend.existencia_inicial = parseFloat(
-          productoData.existencia_inicial
-        );
-        dataToSend.unidad = productoData.unidad;
+        dataToSend.existencia_inicial = parseFloat(productoData.existencia_inicial);
+        dataToSend.unidad = productoData.unidad ? productoData.unidad.trim() : null;
       }
 
       let response;
@@ -580,8 +577,7 @@ export default function ProductosSection({ token, navigation }) {
 
       Alert.alert(
         "Cambiar Estado",
-        `¿Deseas ${
-          nuevoEstado === "activo" ? "activar" : "desactivar"
+        `¿Deseas ${nuevoEstado === "activo" ? "activar" : "desactivar"
         } el producto "${nombre}"?`,
         [
           { text: "Cancelar", style: "cancel" },
@@ -607,7 +603,7 @@ export default function ProductosSection({ token, navigation }) {
                 Alert.alert(
                   "Error",
                   error.response?.data?.error?.message ||
-                    "Error al cambiar el estado del producto"
+                  "Error al cambiar el estado del producto"
                 );
               }
             },
@@ -661,7 +657,7 @@ export default function ProductosSection({ token, navigation }) {
                   style={[
                     styles.paginacionNumeroTexto,
                     paginaActual === numero &&
-                      styles.paginacionNumeroTextoActivo,
+                    styles.paginacionNumeroTextoActivo,
                   ]}
                 >
                   {numero}
@@ -857,15 +853,6 @@ export default function ProductosSection({ token, navigation }) {
               value={textoBusqueda || ""}
               onChangeText={setTextoBusqueda}
             />
-
-            {textoBusqueda.length > 0 && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={limpiarBusqueda}
-              >
-                <Text style={styles.clearButtonText}>✕</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
 
@@ -1101,12 +1088,6 @@ export default function ProductosSection({ token, navigation }) {
                     }
                     editable={!productoData.receta_id}
                   />
-                  {productoData.receta_id && productoData.costo_unitario && (
-                    <Text style={styles.helperText}>
-                      Costo de la receta: $
-                      {parseFloat(productoData.costo_unitario).toFixed(2)}
-                    </Text>
-                  )}
                 </View>
 
                 <TextInput
@@ -1399,8 +1380,8 @@ const styles = StyleSheet.create({
     width: "100%",
     marginHorizontal: 3,
     marginBottom: 10,
+    borderRadius: 15,
     backgroundColor: "#fff",
-    borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -1413,6 +1394,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderColor: "#ccc",
+    borderRadius: 10,
   },
   tableHeaderText: {
     fontWeight: "bold",
@@ -1489,20 +1471,20 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   estadoActivo: {
-    backgroundColor: "#d4edda",
+    backgroundColor: "#32b551",
   },
   estadoInactivo: {
-    backgroundColor: "#f8d7da",
+    backgroundColor: "#ffc107",
   },
   estadoText: {
     fontSize: 14,
     fontWeight: "bold",
   },
   estadoTextoActivo: {
-    color: "#155724",
+    color: "#ffffffff",
   },
   estadoTextoInactivo: {
-    color: "#721c24",
+    color: "#ffffffff",
   },
   tableEmptyRow: {
     padding: 20,

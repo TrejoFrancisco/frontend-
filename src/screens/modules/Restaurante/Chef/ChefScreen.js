@@ -173,7 +173,7 @@ export default function ChefComandasSection() {
       case "cancelado":
         return { backgroundColor: "#cfcfcfff" };
       default:
-        return { backgroundColor: "#6b7280" }; 
+        return { backgroundColor: "#cfcfcfff" }; 
     }
   };
 
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     color: "#000000ff",
     fontWeight: "bold",
-    fontSize: 12
+    fontSize: 11,
   },
 
   // ===== ESTILOS DE ESTADO DE PRODUCTO =====

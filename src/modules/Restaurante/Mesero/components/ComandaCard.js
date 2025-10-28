@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   unificadaBadgeText: {
-    color: "#000",
+    color: "#fff",
     fontSize: 10,
     fontWeight: "bold",
   },
@@ -321,24 +321,24 @@ const styles = StyleSheet.create({
   estadoBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 5,
+    borderRadius: 12,
   },
   estadoPendiente: {
-    backgroundColor: "#fdb03cff",
+    backgroundColor: "#FF9800",
   },
   estadoActiva: {
     backgroundColor: "#4CAF50",
   },
   estadoCerrada: {
-    backgroundColor: "#f1574cff",
+    backgroundColor: "#F44336",
   },
   estadoPagada: {
     backgroundColor: "#2196F3",
   },
   estadoText: {
-    fontSize: 12,
+    color: "#fff",
+    fontSize: 10,
     fontWeight: "bold",
-    color: "#333",
   },
   actionButtons: {
     flexDirection: "row",

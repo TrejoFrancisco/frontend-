@@ -231,9 +231,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
     if (relaciones.recetas && relaciones.recetas.length > 0) {
       mensaje += "📋 RECETAS:\n";
       relaciones.recetas.forEach((receta, index) => {
-        mensaje += `${index + 1}. ${receta.receta_nombre} (${
-          receta.receta_clave
-        })\n`;
+        mensaje += `${index + 1}. ${receta.receta_nombre} (${receta.receta_clave
+          })\n`;
       });
       mensaje += "\n";
     }
@@ -242,9 +241,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
     if (relaciones.productos && relaciones.productos.length > 0) {
       mensaje += "🍽️ PRODUCTOS:\n";
       relaciones.productos.forEach((producto, index) => {
-        mensaje += `${index + 1}. ${producto.producto_nombre} (${
-          producto.producto_clave
-        })\n`;
+        mensaje += `${index + 1}. ${producto.producto_nombre} (${producto.producto_clave
+          })\n`;
       });
       mensaje += "\n";
     }
@@ -297,7 +295,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
                 Alert.alert(
                   "Error",
                   error.response?.data?.error?.message ||
-                    "No se pudo eliminar la materia prima"
+                  "No se pudo eliminar la materia prima"
                 );
               }
             }
@@ -330,10 +328,18 @@ export default function MateriaPrimaSection({ token, navigation }) {
     resetForm();
   };
 
+  // Función para seleccionar archivo CSV
   const handleSeleccionarArchivo = async () => {
     try {
       const res = await DocumentPicker.getDocumentAsync({
-        type: ["text/csv", "text/plain", "application/csv"],
+        type: [
+          "text/csv",
+          "text/comma-separated-values",
+          "application/csv",
+          "application/vnd.ms-excel",
+          "text/plain",
+          "/" // Fallback para permitir todos los archivos
+        ],
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -344,14 +350,19 @@ export default function MateriaPrimaSection({ token, navigation }) {
 
       const archivo = res.assets[0];
 
+      // Verificar tamaño
       if (archivo.size > 2048 * 1024) {
         Alert.alert("Error", "El archivo es muy grande. Máximo 2MB permitido.");
         return;
       }
 
+      // Validar extensión del archivo manualmente
       const extension = archivo.name.split(".").pop().toLowerCase();
       if (!["csv", "txt"].includes(extension)) {
-        Alert.alert("Error", "Solo se permiten archivos .csv o .txt");
+        Alert.alert(
+          "Error",
+          "Solo se permiten archivos .csv o .txt\n\nArchivo seleccionado: " + archivo.name
+        );
         return;
       }
 
@@ -360,11 +371,14 @@ export default function MateriaPrimaSection({ token, navigation }) {
         "Archivo seleccionado",
         `${archivo.name} (${(archivo.size / 1024).toFixed(2)} KB)`
       );
+
     } catch (error) {
-      Alert.alert("Error", "No se pudo seleccionar el archivo.");
+      console.error("Error al seleccionar archivo:", error);
+      Alert.alert("Error", "No se pudo seleccionar el archivo: " + error.message);
     }
   };
 
+  // Función para importar CSV - VERSIÓN MEJORADA
   const handleImportCsv = async () => {
     if (!archivoCSV) {
       Alert.alert("Error", "Primero selecciona un archivo CSV.");
@@ -374,48 +388,57 @@ export default function MateriaPrimaSection({ token, navigation }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(archivoCSV.uri);
-      const fileContent = await response.text();
+      // Leer el contenido del archivo
+      const fileContent = await FileSystem.readAsStringAsync(archivoCSV.uri);
 
-      const blob = new Blob([fileContent], { type: "text/csv" });
+      // Crear FormData
       const formData = new FormData();
-      formData.append("csv_file", blob, archivoCSV.name);
 
-      const baseURL = API.defaults.baseURL || "";
-      const url = `${baseURL}/restaurante/admin/materias-primas/import-csv`;
-
-      const uploadResponse = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
+      // En React Native, FormData necesita un objeto con uri, type y name
+      formData.append("csv_file", {
+        uri: archivoCSV.uri,
+        type: "text/csv",
+        name: archivoCSV.name,
       });
 
-      const responseData = await uploadResponse.json();
+      // Usar API directamente con la ruta relativa
+      const response = await API.post(
+        "/restaurante/admin/materias-primas/import-csv",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-      if (uploadResponse.ok && responseData.success) {
+      if (response.data.success) {
         Alert.alert(
           "Éxito",
-          `Se importaron ${
-            responseData.data.total_procesadas
-          } materias primas.${
-            responseData.data.errores_encontrados > 0
-              ? ` Con ${responseData.data.errores_encontrados} errores.`
-              : ""
+          `Se importaron ${response.data.data.total_procesadas} materias primas.${response.data.data.errores_encontrados > 0
+            ? ` Con ${response.data.data.errores_encontrados} errores.`
+            : ""
           }`
         );
         fetchMateriasPrimas();
+        setArchivoCSV(null);
       } else {
         Alert.alert(
           "Error",
-          responseData.error?.message || "No se pudo importar el archivo"
+          response.data.error?.message || "No se pudo importar el archivo"
         );
       }
-
-      setArchivoCSV(null);
     } catch (error) {
-      Alert.alert("Error", "No se pudo importar el archivo CSV.");
+      console.error("Error al importar CSV:", error);
+      console.error("Response:", error.response?.data);
+
+      Alert.alert(
+        "Error",
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        "No se pudo importar el archivo CSV."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -498,7 +521,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
                   style={[
                     styles.paginacionNumeroTexto,
                     paginaActual === numero &&
-                      styles.paginacionNumeroTextoActivo,
+                    styles.paginacionNumeroTextoActivo,
                   ]}
                 >
                   {numero}
@@ -735,8 +758,8 @@ export default function MateriaPrimaSection({ token, navigation }) {
                         ? "Creando..."
                         : "Actualizando..."
                       : modalType === "crear"
-                      ? "Crear"
-                      : "Actualizar"}
+                        ? "Crear"
+                        : "Actualizar"}
                   </Text>
                 </TouchableOpacity>
               </View>

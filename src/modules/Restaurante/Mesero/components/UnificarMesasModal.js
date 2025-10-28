@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F44336",
   },
   unificarButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#28a745",
   },
   unificarButtonDisabled: {
     backgroundColor: "#cccccc",

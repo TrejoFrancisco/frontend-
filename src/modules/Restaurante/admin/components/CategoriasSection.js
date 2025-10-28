@@ -308,7 +308,7 @@ export default function CategoriasScreen({ token, navigation }) {
           onPress={() => goToPage(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          <Text style={styles.paginationText}>{"<"}</Text>
+          <Text style={styles.paginationText}>←</Text>
         </TouchableOpacity>
 
         {startPage > 1 && (
@@ -365,7 +365,7 @@ export default function CategoriasScreen({ token, navigation }) {
           onPress={() => goToPage(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          <Text style={styles.paginationText}>{">"}</Text>
+          <Text style={styles.paginationText}>→</Text>
         </TouchableOpacity>
       </View>
     );
@@ -445,16 +445,6 @@ export default function CategoriasScreen({ token, navigation }) {
             </View>
           ))}
         </ScrollView>
-
-        {/* Información de paginación */}
-        {categorias.length > 0 && (
-          <View style={styles.paginationInfo}>
-            <Text style={styles.paginationInfoText}>
-              Mostrando {startIndex + 1} -{" "}
-              {Math.min(endIndex, categorias.length)}
-            </Text>
-          </View>
-        )}
 
         {/* Controles de paginación */}
         {renderPagination()}

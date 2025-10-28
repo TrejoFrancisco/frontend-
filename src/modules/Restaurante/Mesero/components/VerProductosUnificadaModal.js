@@ -26,9 +26,6 @@ export default function VerProductosUnificadaModal({
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.modalTitle}>Productos de la Comanda</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Información de la comanda */}
@@ -78,7 +75,7 @@ export default function VerProductosUnificadaModal({
                           </Text>
                           {producto.pivot?.detalle && (
                             <Text style={styles.productoCardDetalle}>
-                              📝 {producto.pivot.detalle}
+                              Detalles: {producto.pivot.detalle}
                             </Text>
                           )}
                         </View>
@@ -263,7 +260,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   cerrarButton: {
-    backgroundColor: "#6c757d",
+    backgroundColor: "#F44336",
     paddingVertical: 12,
     marginTop: 16,
     borderRadius: 8,

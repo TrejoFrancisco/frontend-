@@ -218,12 +218,12 @@ export default function InventarioSection({ token, navigation }) {
           <Text style={styles.historialFecha}>
             {item.created_at
               ? new Date(item.created_at).toLocaleDateString("es-MX", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
               : "Fecha no disponible"}
           </Text>
         </View>
@@ -294,20 +294,14 @@ export default function InventarioSection({ token, navigation }) {
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: "#000" }]}
               placeholder="Buscar en Inventario..."
-              value={busquedaInventario}
+              placeholderTextColor="#999"
+              value={busquedaInventario || ""}
               onChangeText={setBusquedaInventario}
             />
-            {busquedaInventario.length > 0 && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={() => setBusquedaInventario("")}
-              >
-                <Text style={styles.clearButtonText}>✕</Text>
-              </TouchableOpacity>
-            )}
           </View>
+
         </View>
 
         {/* Sección de Productos */}
@@ -380,8 +374,8 @@ export default function InventarioSection({ token, navigation }) {
                 showsVerticalScrollIndicator={false}
               >
                 {selectedItem?.historial &&
-                Array.isArray(selectedItem.historial) &&
-                selectedItem.historial.length > 0 ? (
+                  Array.isArray(selectedItem.historial) &&
+                  selectedItem.historial.length > 0 ? (
                   selectedItem.historial.map((item, index) =>
                     renderHistorialItem(item, index)
                   )
@@ -481,6 +475,7 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 18,
     backgroundColor: "#ECFDF5",
+    color: "#000",
   },
   clearButton: {
     marginLeft: 8,
