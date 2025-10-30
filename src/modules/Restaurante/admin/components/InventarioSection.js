@@ -296,8 +296,10 @@ export default function InventarioSection({ token, navigation }) {
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar en Inventario..."
+              placeholderTextColor="#888"
               value={busquedaInventario}
               onChangeText={setBusquedaInventario}
+              color="#000"
             />
             {busquedaInventario.length > 0 && (
               <TouchableOpacity

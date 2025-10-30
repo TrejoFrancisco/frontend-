@@ -11,7 +11,7 @@ import {
   Alert,
   Image,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import CustomSelector from "./CustomSelector"; // Ajusta la ruta según tu estructura
 import { API } from "../../../../services/api";
 
 export default function UsuariosSection({ token, navigation }) {
@@ -23,11 +23,11 @@ export default function UsuariosSection({ token, navigation }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [clave, setClave] = useState(""); // NUEVO
+  const [clave, setClave] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [passwordError, setPasswordError] = useState("");
-  const [claveError, setClaveError] = useState(""); // NUEVO
+  const [claveError, setClaveError] = useState("");
 
   useEffect(() => {
     fetchUsuarios();
@@ -71,7 +71,7 @@ export default function UsuariosSection({ token, navigation }) {
       setName(usuario.name);
       setEmail(usuario.email);
       setSelectedRole(usuario.role_id || "");
-      setClave(usuario.clave || ""); // NUEVO
+      setClave(usuario.clave || "");
       setPassword("");
     } else {
       setEditMode(false);
@@ -79,13 +79,12 @@ export default function UsuariosSection({ token, navigation }) {
       setName("");
       setEmail("");
       setPassword("");
-      setClave(""); // NUEVO
+      setClave("");
       setSelectedRole("");
     }
     setModalVisible(true);
   };
 
-  // NUEVA FUNCIÓN: Validar clave
   const validarClave = (text) => {
     const sinEspacios = text.trim();
     if (sinEspacios.length < 4) {
@@ -132,10 +131,9 @@ export default function UsuariosSection({ token, navigation }) {
 
       if (!editMode) {
         data.password = password;
-        data.clave = clave.trim().toUpperCase(); // NUEVO - convertir a mayúsculas
+        data.clave = clave.trim().toUpperCase();
       } else if (clave && clave.trim() !== "") {
-        // Solo enviar clave si se modificó en edición
-        data.clave = clave.trim().toUpperCase(); // NUEVO
+        data.clave = clave.trim().toUpperCase();
       }
 
       let response;
@@ -208,6 +206,12 @@ export default function UsuariosSection({ token, navigation }) {
     }
   };
 
+  // Preparar items para CustomSelector
+  const rolesItems = roles.map((rol) => ({
+    label: rol.name,
+    value: rol.id,
+  }));
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -276,6 +280,7 @@ export default function UsuariosSection({ token, navigation }) {
               value={name || undefined}
               onChangeText={setName}
               style={styles.input}
+              color="#000"
             />
 
             <TextInput
@@ -286,6 +291,7 @@ export default function UsuariosSection({ token, navigation }) {
               keyboardType="email-address"
               autoCapitalize="none"
               style={styles.input}
+              color="#000"
             />
 
             {!editMode && (
@@ -303,6 +309,7 @@ export default function UsuariosSection({ token, navigation }) {
                     styles.input,
                     passwordError ? { borderColor: "red", borderWidth: 1 } : {},
                   ]}
+                  color="#000"
                 />
                 {passwordError ? (
                   <Text style={styles.errorText}>{passwordError}</Text>
@@ -310,7 +317,6 @@ export default function UsuariosSection({ token, navigation }) {
               </>
             )}
 
-            {/* NUEVO CAMPO: Clave */}
             <TextInput
               placeholder={
                 editMode ? "Nueva clave (opcional)" : "Clave (requerida)"
@@ -326,6 +332,7 @@ export default function UsuariosSection({ token, navigation }) {
                 styles.input,
                 claveError ? { borderColor: "red", borderWidth: 1 } : {},
               ]}
+              color="#000"
             />
             {claveError ? (
               <Text style={styles.errorText}>{claveError}</Text>
@@ -336,24 +343,13 @@ export default function UsuariosSection({ token, navigation }) {
               </Text>
             )}
 
-            <View style={styles.row}>
-              <Text style={styles.labelR}>Rol</Text>
-              <Picker
-                selectedValue={selectedRole || "default"}
-                onValueChange={(value) =>
-                  setSelectedRole(value === "default" ? null : value)
-                }
-                style={[
-                  styles.picker,
-                  { color: selectedRole ? "#000" : "#888" },
-                ]}
-              >
-                <Picker.Item label="Selecciona un rol" value="default" />
-                {roles.map((rol) => (
-                  <Picker.Item key={rol.id} label={rol.name} value={rol.id} />
-                ))}
-              </Picker>
-            </View>
+            <CustomSelector
+              label="Rol"
+              value={selectedRole}
+              items={rolesItems}
+              onValueChange={setSelectedRole}
+              placeholder="Selecciona un rol"
+            />
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -458,6 +454,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#333",
   },
+  errorText: {
+    color: "red",
+    fontSize: 14,
+    marginTop: -8,
+    marginBottom: 8,
+  },
+  helperText: {
+    color: "#666",
+    fontSize: 14,
+    fontStyle: "italic",
+    marginTop: -8,
+    marginBottom: 12,
+  },
 
   // ======== BOTONES ========
   createButton: {
@@ -507,6 +516,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     elevation: 5,
+    maxHeight: "90%",
   },
   modalTitle: {
     fontSize: 20,
@@ -551,23 +561,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 12,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-    gap: 20,
-  },
-  picker: {
-    height: 60, // asegura que se vea el campo
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 140,
-  },
-  labelR: {
-    fontWeight: "bold",
-    fontSize: 18,
-    color: "#444",
+    backgroundColor: "#fff",
   },
 });

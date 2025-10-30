@@ -427,7 +427,7 @@ export default function RecetasSection({ token, navigation }) {
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-        "No se pudo actualizar la receta"
+          "No se pudo actualizar la receta"
       );
     } finally {
       setIsLoading(false);
@@ -493,6 +493,7 @@ export default function RecetasSection({ token, navigation }) {
               setBusquedaReceta(text);
               setPaginaActual(1);
             }}
+            color="#000"
           />
 
           <View style={styles.filtroEstadoContainer}>
@@ -659,7 +660,10 @@ export default function RecetasSection({ token, navigation }) {
                   {obtenerNumerosPagina().map((numero, index) => {
                     if (numero === "...") {
                       return (
-                        <Text key={`dots-${index}`} style={styles.paginacionPuntos}>
+                        <Text
+                          key={`dots-${index}`}
+                          style={styles.paginacionPuntos}
+                        >
                           ...
                         </Text>
                       );
@@ -669,14 +673,16 @@ export default function RecetasSection({ token, navigation }) {
                         key={numero}
                         style={[
                           styles.paginacionNumero,
-                          paginaActual === numero && styles.paginacionNumeroActivo,
+                          paginaActual === numero &&
+                            styles.paginacionNumeroActivo,
                         ]}
                         onPress={() => cambiarPagina(numero)}
                       >
                         <Text
                           style={[
                             styles.paginacionNumeroTexto,
-                            paginaActual === numero && styles.paginacionNumeroTextoActivo,
+                            paginaActual === numero &&
+                              styles.paginacionNumeroTextoActivo,
                           ]}
                         >
                           {numero}
@@ -689,7 +695,8 @@ export default function RecetasSection({ token, navigation }) {
                 <TouchableOpacity
                   style={[
                     styles.paginacionBoton,
-                    paginaActual === totalPaginas && styles.paginacionBotonDisabled,
+                    paginaActual === totalPaginas &&
+                      styles.paginacionBotonDisabled,
                   ]}
                   onPress={paginaSiguiente}
                   disabled={paginaActual === totalPaginas}
@@ -722,6 +729,7 @@ export default function RecetasSection({ token, navigation }) {
                 placeholderTextColor="#888"
                 value={recetaData.clave || undefined}
                 onChangeText={(text) => handleInputChange("clave", text)}
+                color="#000"
               />
 
               <TextInput
@@ -730,6 +738,7 @@ export default function RecetasSection({ token, navigation }) {
                 placeholderTextColor="#888"
                 value={recetaData.nombre || undefined}
                 onChangeText={(text) => handleInputChange("nombre", text)}
+                color="#000"
               />
 
               <View style={styles.estadoSelectorContainer}>
@@ -739,7 +748,7 @@ export default function RecetasSection({ token, navigation }) {
                     style={[
                       styles.estadoSelectorBoton,
                       recetaData.estado === "activo" &&
-                      styles.estadoSelectorBotonActivo,
+                        styles.estadoSelectorBotonActivo,
                     ]}
                     onPress={() => handleInputChange("estado", "activo")}
                   >
@@ -747,7 +756,7 @@ export default function RecetasSection({ token, navigation }) {
                       style={[
                         styles.estadoSelectorTexto,
                         recetaData.estado === "activo" &&
-                        styles.estadoSelectorTextoActivo,
+                          styles.estadoSelectorTextoActivo,
                       ]}
                     >
                       Activo
@@ -757,7 +766,7 @@ export default function RecetasSection({ token, navigation }) {
                     style={[
                       styles.estadoSelectorBoton,
                       recetaData.estado === "inactivo" &&
-                      styles.estadoSelectorBotonActivo,
+                        styles.estadoSelectorBotonActivo,
                     ]}
                     onPress={() => handleInputChange("estado", "inactivo")}
                   >
@@ -765,7 +774,7 @@ export default function RecetasSection({ token, navigation }) {
                       style={[
                         styles.estadoSelectorTexto,
                         recetaData.estado === "inactivo" &&
-                        styles.estadoSelectorTextoActivo,
+                          styles.estadoSelectorTextoActivo,
                       ]}
                     >
                       Inactivo
@@ -836,6 +845,7 @@ export default function RecetasSection({ token, navigation }) {
                                 onChangeText={(text) =>
                                   handleExistingMateriaPrimaChange(mp.id, text)
                                 }
+                                color="#000"
                               />
                               <Text style={styles.unidadText}>{mp.unidad}</Text>
                             </View>
@@ -881,7 +891,7 @@ export default function RecetasSection({ token, navigation }) {
                       <View style={styles.newRowControls}>
                         <View style={styles.searchMateriaPrimaContainer}>
                           <TextInput
-                            style={[styles.searchMateriaPrimaInput, { color: "#000" }]}
+                            style={styles.searchMateriaPrimaInput}
                             placeholder="Buscar materia prima..."
                             placeholderTextColor="#999"
                             value={mp.searchText || ""}
@@ -895,6 +905,7 @@ export default function RecetasSection({ token, navigation }) {
                               setShowMateriaPrimaDropdown(index);
                             }}
                             onFocus={() => setShowMateriaPrimaDropdown(index)}
+                            color="#000"
                           />
 
                           {showMateriaPrimaDropdown === index &&
@@ -926,10 +937,10 @@ export default function RecetasSection({ token, navigation }) {
                                   ))}
                                   {getMateriasPrimasFiltradas(mp.searchText)
                                     .length === 0 && (
-                                      <Text style={styles.dropdownEmpty}>
-                                        No se encontraron materias primas
-                                      </Text>
-                                    )}
+                                    <Text style={styles.dropdownEmpty}>
+                                      No se encontraron materias primas
+                                    </Text>
+                                  )}
                                 </ScrollView>
                               </View>
                             )}
@@ -937,7 +948,7 @@ export default function RecetasSection({ token, navigation }) {
 
                         <View style={styles.newCantidadWrapper}>
                           <TextInput
-                            style={[styles.newCantidadInput, { color: "#000" }]}
+                            style={styles.newCantidadInput}
                             placeholder="Cantidad"
                             placeholderTextColor="#999"
                             keyboardType="decimal-pad"
@@ -945,6 +956,7 @@ export default function RecetasSection({ token, navigation }) {
                             onChangeText={(text) =>
                               handleMateriaPrimaChange(index, "cantidad", text)
                             }
+                            color="#000"
                           />
                           <Text style={styles.newUnidadText}>
                             {getUnidadMateriaPrima(mp.materia_prima_id)}
@@ -997,8 +1009,8 @@ export default function RecetasSection({ token, navigation }) {
                       ? "Creando..."
                       : "Actualizando..."
                     : modalType === "crear"
-                      ? "Crear"
-                      : "Actualizar"}
+                    ? "Crear"
+                    : "Actualizar"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1042,7 +1054,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   filtrosContainer: {
-    flexDirection: "column", // <-- antes horizontal, ahora vertical
+    flexDirection: "column",
     alignItems: "stretch",
   },
   buscadorInput: {
@@ -1053,8 +1065,8 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 12,
     fontSize: 18,
-    marginBottom: 10, // espacio debajo del buscador
-    marginTop: 2, // lo empuja debajo del botón
+    marginBottom: 10,
+    marginTop: 2,
   },
   filtroEstadoContainer: {
     flexDirection: "row",
@@ -1129,29 +1141,25 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   idColumn: {
-    flex: 0.7,          // un poco más ancho que antes para que no se vea apretado
+    flex: 0.7,
     textAlign: "center",
     paddingHorizontal: 4,
   },
-
   claveColumn: {
-    flex: 1.5,          // mantiene suficiente espacio para claves
-    textAlign: "left",  // generalmente las claves se leen mejor alineadas a la izquierda
-    paddingHorizontal: 6,
-  },
-
-  nombreColumn: {
-    flex: 2,            // un poco más ancho para nombres largos
+    flex: 1.5,
     textAlign: "left",
     paddingHorizontal: 6,
   },
-
-  costoColumn: {
-    flex: 1.5,            // igual que antes
-    textAlign: "right", // los números se alinean a la derecha
+  nombreColumn: {
+    flex: 2,
+    textAlign: "left",
     paddingHorizontal: 6,
   },
-
+  costoColumn: {
+    flex: 1.5,
+    textAlign: "right",
+    paddingHorizontal: 6,
+  },
   costoText: {
     fontWeight: "600",
     color: "#28a745",
@@ -1161,7 +1169,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  // === PAGINACIÓN ===
   paginacionContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -1213,7 +1220,6 @@ const styles = StyleSheet.create({
     color: "#666",
     marginHorizontal: 4,
   },
-
   actionsContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -1408,6 +1414,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#fff",
     fontSize: 14,
+    color: "#000",
   },
   dropdownContainer: {
     position: "absolute",
@@ -1465,6 +1472,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: "#fff",
     fontSize: 14,
+    color: "#000",
   },
   newUnidadText: {
     marginLeft: 6,

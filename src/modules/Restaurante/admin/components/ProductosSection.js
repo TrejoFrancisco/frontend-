@@ -13,8 +13,8 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import { API } from "../../../../services/api";
+import CustomSelector from "./CustomSelector"; // Importar el selector personalizado
 
 // ============================================
 // COMPONENTE BUSCADOR DE RECETAS
@@ -75,7 +75,9 @@ const BuscadorRecetas = ({
         <TouchableOpacity
           style={styles.clearRecetaButton}
           onPress={handleClearReceta}
-        ></TouchableOpacity>
+        >
+          <Text style={styles.clearRecetaButtonText}>✕</Text>
+        </TouchableOpacity>
       )}
 
       {showDropdown && (
@@ -152,6 +154,30 @@ export default function ProductosSection({ token, navigation }) {
     unidad: "",
     estado: "activo",
   });
+
+  // Preparar opciones para los selectores
+  const prioridadItems = [
+    { label: "1 - Alta", value: "1" },
+    { label: "2 - Media", value: "2" },
+    { label: "3 - Baja", value: "3" },
+  ];
+
+  const unidadItems = [
+    { label: "Pieza", value: "pieza" },
+    { label: "Kilogramo", value: "kg" },
+    { label: "Gramo", value: "g" },
+    { label: "Litro", value: "l" },
+    { label: "Mililitro", value: "ml" },
+    { label: "Botella", value: "botella" },
+    { label: "Lata", value: "lata" },
+    { label: "Caja", value: "caja" },
+    { label: "Paquete", value: "paquete" },
+  ];
+
+  const estadoItems = [
+    { label: "Activo", value: "activo" },
+    { label: "Inactivo", value: "inactivo" },
+  ];
 
   useEffect(() => {
     let isMounted = true;
@@ -796,6 +822,12 @@ export default function ProductosSection({ token, navigation }) {
     );
   }
 
+  // Preparar categorías como items para CustomSelector
+  const categoriaItems = categorias.map((cat) => ({
+    label: cat.nombre,
+    value: cat.id.toString(),
+  }));
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -1008,7 +1040,7 @@ export default function ProductosSection({ token, navigation }) {
                 </Text>
 
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: "#000" }]}
                   placeholder="Clave"
                   placeholderTextColor="#888"
                   value={productoData.clave || undefined}
@@ -1016,37 +1048,22 @@ export default function ProductosSection({ token, navigation }) {
                 />
 
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: "#000" }]}
                   placeholder="Nombre"
                   placeholderTextColor="#888"
                   value={productoData.nombre || undefined}
                   onChangeText={(text) => handleInputChange("nombre", text)}
                 />
 
-                <Text style={styles.label}>Categoría</Text>
-                <Picker
-                  selectedValue={productoData.categoria_id || "default"}
-                  onValueChange={(value) => {
-                    if (value !== "default")
-                      handleInputChange("categoria_id", value);
-                  }}
-                  style={[
-                    styles.picker,
-                    { color: productoData.categoria_id ? "#000" : "#888" },
-                  ]}
-                >
-                  <Picker.Item
-                    label="Selecciona una categoría"
-                    value="default"
-                  />
-                  {categorias.map((categoria) => (
-                    <Picker.Item
-                      key={categoria.id}
-                      label={categoria.nombre}
-                      value={categoria.id.toString()}
-                    />
-                  ))}
-                </Picker>
+                <CustomSelector
+                  label="Categoría"
+                  value={productoData.categoria_id}
+                  items={categoriaItems}
+                  onValueChange={(value) =>
+                    handleInputChange("categoria_id", value)
+                  }
+                  placeholder="Selecciona una categoría"
+                />
 
                 <Text style={styles.label}>Receta (Opcional)</Text>
                 <BuscadorRecetas
@@ -1057,26 +1074,15 @@ export default function ProductosSection({ token, navigation }) {
                   }
                 />
 
-                <Text style={styles.label}>Prioridad</Text>
-                <Picker
-                  selectedValue={productoData.prioridad || "default"}
-                  onValueChange={(value) => {
-                    if (value !== "default")
-                      handleInputChange("prioridad", value);
-                  }}
-                  style={[
-                    styles.picker,
-                    { color: productoData.prioridad ? "#000" : "#888" },
-                  ]}
-                >
-                  <Picker.Item
-                    label="Selecciona una prioridad"
-                    value="default"
-                  />
-                  <Picker.Item label="1 - Alta" value="1" />
-                  <Picker.Item label="2 - Media" value="2" />
-                  <Picker.Item label="3 - Baja" value="3" />
-                </Picker>
+                <CustomSelector
+                  label="Prioridad"
+                  value={productoData.prioridad}
+                  items={prioridadItems}
+                  onValueChange={(value) =>
+                    handleInputChange("prioridad", value)
+                  }
+                  placeholder="Selecciona una prioridad"
+                />
 
                 <View>
                   <Text style={styles.label}>
@@ -1086,6 +1092,7 @@ export default function ProductosSection({ token, navigation }) {
                   <TextInput
                     style={[
                       styles.input,
+                      { color: productoData.receta_id ? "#666" : "#000" },
                       productoData.receta_id && styles.inputReadOnly,
                     ]}
                     placeholder={
@@ -1110,7 +1117,7 @@ export default function ProductosSection({ token, navigation }) {
                 </View>
 
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: "#000" }]}
                   placeholder="Precio de venta"
                   placeholderTextColor="#888"
                   keyboardType="decimal-pad"
@@ -1122,7 +1129,7 @@ export default function ProductosSection({ token, navigation }) {
 
                 {!productoData.receta_id && (
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: "#000" }]}
                     placeholder="Existencia inicial"
                     placeholderTextColor="#888"
                     keyboardType="decimal-pad"
@@ -1134,51 +1141,24 @@ export default function ProductosSection({ token, navigation }) {
                 )}
 
                 {!productoData.receta_id && (
-                  <>
-                    <Text style={styles.label}>Unidad</Text>
-                    <Picker
-                      selectedValue={productoData.unidad || "default"}
-                      onValueChange={(value) => {
-                        if (value !== "default")
-                          handleInputChange("unidad", value);
-                      }}
-                      style={[
-                        styles.picker,
-                        { color: productoData.unidad ? "#000" : "#888" },
-                      ]}
-                    >
-                      <Picker.Item
-                        label="Selecciona una unidad"
-                        value="default"
-                      />
-                      <Picker.Item label="Pieza" value="pieza" />
-                      <Picker.Item label="Kilogramo" value="kg" />
-                      <Picker.Item label="Gramo" value="g" />
-                      <Picker.Item label="Litro" value="l" />
-                      <Picker.Item label="Mililitro" value="ml" />
-                      <Picker.Item label="Botella" value="botella" />
-                      <Picker.Item label="Lata" value="lata" />
-                      <Picker.Item label="Caja" value="caja" />
-                      <Picker.Item label="Paquete" value="paquete" />
-                    </Picker>
-                  </>
+                  <CustomSelector
+                    label="Unidad"
+                    value={productoData.unidad}
+                    items={unidadItems}
+                    onValueChange={(value) =>
+                      handleInputChange("unidad", value)
+                    }
+                    placeholder="Selecciona una unidad"
+                  />
                 )}
 
-                <Text style={styles.label}>Estado del Producto</Text>
-                <Picker
-                  selectedValue={productoData.estado || "default"}
-                  onValueChange={(value) => {
-                    if (value !== "default") handleInputChange("estado", value);
-                  }}
-                  style={[
-                    styles.picker,
-                    { color: productoData.estado ? "#000" : "#888" },
-                  ]}
-                >
-                  <Picker.Item label="Selecciona un estado" value="default" />
-                  <Picker.Item label="Activo" value="activo" />
-                  <Picker.Item label="Inactivo" value="inactivo" />
-                </Picker>
+                <CustomSelector
+                  label="Estado del Producto"
+                  value={productoData.estado}
+                  items={estadoItems}
+                  onValueChange={(value) => handleInputChange("estado", value)}
+                  placeholder="Selecciona un estado"
+                />
 
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
@@ -1538,18 +1518,14 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 15,
     fontSize: 16,
+    color: "#000",
+    backgroundColor: "#fff",
   },
   label: {
     fontSize: 15,
     fontWeight: "bold",
     marginBottom: 5,
     marginTop: 10,
-  },
-  picker: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    marginBottom: 15,
   },
   modalButtons: {
     flexDirection: "row",
@@ -1724,10 +1700,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4CAF50",
     fontWeight: "bold",
-  },
-  dropdownRecetaItemSubtext: {
-    fontSize: 12,
-    color: "#666",
   },
   claveReceta: {
     fontWeight: "bold",

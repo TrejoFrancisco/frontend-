@@ -482,7 +482,7 @@ export default function CategoriasScreen({ token, navigation }) {
               </Text>
 
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: "#000" }]}
                 placeholder="Nombre de la categoría"
                 placeholderTextColor="#888"
                 value={categoriaData.nombre || undefined}
@@ -490,7 +490,7 @@ export default function CategoriasScreen({ token, navigation }) {
               />
 
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, { color: "#000" }]}
                 placeholder="Descripción de la categoría"
                 placeholderTextColor="#888"
                 value={categoriaData.descripcion || undefined}
@@ -753,6 +753,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 16,
     backgroundColor: "#FFFFFF",
+    color: "#000",
   },
   textArea: {
     height: 100,
