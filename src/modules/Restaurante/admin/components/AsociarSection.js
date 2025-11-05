@@ -12,8 +12,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import { API } from "../../../../services/api";
+import CustomSelector from "./CustomSelector"; // Importar el selector personalizado
 
 export default function UsuariosCocinaSection({ token, navigation }) {
   const [usuarios, setUsuarios] = useState([]);
@@ -21,7 +21,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedCategoriaId, setSelectedCategoriaId] = useState("undefined");
+  const [selectedCategoriaId, setSelectedCategoriaId] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +61,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
         Alert.alert(
           "Error",
           error.response?.data?.error?.message ||
-          "Error al obtener los usuarios"
+            "Error al obtener los usuarios"
         );
       }
     } finally {
@@ -87,7 +87,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
       Alert.alert(
         "Error",
         error.response?.data?.error?.message ||
-        "Error al obtener las categorías"
+          "Error al obtener las categorías"
       );
     }
   };
@@ -172,7 +172,8 @@ export default function UsuariosCocinaSection({ token, navigation }) {
 
     Alert.alert(
       "Confirmar eliminación",
-      `¿Estás seguro de que deseas eliminar la categoría asignada a "${usuario.name || "este usuario"
+      `¿Estás seguro de que deseas eliminar la categoría asignada a "${
+        usuario.name || "este usuario"
       }"?`,
       [
         { text: "Cancelar", style: "cancel" },
@@ -198,7 +199,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
               Alert.alert(
                 "Error",
                 error.response?.data?.error?.message ||
-                "Error al eliminar la asociación"
+                  "Error al eliminar la asociación"
               );
             }
           },
@@ -269,9 +270,7 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                 onPress={() => abrirModalAgregar(usuario)}
               >
                 <View style={styles.buttonContent}>
-                  <Text style={styles.actionButtonText}>
-                    Agregar Categoría
-                  </Text>
+                  <Text style={styles.actionButtonText}>Agregar Categoría</Text>
                 </View>
               </TouchableOpacity>
             ) : (
@@ -285,7 +284,6 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                     style={styles.icon}
                     accessibilityLabel="Editar categoría"
                   />
-
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -297,7 +295,6 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                     style={styles.icon}
                     accessibilityLabel="Eliminar categoría"
                   />
-
                 </TouchableOpacity>
               </View>
             )}
@@ -314,6 +311,12 @@ export default function UsuariosCocinaSection({ token, navigation }) {
       </View>
     );
   }
+
+  // Preparar categorías como items para CustomSelector
+  const categoriaItems = categorias.map((cat) => ({
+    label: cat.nombre,
+    value: cat.id.toString(),
+  }));
 
   return (
     <View style={styles.container}>
@@ -372,24 +375,13 @@ export default function UsuariosCocinaSection({ token, navigation }) {
                 Usuario: {selectedUser?.name || "Sin nombre"}
               </Text>
 
-              <Text style={styles.label}>Seleccionar Categoría</Text>
-              <Picker
-                selectedValue={selectedCategoriaId}
+              <CustomSelector
+                label="Seleccionar Categoría"
+                value={selectedCategoriaId}
+                items={categoriaItems}
                 onValueChange={(value) => setSelectedCategoriaId(value)}
-                style={[styles.picker, { color: "#000" }]}
-              >
-                <Picker.Item label="Selecciona una categoría" value="" color="#999" />
-                {categorias.map((categoria) => (
-                  <Picker.Item
-                    key={categoria.id}
-                    label={categoria.nombre}
-                    value={categoria.id.toString()}
-                    color="#000"
-                  />
-                ))}
-              </Picker>
-
-
+                placeholder="Selecciona una categoría"
+              />
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity
@@ -561,9 +553,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "bold",
   },
-  actionButtonTextSmall: {
-    fontSize: 20,
-  },
   addButton: {
     backgroundColor: "#32b551",
     alignSelf: "flex-start",
@@ -589,6 +578,7 @@ const styles = StyleSheet.create({
     height: 30,
     resizeMode: "contain",
   },
+
   // ===== MODAL =====
   modalContainer: {
     flex: 1,
@@ -624,12 +614,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 5,
     marginTop: 10,
-  },
-  picker: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    marginBottom: 15,
   },
 
   // ===== BOTONES DEL MODAL =====

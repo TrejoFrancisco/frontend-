@@ -17,7 +17,6 @@ import ComandaCard from "../../../../modules/Restaurante/Mesero/components/Coman
 import NuevaComandaModal from "../../../../modules/Restaurante/Mesero/components/NuevaComandaModal";
 import EditarComandaModal from "../../../../modules/Restaurante/Mesero/components/EditarComandaModal";
 import UnificarMesasModal from "../../../../modules/Restaurante/Mesero/components/UnificarMesasModal";
-import PagoModal from "../../../../modules/Restaurante/Mesero/components/PagoModal";
 import TicketModal from "../../../../modules/Restaurante/Mesero/components/TicketModal";
 
 export default function ComandaSection() {
@@ -38,7 +37,6 @@ export default function ComandaSection() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [unificarModalVisible, setUnificarModalVisible] = useState(false);
-  const [pagoModalVisible, setPagoModalVisible] = useState(false);
   const [ticketModalVisible, setTicketModalVisible] = useState(false);
 
   // Estados para datos seleccionados
@@ -161,12 +159,6 @@ export default function ComandaSection() {
     },
     [token, fetchComandas]
   );
-
-  // Procesar pago
-  const handlePagar = useCallback((comanda, isUnificada) => {
-    setSelectedComanda(comanda);
-    setPagoModalVisible(true);
-  }, []);
 
   // Cerrar sesión
   const handleLogout = useCallback(() => {
@@ -292,7 +284,6 @@ export default function ComandaSection() {
                 comanda={comanda}
                 onEdit={handleOpenEditModal}
                 onGenerarTicket={handleGenerarTicket}
-                onPagar={handlePagar}
                 isUnificada={false}
                 perteneceAUnificada={comandasEnUnificadas[comanda.id] || false}
               />
@@ -308,7 +299,6 @@ export default function ComandaSection() {
                     comanda={comandaUnificada}
                     onEdit={handleOpenEditModal}
                     onGenerarTicket={handleGenerarTicket}
-                    onPagar={handlePagar}
                     isUnificada={true}
                     perteneceAUnificada={false}
                   />
@@ -344,18 +334,6 @@ export default function ComandaSection() {
         onSuccess={fetchComandas}
         token={token}
         comandas={comandas}
-      />
-
-      <PagoModal
-        visible={pagoModalVisible}
-        onClose={() => {
-          setPagoModalVisible(false);
-          setSelectedComanda(null);
-        }}
-        onSuccess={fetchComandas}
-        token={token}
-        comanda={selectedComanda}
-        isUnificada={selectedComanda?.tipo === "unificada"}
       />
 
       {ticket && (

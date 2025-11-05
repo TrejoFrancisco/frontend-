@@ -2,6 +2,9 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
+import * as MediaLibrary from "expo-media-library";
+import { Platform } from "react-native";
+
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -329,11 +332,17 @@ export default function MateriaPrimaSection({ token, navigation }) {
     setModalVisible(false);
     resetForm();
   };
-
   const handleSeleccionarArchivo = async () => {
     try {
       const res = await DocumentPicker.getDocumentAsync({
-        type: ["text/csv", "text/plain", "application/csv"],
+        type: [
+          "text/csv",
+          "text/comma-separated-values",
+          "application/csv",
+          "application/vnd.ms-excel",
+          "text/plain",
+          "*/*", // Permite todos los archivos como fallback
+        ],
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -344,24 +353,34 @@ export default function MateriaPrimaSection({ token, navigation }) {
 
       const archivo = res.assets[0];
 
+      // Validar extensión del archivo
+      const extension = archivo.name.split(".").pop().toLowerCase();
+      if (!["csv", "txt"].includes(extension)) {
+        Alert.alert(
+          "Error",
+          "Solo se permiten archivos .csv o .txt\n\nSeleccionaste: " +
+            archivo.name
+        );
+        return;
+      }
+
+      // Validar tamaño
       if (archivo.size > 2048 * 1024) {
         Alert.alert("Error", "El archivo es muy grande. Máximo 2MB permitido.");
         return;
       }
 
-      const extension = archivo.name.split(".").pop().toLowerCase();
-      if (!["csv", "txt"].includes(extension)) {
-        Alert.alert("Error", "Solo se permiten archivos .csv o .txt");
-        return;
-      }
-
       setArchivoCSV(archivo);
       Alert.alert(
-        "Archivo seleccionado",
-        `${archivo.name} (${(archivo.size / 1024).toFixed(2)} KB)`
+        "✓ Archivo seleccionado",
+        `${archivo.name}\nTamaño: ${(archivo.size / 1024).toFixed(2)} KB`
       );
     } catch (error) {
-      Alert.alert("Error", "No se pudo seleccionar el archivo.");
+      console.error("Error al seleccionar archivo:", error);
+      Alert.alert(
+        "Error",
+        "No se pudo seleccionar el archivo: " + error.message
+      );
     }
   };
 
@@ -374,12 +393,22 @@ export default function MateriaPrimaSection({ token, navigation }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(archivoCSV.uri);
-      const fileContent = await response.text();
+      // Leer el contenido del archivo
+      const fileContent = await FileSystem.readAsStringAsync(archivoCSV.uri, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
 
-      const blob = new Blob([fileContent], { type: "text/csv" });
+      // Crear FormData
       const formData = new FormData();
-      formData.append("csv_file", blob, archivoCSV.name);
+
+      // Para React Native, necesitamos crear el objeto correctamente
+      const file = {
+        uri: archivoCSV.uri,
+        type: "text/csv",
+        name: archivoCSV.name,
+      };
+
+      formData.append("csv_file", file);
 
       const baseURL = API.defaults.baseURL || "";
       const url = `${baseURL}/restaurante/admin/materias-primas/import-csv`;
@@ -388,6 +417,7 @@ export default function MateriaPrimaSection({ token, navigation }) {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          // NO incluir Content-Type, fetch lo configura automáticamente para FormData
         },
         body: formData,
       });
@@ -395,35 +425,61 @@ export default function MateriaPrimaSection({ token, navigation }) {
       const responseData = await uploadResponse.json();
 
       if (uploadResponse.ok && responseData.success) {
-        Alert.alert(
-          "Éxito",
-          `Se importaron ${
-            responseData.data.total_procesadas
-          } materias primas.${
-            responseData.data.errores_encontrados > 0
-              ? ` Con ${responseData.data.errores_encontrados} errores.`
-              : ""
-          }`
-        );
+        const mensaje = `✓ Importación exitosa\n\nProcesadas: ${responseData.data.total_procesadas} materias primas`;
+
+        if (responseData.data.errores_encontrados > 0) {
+          Alert.alert(
+            "Importación con advertencias",
+            mensaje + `\n\n⚠️ Errores: ${responseData.data.errores_encontrados}`
+          );
+        } else {
+          Alert.alert("Éxito", mensaje);
+        }
+
         fetchMateriasPrimas();
+        setArchivoCSV(null);
       } else {
         Alert.alert(
-          "Error",
+          "Error en importación",
           responseData.error?.message || "No se pudo importar el archivo"
         );
       }
-
-      setArchivoCSV(null);
     } catch (error) {
-      Alert.alert("Error", "No se pudo importar el archivo CSV.");
+      console.error("Error al importar CSV:", error);
+      Alert.alert(
+        "Error",
+        "No se pudo importar el archivo CSV.\n\n" +
+          (error.message || "Error desconocido")
+      );
     } finally {
       setIsLoading(false);
     }
   };
-
+  // Agregar esta función antes de handleDescargarPlantilla
+  const solicitarPermisos = async () => {
+    if (Platform.OS === "android") {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permiso denegado",
+          "Se necesita permiso para guardar archivos en el dispositivo"
+        );
+        return false;
+      }
+    }
+    return true;
+  };
   const handleDescargarPlantilla = async () => {
     setIsLoading(true);
     try {
+      // Solicitar permisos
+      const tienePermisos = await solicitarPermisos();
+      if (!tienePermisos) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Obtener el archivo del servidor
       const response = await API.get(
         "/restaurante/admin/materias-primas/download-template",
         {
@@ -435,23 +491,119 @@ export default function MateriaPrimaSection({ token, navigation }) {
       const base64String = Buffer.from(response.data, "binary").toString(
         "base64"
       );
+      const fileName = `plantilla_materias_primas_${Date.now()}.csv`;
 
-      const fileUri =
-        FileSystem.cacheDirectory +
-        `plantilla_materias_primas_${Date.now()}.csv`;
+      if (Platform.OS === "android") {
+        // Para Android: Guardar en Downloads usando SAF (Storage Access Framework)
+        const downloadDir =
+          FileSystem.StorageAccessFramework.getUriForDirectoryInRoot(
+            "Download"
+          );
 
-      await FileSystem.writeAsStringAsync(fileUri, base64String, {
-        encoding: "base64",
-      });
+        try {
+          // Intentar guardar directamente en Downloads
+          const permissions =
+            await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(
+              downloadDir
+            );
 
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (isAvailable) {
-        await Sharing.shareAsync(fileUri);
-      } else {
-        Alert.alert("Éxito", "Plantilla descargada correctamente");
+          if (!permissions.granted) {
+            // Si no se otorgó permiso, usar compartir como fallback
+            const fileUri = FileSystem.cacheDirectory + fileName;
+            await FileSystem.writeAsStringAsync(fileUri, base64String, {
+              encoding: "base64",
+            });
+
+            const isAvailable = await Sharing.isAvailableAsync();
+            if (isAvailable) {
+              await Sharing.shareAsync(fileUri, {
+                mimeType: "text/csv",
+                dialogTitle: "Guardar plantilla CSV",
+              });
+            }
+            return;
+          }
+
+          // Crear el archivo en Downloads
+          const fileUri =
+            await FileSystem.StorageAccessFramework.createFileAsync(
+              permissions.directoryUri,
+              fileName,
+              "text/csv"
+            );
+
+          // Escribir el contenido
+          await FileSystem.writeAsStringAsync(fileUri, base64String, {
+            encoding: "base64",
+          });
+
+          Alert.alert("Éxito", `Plantilla guardada en Descargas/${fileName}`, [
+            { text: "OK" },
+          ]);
+        } catch (error) {
+          console.log("Error con SAF, usando método alternativo:", error);
+
+          // Método alternativo: Usar MediaLibrary con directorio temporal
+          const fileUri = FileSystem.documentDirectory + fileName;
+          await FileSystem.writeAsStringAsync(fileUri, base64String, {
+            encoding: "base64",
+          });
+
+          // Crear asset y moverlo a Downloads
+          const asset = await MediaLibrary.createAssetAsync(fileUri);
+
+          // Intentar obtener o crear el álbum Download
+          try {
+            const albums = await MediaLibrary.getAlbumsAsync();
+            const downloadAlbum = albums.find(
+              (album) =>
+                album.title === "Download" || album.title === "Downloads"
+            );
+
+            if (downloadAlbum) {
+              await MediaLibrary.addAssetsToAlbumAsync(
+                [asset],
+                downloadAlbum,
+                false
+              );
+            }
+          } catch (albumError) {
+            console.log("No se pudo mover a álbum:", albumError);
+          }
+
+          Alert.alert("Éxito", `Plantilla guardada: ${fileName}`, [
+            { text: "OK" },
+          ]);
+        }
+      } else if (Platform.OS === "ios") {
+        // Para iOS: Usar el sistema de compartir
+        const fileUri = FileSystem.documentDirectory + fileName;
+
+        await FileSystem.writeAsStringAsync(fileUri, base64String, {
+          encoding: "base64",
+        });
+
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          await Sharing.shareAsync(fileUri, {
+            UTI: "public.comma-separated-values-text",
+            mimeType: "text/csv",
+            dialogTitle: "Guardar plantilla CSV",
+          });
+        } else {
+          Alert.alert(
+            "Error",
+            "No se puede compartir archivos en este dispositivo"
+          );
+        }
       }
     } catch (error) {
-      Alert.alert("Error", "No se pudo descargar la plantilla CSV");
+      console.error("Error al descargar plantilla:", error);
+      Alert.alert(
+        "Error",
+        "No se pudo descargar la plantilla CSV: " +
+          (error.message || "Error desconocido")
+      );
     } finally {
       setIsLoading(false);
     }

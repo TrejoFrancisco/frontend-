@@ -6,7 +6,6 @@ export default function ComandaCard({
   comanda,
   onEdit,
   onGenerarTicket,
-  onPagar,
   isUnificada = false,
   perteneceAUnificada = false,
   mesasUnificadas = "",
@@ -144,21 +143,6 @@ export default function ComandaCard({
                   />
                   <Text style={styles.ticketButtonText}>Ticket</Text>
                 </TouchableOpacity>
-
-                {/* Pagar unificado - solo si está cerrada */}
-                {puedePagar && (
-                  <TouchableOpacity
-                    style={styles.pagoButton}
-                    onPress={() => onPagar(comanda, true)}
-                    activeOpacity={0.7}
-                  >
-                    <Image
-                      source={require("../../../../../assets/card.png")}
-                      style={styles.pagoIcon}
-                    />
-                    <Text style={styles.pagoButtonText}>Pagar</Text>
-                  </TouchableOpacity>
-                )}
               </>
             ) : (
               <>
@@ -198,21 +182,6 @@ export default function ComandaCard({
                       style={styles.actionIcon}
                     />
                     <Text style={styles.ticketButtonText}>Ticket</Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Pagar individual - BLOQUEADO si está en una unificada */}
-                {!perteneceAUnificada && estadoActual === "cerrada" && (
-                  <TouchableOpacity
-                    style={styles.pagoButton}
-                    onPress={() => onPagar(comanda, false)}
-                    activeOpacity={0.7}
-                  >
-                    <Image
-                      source={require("../../../../../assets/card.png")}
-                      style={styles.pagoIcon}
-                    />
-                    <Text style={styles.pagoButtonText}>Pagar</Text>
                   </TouchableOpacity>
                 )}
               </>
@@ -361,14 +330,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
   },
-  pagoButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#cbf3ffff",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
+
   botonBloqueado: {
     flexDirection: "row",
     alignItems: "center",
@@ -384,11 +346,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
     resizeMode: "contain",
   },
-  pagoIcon: {
-    width: 20,
-    height: 19,
-    marginRight: 4,
-  },
+
   editButtonText: {
     color: "#545454ff",
     fontSize: 12,
@@ -399,11 +357,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
-  pagoButtonText: {
-    color: "#545454ff",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
+
   botoBloqueadoText: {
     color: "#999",
     fontSize: 12,
