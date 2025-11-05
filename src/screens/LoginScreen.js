@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from "react-native";
 import { CommonActions } from "@react-navigation/native";
 import { useAuth } from "../AuthContext";
@@ -24,19 +25,52 @@ export default function LoginScreen({ navigation }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const { saveToken } = useAuth();
+
+  // Fix para el KeyboardAvoidingView en primera carga
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const handleLogin = async () => {
     setError("");
+
     if (!clave) {
       setError("Por favor ingresa tu clave de acceso");
       return;
     }
+
+    if (clave.length < 4) {
+      setError("La clave debe tener al menos 4 caracteres");
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await API.post("/auth/login-clave", { clave });
       const { token: newToken, role, id, name } = response.data.data;
       await saveToken(newToken, { id, name, role });
+
+      // Cerrar el teclado antes de navegar
+      Keyboard.dismiss();
+
       Alert.alert("Login exitoso", `Bienvenido ${name}`);
 
       // Determinar la ruta según el rol
@@ -46,6 +80,7 @@ export default function LoginScreen({ navigation }) {
       else if (role === "cocina") targetScreen = "CocinaScreen";
       else if (role === "bartender_restaurante")
         targetScreen = "BartenderScreen";
+      else if (role === "cajero") targetScreen = "CajeroScreen";
       else if (role === "chef") targetScreen = "ChefScreen";
 
       // Resetear el stack de navegación para evitar volver al Login
@@ -61,116 +96,158 @@ export default function LoginScreen({ navigation }) {
         if (http_code === 401)
           setError(message || "Clave inválida o inactiva.");
         else setError(message || "Ocurrió un error inesperado.");
-      } else setError("No se pudo conectar con el servidor.");
+      } else {
+        setError("No se pudo conectar con el servidor.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClearError = () => {
+    setError("");
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      enabled={true}
-    >
+    <View style={styles.container}>
       {/* Fondos decorativos */}
       <View style={styles.backgroundDecoration}>
         <View style={styles.circleTop} />
         <View style={styles.circleBottom} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        scrollEnabled={false}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        {/* Logo */}
-        <View style={styles.headerContainer}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("../../assets/icono.png")}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-            <View style={styles.logoGlow} />
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          {/* Logo - Se mantiene arriba */}
+          <View style={styles.headerContainer}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require("../../assets/icono.png")}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+              <View style={styles.logoGlow} />
+            </View>
+            <Text style={styles.title}>Bienvenido</Text>
+            <Text style={styles.subtitle}>Ingresa tu clave para continuar</Text>
           </View>
-          <Text style={styles.title}>Bienvenido</Text>
-        </View>
 
-        {/* Card */}
-        <View style={styles.card}>
-          {error ? (
-            <View style={styles.errorContainer}>
-              <View style={styles.errorIconContainer}>
-                <Image
-                  source={require("../../assets/warning.png")}
-                  style={styles.errorIcon}
-                />
+          {/* Card */}
+          <View style={styles.card}>
+            {error ? (
+              <View style={styles.errorContainer}>
+                <View style={styles.errorIconContainer}>
+                  <Image
+                    source={require("../../assets/warning.png")}
+                    style={styles.errorIcon}
+                  />
+                </View>
+                <View style={styles.errorContent}>
+                  <Text style={styles.errorTitle}>Ups, algo salió mal</Text>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.errorCloseButton}
+                  onPress={handleClearError}
+                >
+                  <Text style={styles.errorCloseText}>✕</Text>
+                </TouchableOpacity>
               </View>
-              <View style={styles.errorContent}>
-                <Text style={styles.errorTitle}>Ups, algo salió mal</Text>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            </View>
-          ) : null}
+            ) : null}
 
-          {/* Formulario */}
-          <View style={styles.formContainer}>
-            {/* Clave */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Clave de acceso</Text>
-              <View
-                style={[
-                  styles.inputWrapper,
-                  focusedInput === "clave" && styles.inputWrapperFocused,
-                  error && styles.inputWrapperError,
-                ]}
-              >
-                <TextInput
-                  placeholder="Ingresa tu clave"
-                  placeholderTextColor="#6B7280" 
-                  value={clave}
-                  onChangeText={setClave}
-                  onFocus={() => setFocusedInput("clave")}
-                  onBlur={() => setFocusedInput(null)}
-                  autoCapitalize="characters"
-                  secureTextEntry={true}
-                  style={[styles.input, { color: "#000" }]} 
-                  onSubmitEditing={handleLogin}
-                  returnKeyType="done"
-                />
-
-              </View>
-            </View>
-
-            {/* Botón */}
-            <TouchableOpacity
-              onPress={handleLogin}
-              style={[
-                styles.loginButton,
-                loading && styles.loginButtonDisabled,
-              ]}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              <View style={styles.loginButtonContent}>
-                {loading ? (
-                  <>
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                    <Text style={styles.loadingText}>Verificando...</Text>
-                  </>
-                ) : (
-                  <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+            {/* Formulario */}
+            <View style={styles.formContainer}>
+              {/* Clave */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Clave de acceso</Text>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    focusedInput === "clave" && styles.inputWrapperFocused,
+                    error && styles.inputWrapperError,
+                  ]}
+                >
+                  <View style={styles.inputIconContainer}>
+                    <Text style={styles.inputIcon}>🔑</Text>
+                  </View>
+                  <TextInput
+                    placeholder="Ingresa tu clave"
+                    placeholderTextColor="#6B7280"
+                    value={clave}
+                    onChangeText={(text) => {
+                      setClave(text);
+                      if (error) setError(""); // Limpiar error al escribir
+                    }}
+                    onFocus={() => setFocusedInput("clave")}
+                    onBlur={() => setFocusedInput(null)}
+                    autoCapitalize="characters"
+                    secureTextEntry={true}
+                    style={[styles.input, { color: "#000" }]}
+                    onSubmitEditing={handleLogin}
+                    returnKeyType="done"
+                    maxLength={20}
+                    editable={!loading}
+                  />
+                  {clave.length > 0 && !loading && (
+                    <TouchableOpacity
+                      style={styles.clearInputButton}
+                      onPress={() => {
+                        setClave("");
+                        setError("");
+                      }}
+                    >
+                      <Text style={styles.clearInputText}>✕</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {clave.length > 0 && clave.length < 4 && (
+                  <Text style={styles.helperText}>Mínimo 4 caracteres</Text>
                 )}
               </View>
-            </TouchableOpacity>
-          </View>
 
-          {/* Footer */}
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+              {/* Botón */}
+              <TouchableOpacity
+                onPress={handleLogin}
+                style={[
+                  styles.loginButton,
+                  (loading || !clave) && styles.loginButtonDisabled,
+                ]}
+                disabled={loading || !clave}
+                activeOpacity={0.8}
+              >
+                <View style={styles.loginButtonContent}>
+                  {loading ? (
+                    <>
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <Text style={styles.loadingText}>Verificando...</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+                      <Text style={styles.loginButtonIcon}>→</Text>
+                    </>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footerContainer}>
+              <Text style={styles.versionText}>v1.0.0</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -179,6 +256,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8FAFC",
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -215,7 +295,7 @@ const styles = StyleSheet.create({
   /* Header/logo */
   headerContainer: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 32,
   },
   logoContainer: {
     width: 80,
@@ -224,7 +304,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -249,7 +329,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "bold",
     color: "#1e3a8a",
-    marginBottom: 4,
+    marginBottom: 8,
     textAlign: "center",
   },
   subtitle: {
@@ -311,21 +391,28 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 18,
   },
+  errorCloseButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  errorCloseText: {
+    fontSize: 20,
+    color: "#DC2626",
+    fontWeight: "bold",
+  },
 
   /* Formulario */
   formContainer: {
-    marginBottom: 1,
+    marginBottom: 8,
   },
   inputContainer: {
-    alignItems: "center",
-    marginBottom: 20,
-    maxWidth: "100%",
+    marginBottom: 24,
   },
   label: {
-    fontSize: 25,
+    fontSize: 16,
     fontWeight: "600",
     color: "#374151",
-    marginBottom: 8,
+    marginBottom: 10,
     marginLeft: 4,
   },
 
@@ -342,6 +429,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    paddingRight: 12,
   },
   inputWrapperFocused: {
     borderColor: "#3B82F6",
@@ -355,22 +443,36 @@ const styles = StyleSheet.create({
   inputIconContainer: {
     backgroundColor: "#F9FAFB",
     borderRadius: 12,
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 12,
+    marginLeft: 8,
   },
   inputIcon: {
-    fontSize: 22,
+    fontSize: 24,
   },
   input: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 16,
     color: "#1F2937",
     paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     fontWeight: "500",
+  },
+  clearInputButton: {
+    padding: 8,
+  },
+  clearInputText: {
+    fontSize: 18,
+    color: "#9CA3AF",
+    fontWeight: "bold",
+  },
+  helperText: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 6,
+    marginLeft: 4,
   },
 
   /* Botón login */
@@ -378,48 +480,54 @@ const styles = StyleSheet.create({
     backgroundColor: "#1F2937",
     paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
     shadowColor: "#1F2937",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-    flexDirection: "row",
-    gap: 8,
+    shadowRadius: 12,
+    elevation: 8,
   },
   loginButtonDisabled: {
-    opacity: 0.7,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.5,
+    backgroundColor: "#9CA3AF",
   },
   loginButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
   },
   loginButtonText: {
     color: "#FFFFFF",
     fontWeight: "700",
+    fontSize: 18,
+    letterSpacing: 0.5,
+  },
+  loginButtonIcon: {
+    color: "#FFFFFF",
     fontSize: 20,
+    fontWeight: "bold",
   },
   loadingText: {
     color: "#FFFFFF",
     marginLeft: 12,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
   },
 
   /* Footer */
   footerContainer: {
     alignItems: "center",
-    paddingTop: 16,
+    paddingTop: 20,
+    marginTop: 12,
     borderTopWidth: 1,
     borderTopColor: "#F3F4F6",
   },
   versionText: {
-    fontSize: 20,
+    fontSize: 14,
     color: "#9CA3AF",
     fontWeight: "500",
   },

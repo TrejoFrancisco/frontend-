@@ -10,6 +10,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { API } from "../../../../services/api";
 
@@ -1176,6 +1177,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 10,
     paddingVertical: 10,
+    paddingBottom: Platform.OS === "android" ? 40 : 10,
   },
   paginacionBoton: {
     backgroundColor: "#4CAF50",

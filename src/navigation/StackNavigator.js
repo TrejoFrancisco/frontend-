@@ -6,6 +6,7 @@ import MeseroScreen2 from "../screens/modules/Restaurante/Mesero/MeseroScreen2";
 import CocinaScreen from "../screens/modules/Restaurante/Cocina/CocinaScreen";
 import BartenderScreen from "../screens/modules/Restaurante/Bartender/BartenderScreen";
 import ChefScreen from "../screens/modules/Restaurante/Chef/ChefScreen";
+import CajeroScreen from "../screens/modules/Restaurante/Cajero/CajeroScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +41,11 @@ export default function StackNavigator() {
       <Stack.Screen
         name="ChefScreen"
         component={ChefScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="CajeroScreen"
+        component={CajeroScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
