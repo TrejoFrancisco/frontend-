@@ -216,8 +216,11 @@ function HomeScreen() {
 
 const DrawerContent = React.memo(
   ({ insets, menuItems, activeSection, onMenuPress, user, onClose }) => (
-    <View style={[styles.drawerContainer, { paddingTop: insets.top }]}>
-      <View style={styles.drawerHeader}>
+    <View style={styles.drawerContainer}>
+      {/* Fondo oscuro para el área del status bar */}
+      <View style={[styles.drawerStatusBar, { height: insets.top }]} />
+
+      <View style={[styles.drawerHeader, { paddingTop: 20 }]}>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <View style={styles.closeButtonContainer}>
             <Text style={styles.closeButtonText}>✕</Text>
@@ -664,13 +667,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 10,
+    overflow: "hidden", // IMPORTANTE: esto asegura que el borderRadius funcione
   },
+
+  // Nuevo estilo para el área del status bar
+  drawerStatusBar: {
+    backgroundColor: "#1A1A2E",
+    width: "100%",
+  },
+
   drawerHeader: {
     backgroundColor: "#1A1A2E",
-    borderTopRightRadius: 24,
     paddingVertical: 20,
     paddingHorizontal: 20,
     position: "relative",
+    // Removemos borderTopRightRadius de aquí
   },
   closeButton: { position: "absolute", top: 15, right: 15, zIndex: 10 },
   closeButtonContainer: {

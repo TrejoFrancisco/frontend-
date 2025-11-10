@@ -557,11 +557,17 @@ const styles = StyleSheet.create({
   // ===== HEADER SUPERIOR =====
   topHeader: {
     backgroundColor: "#fff",
-    paddingTop: 40,
+    paddingTop: 50,
     paddingHorizontal: 20,
-    paddingBottom: 15,
+    paddingBottom: 16,
+    marginBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   headerColumns: {
     flexDirection: "row",
