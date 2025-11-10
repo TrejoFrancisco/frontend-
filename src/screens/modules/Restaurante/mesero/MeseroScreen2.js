@@ -242,27 +242,24 @@ export default function ComandaSection() {
         }
       >
         <View style={styles.headerContainer}>
-          <View style={styles.rowWrap}>
-            <Text style={styles.contentTitle}>Mis Comandas</Text>
+          <Text style={styles.contentTitle}>Mis Comandas</Text>
 
+          {/* ✨ NUEVO: Botones de acción mejorados */}
+          <View style={styles.botonesAccion}>
             <TouchableOpacity
-              style={styles.nuevaComandaButton}
+              style={[styles.actionButton, styles.nuevaComandaButton]}
               onPress={() => setModalVisible(true)}
             >
-              <View style={styles.buttonContent}>
-                <Image
-                  source={require("../../../../../assets/agreg.png")}
-                  style={styles.iconImage}
-                />
-                <Text style={styles.nuevaComandaButtonText}>Nueva Comanda</Text>
-              </View>
+              <Text style={styles.actionButtonIcon}>➕</Text>
+              <Text style={styles.actionButtonText}>Nueva Comanda</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.unificarButton}
+              style={[styles.actionButton, styles.unificarButton]}
               onPress={() => setUnificarModalVisible(true)}
             >
-              <Text style={styles.unificarButtonText}>Unificar Mesas</Text>
+              <Text style={styles.actionButtonIcon}>🔗</Text>
+              <Text style={styles.actionButtonText}>Unificar Mesas</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -270,6 +267,9 @@ export default function ComandaSection() {
         {/* Lista de comandas */}
         {comandas.length === 0 && comandasUnificadas.length === 0 ? (
           <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <Text style={styles.emptyIcon}>📋</Text>
+            </View>
             <Text style={styles.emptyText}>No tienes comandas registradas</Text>
             <Text style={styles.emptySubtext}>
               Crea tu primera comanda usando el botón de arriba
@@ -368,12 +368,17 @@ const styles = StyleSheet.create({
   },
   topHeader: {
     backgroundColor: "#fff",
-    paddingTop: 20,
+    paddingTop: 50,
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 16,
     marginBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   headerColumns: {
     flexDirection: "row",
@@ -391,130 +396,144 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   welcomeIcon: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     marginRight: 8,
   },
   userWelcome: {
-    fontSize: 25,
-    color: "#333",
-    fontWeight: "bold",
+    fontSize: 24,
+    color: "#1a1a1a",
+    fontWeight: "700",
     maxWidth: 195,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FEE2E2",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#dc3545",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   logoutIcon: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     marginRight: 6,
   },
   logoutButtonText: {
-    fontSize: 22,
-    color: "#000000ff",
-    fontWeight: "500",
+    fontSize: 18,
+    color: "#dc3545",
+    fontWeight: "600",
   },
   headerContainer: {
-    paddingVertical: 5,
-  },
-  rowWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
+    paddingVertical: 12,
+    marginBottom: 8,
   },
   contentTitle: {
-    fontSize: 30,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 12,
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#1a1a1a",
+    marginBottom: 16,
+    letterSpacing: -0.5,
   },
-  nuevaComandaButton: {
-    flexShrink: 1,
-    flexGrow: 0,
-    minWidth: 150,
-    maxWidth: "100%",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: "#007bff",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "flex-start",
+  // ✨ NUEVO: Contenedor de botones mejorado
+  botonesAccion: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 8,
   },
-  unificarButton: {
-    flexShrink: 1,
-    flexGrow: 0,
-    minWidth: 140,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: "#6c757d",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  unificarButtonText: {
-    fontSize: 16,
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  buttonContent: {
+  // ✨ NUEVO: Estilo base para botones de acción
+  actionButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    minWidth: 140,
+    flex: 1,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
-  iconImage: {
-    width: 24,
-    height: 24,
-    marginRight: 6,
-    resizeMode: "contain",
+  actionButtonIcon: {
+    fontSize: 20,
+    marginRight: 8,
   },
-  nuevaComandaButtonText: {
-    fontSize: 18,
+  actionButtonText: {
+    fontSize: 16,
     color: "#fff",
-    fontWeight: "bold",
-    flexShrink: 1,
-    textAlign: "center",
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
+  nuevaComandaButton: {
+    backgroundColor: "#007bff",
+    shadowColor: "#007bff",
+  },
+  unificarButton: {
+    backgroundColor: "#6c757d",
+    shadowColor: "#6c757d",
+  },
+  // ✨ MEJORADO: Empty state con iconos
   emptyState: {
     alignItems: "center",
-    marginTop: 100,
+    marginTop: 80,
     paddingHorizontal: 20,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  emptyIcon: {
+    fontSize: 50,
   },
   emptyText: {
     textAlign: "center",
-    color: "#666",
-    fontSize: 16,
-    fontWeight: "500",
+    color: "#333",
+    fontSize: 20,
+    fontWeight: "600",
     marginBottom: 8,
   },
   emptySubtext: {
     textAlign: "center",
-    color: "#999",
+    color: "#666",
     fontSize: 15,
+    lineHeight: 22,
   },
   loadingText: {
-    fontSize: 20,
-    color: "#000000ff",
+    fontSize: 18,
+    color: "#333",
+    marginTop: 12,
+    fontWeight: "500",
   },
   seccionUnificadas: {
-    marginTop: 20,
-    marginBottom: 20,
-    paddingTop: 20,
+    marginTop: 28,
+    paddingTop: 24,
     borderTopWidth: 2,
     borderTopColor: "#FFC107",
   },
   seccionTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
-    textAlign: "center",
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
 });

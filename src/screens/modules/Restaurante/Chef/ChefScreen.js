@@ -173,10 +173,9 @@ export default function ChefComandasSection() {
       case "cancelado":
         return { backgroundColor: "#cfcfcfff" };
       default:
-        return { backgroundColor: "#6b7280" }; 
+        return { backgroundColor: "#6b7280" };
     }
   };
-
 
   if (loading) {
     return (
@@ -263,10 +262,16 @@ export default function ChefComandasSection() {
                       )}
                       {/* Lista de productos */}
                       <View style={styles.productosContainer}>
-                        {!comanda.productos || comanda.productos.length === 0 ? (
-                          <Text style={styles.sinProductosText}>Sin productos</Text>
+                        {!comanda.productos ||
+                        comanda.productos.length === 0 ? (
+                          <Text style={styles.sinProductosText}>
+                            Sin productos
+                          </Text>
                         ) : comanda.productos.length > 3 ? (
-                          <ScrollView style={{ maxHeight: 200 }} showsVerticalScrollIndicator={true}>
+                          <ScrollView
+                            style={{ maxHeight: 200 }}
+                            showsVerticalScrollIndicator={true}
+                          >
                             {comanda.productos.map((producto, index) => (
                               <View
                                 key={`${producto.id || index}-${index}`}
@@ -292,7 +297,12 @@ export default function ChefComandasSection() {
 
                                 <View style={styles.productoFooter}>
                                   {/* Aquí el badge */}
-                                  <View style={[styles.statusBadge, getBadgeColor(producto.estado)]}>
+                                  <View
+                                    style={[
+                                      styles.statusBadge,
+                                      getBadgeColor(producto.estado),
+                                    ]}
+                                  >
                                     <Text style={styles.statusBadgeText}>
                                       {capitalizeEstado(producto.estado)}
                                     </Text>
@@ -327,7 +337,12 @@ export default function ChefComandasSection() {
 
                               <View style={styles.productoFooter}>
                                 {/* Aquí el badge */}
-                                <View style={[styles.statusBadge, getBadgeColor(producto.estado)]}>
+                                <View
+                                  style={[
+                                    styles.statusBadge,
+                                    getBadgeColor(producto.estado),
+                                  ]}
+                                >
                                   <Text style={styles.statusBadgeText}>
                                     {capitalizeEstado(producto.estado)}
                                   </Text>
@@ -337,8 +352,6 @@ export default function ChefComandasSection() {
                           ))
                         )}
                       </View>
-
-
 
                       {/* Información pie de comanda */}
                       <View style={styles.footerInfo}>
@@ -434,10 +447,10 @@ const styles = StyleSheet.create({
       screenWidth <= 600
         ? "95%"
         : screenWidth <= 768
-          ? "45%"
-          : screenWidth <= 1024
-            ? "30%"
-            : "280px",
+        ? "45%"
+        : screenWidth <= 1024
+        ? "30%"
+        : "280px",
     maxWidth: 500, // Ancho máximo
     minWidth: 300, // Ancho mínimo
     marginBottom: 15,
@@ -556,7 +569,7 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     color: "#000000ff",
     fontWeight: "bold",
-    fontSize: 12
+    fontSize: 12,
   },
 
   // ===== ESTILOS DE ESTADO DE PRODUCTO =====
@@ -621,11 +634,17 @@ const styles = StyleSheet.create({
   // ===== HEADER SUPERIOR =====
   topHeader: {
     backgroundColor: "#fff",
-    paddingTop: 40,
+    paddingTop: 50,
     paddingHorizontal: 20,
-    paddingBottom: 15,
+    paddingBottom: 16,
+    marginBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   headerColumns: {
     flexDirection: "row",

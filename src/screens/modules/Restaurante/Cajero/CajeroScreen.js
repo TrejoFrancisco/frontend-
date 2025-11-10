@@ -49,7 +49,7 @@ export default function CajaSection() {
 
   const [historialModalVisible, setHistorialModalVisible] = useState(false);
 
-  // ✅ CORREGIDO: Verificar estado de la caja
+  // Verificar estado de la caja
   const verificarEstadoCaja = useCallback(async () => {
     try {
       const response = await API.get("/restaurante/cajero/reporte-turno", {
@@ -61,12 +61,10 @@ export default function CajaSection() {
         setArqueoActual(response.data.data.arqueo);
       }
     } catch (error) {
-      // Si hay error 404, significa que no hay caja abierta
       if (error.response?.status === 404) {
         setCajaAbierta(false);
         setArqueoActual(null);
       } else {
-        // Otros errores (403, 500, etc.)
         console.log("Error al verificar estado de caja:", error);
         Alert.alert(
           "Error",
@@ -74,7 +72,6 @@ export default function CajaSection() {
         );
       }
     } finally {
-      // ✅ IMPORTANTE: Siempre quitar el loading
       setLoading(false);
     }
   }, [token]);
@@ -104,7 +101,6 @@ export default function CajaSection() {
     }
   }, [token, cajaAbierta]);
 
-  // ✅ CORREGIDO: Cargar datos al montar
   useEffect(() => {
     if (token) {
       setLoading(true);
@@ -112,14 +108,12 @@ export default function CajaSection() {
     }
   }, [token]);
 
-  // Cargar comandas cuando la caja esté abierta
   useEffect(() => {
     if (cajaAbierta) {
       fetchComandasPendientes();
     }
   }, [cajaAbierta, fetchComandasPendientes]);
 
-  // Refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await verificarEstadoCaja();
@@ -129,7 +123,6 @@ export default function CajaSection() {
     setRefreshing(false);
   }, [verificarEstadoCaja, cajaAbierta, fetchComandasPendientes]);
 
-  // Ver ticket
   const handleVerTicket = useCallback(
     async (comanda, isUnificada) => {
       try {
@@ -156,20 +149,17 @@ export default function CajaSection() {
     [token]
   );
 
-  // Pagar comanda
   const handlePagar = useCallback((comanda, isUnificada) => {
     setSelectedComanda({ ...comanda, isUnificada });
     setPagoModalVisible(true);
   }, []);
 
-  // Abrir caja exitosamente
   const handleAperturaExitosa = useCallback(() => {
     setCajaAbierta(true);
     verificarEstadoCaja();
     fetchComandasPendientes();
   }, [verificarEstadoCaja, fetchComandasPendientes]);
 
-  // Cerrar caja exitosamente
   const handleCierreExitoso = useCallback(() => {
     setCajaAbierta(false);
     setArqueoActual(null);
@@ -177,7 +167,6 @@ export default function CajaSection() {
     setComandasUnificadas([]);
   }, []);
 
-  // Cerrar sesión
   const handleLogout = useCallback(() => {
     Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas cerrar sesión?", [
       { text: "Cancelar", style: "cancel" },
@@ -212,7 +201,6 @@ export default function CajaSection() {
     ]);
   }, [token, logout, navigation]);
 
-  // ✅ MEJORADO: Pantalla de carga
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -274,40 +262,44 @@ export default function CajaSection() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Botones de acción */}
+        {/* Título y botones de acción */}
         <View style={styles.headerContainer}>
-          <View style={styles.rowWrap}>
-            <Text style={styles.contentTitle}>Caja</Text>
+          <Text style={styles.contentTitle}>Caja</Text>
 
+          {/* Contenedor de botones mejorado */}
+          <View style={styles.botonesAccion}>
             {!cajaAbierta ? (
               <TouchableOpacity
-                style={styles.abrirCajaButton}
+                style={[styles.actionButton, styles.abrirCajaButton]}
                 onPress={() => setAperturaModalVisible(true)}
               >
-                <Text style={styles.abrirCajaButtonText}>🔓 Abrir Caja</Text>
+                <Text style={styles.actionButtonIcon}>🔓</Text>
+                <Text style={styles.actionButtonText}>Abrir Caja</Text>
               </TouchableOpacity>
             ) : (
               <>
                 <TouchableOpacity
-                  style={styles.reporteButton}
+                  style={[styles.actionButton, styles.reporteButton]}
                   onPress={() => setReporteModalVisible(true)}
                 >
-                  <Text style={styles.reporteButtonText}>📊 Reporte</Text>
+                  <Text style={styles.actionButtonIcon}>📊</Text>
+                  <Text style={styles.actionButtonText}>Reporte</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.cerrarCajaButton}
-                  onPress={() => setCierreModalVisible(true)}
-                >
-                  <Text style={styles.cerrarCajaButtonText}>
-                    🔒 Cerrar Caja
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.historialButton}
+                  style={[styles.actionButton, styles.historialButton]}
                   onPress={() => setHistorialModalVisible(true)}
                 >
-                  <Text style={styles.historialButtonText}>📚 Historial</Text>
+                  <Text style={styles.actionButtonIcon}>📚</Text>
+                  <Text style={styles.actionButtonText}>Historial</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.cerrarCajaButton]}
+                  onPress={() => setCierreModalVisible(true)}
+                >
+                  <Text style={styles.actionButtonIcon}>🔒</Text>
+                  <Text style={styles.actionButtonText}>Cerrar Caja</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -317,6 +309,9 @@ export default function CajaSection() {
         {/* Contenido según estado de caja */}
         {!cajaAbierta ? (
           <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <Text style={styles.emptyIcon}>💰</Text>
+            </View>
             <Text style={styles.emptyText}>Debes abrir la caja</Text>
             <Text style={styles.emptySubtext}>
               Haz clic en "Abrir Caja" para comenzar tu turno
@@ -324,6 +319,9 @@ export default function CajaSection() {
           </View>
         ) : comandas.length === 0 && comandasUnificadas.length === 0 ? (
           <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <Text style={styles.emptyIcon}>✅</Text>
+            </View>
             <Text style={styles.emptyText}>
               No hay comandas pendientes de pago
             </Text>
@@ -438,12 +436,17 @@ const styles = StyleSheet.create({
   },
   topHeader: {
     backgroundColor: "#fff",
-    paddingTop: 20,
+    paddingTop: 50,
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 16,
     marginBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   headerColumns: {
     flexDirection: "row",
@@ -462,176 +465,190 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   welcomeIcon: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     marginRight: 8,
   },
   userWelcome: {
-    fontSize: 25,
-    color: "#333",
-    fontWeight: "bold",
+    fontSize: 24,
+    color: "#1a1a1a",
+    fontWeight: "700",
     maxWidth: 195,
   },
   estadoCajaContainer: {
     marginTop: 4,
   },
   estadoCajaBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
     alignSelf: "flex-start",
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   cajaAbierta: {
     backgroundColor: "#d4edda",
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#28a745",
   },
   cajaCerrada: {
     backgroundColor: "#f8d7da",
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#dc3545",
   },
   estadoCajaText: {
     fontSize: 13,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: "700",
+    color: "#1a1a1a",
+    letterSpacing: 0.3,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FEE2E2",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#dc3545",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   logoutIcon: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     marginRight: 6,
   },
   logoutButtonText: {
-    fontSize: 22,
-    color: "#000000ff",
-    fontWeight: "500",
+    fontSize: 18,
+    color: "#dc3545",
+    fontWeight: "600",
   },
   headerContainer: {
-    paddingVertical: 5,
-  },
-  rowWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
+    paddingVertical: 12,
+    marginBottom: 8,
   },
   contentTitle: {
-    fontSize: 30,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 12,
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#1a1a1a",
+    marginBottom: 16,
+    letterSpacing: -0.5,
+  },
+  // ✨ NUEVO: Contenedor de botones mejorado
+  botonesAccion: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 8,
+  },
+  // ✨ NUEVO: Estilo base para botones de acción
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    minWidth: 140,
+    flex: 1,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  actionButtonIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    color: "#fff",
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   abrirCajaButton: {
-    flexShrink: 1,
-    flexGrow: 0,
-    minWidth: 150,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
     backgroundColor: "#28a745",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  abrirCajaButtonText: {
-    fontSize: 18,
-    color: "#fff",
-    fontWeight: "bold",
+    shadowColor: "#28a745",
   },
   reporteButton: {
-    flexShrink: 1,
-    flexGrow: 0,
-    minWidth: 120,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
     backgroundColor: "#17a2b8",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    shadowColor: "#17a2b8",
   },
-  reporteButtonText: {
-    fontSize: 16,
-    color: "#fff",
-    fontWeight: "bold",
+  historialButton: {
+    backgroundColor: "#6f42c1",
+    shadowColor: "#6f42c1",
   },
   cerrarCajaButton: {
-    flexShrink: 1,
-    flexGrow: 0,
-    minWidth: 140,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
     backgroundColor: "#dc3545",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    shadowColor: "#dc3545",
   },
-  cerrarCajaButtonText: {
-    fontSize: 16,
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  // ✨ MEJORADO: Empty state con iconos
   emptyState: {
     alignItems: "center",
-    marginTop: 100,
+    marginTop: 80,
     paddingHorizontal: 20,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  emptyIcon: {
+    fontSize: 50,
   },
   emptyText: {
     textAlign: "center",
-    color: "#666",
-    fontSize: 16,
-    fontWeight: "500",
+    color: "#333",
+    fontSize: 20,
+    fontWeight: "600",
     marginBottom: 8,
   },
   emptySubtext: {
     textAlign: "center",
-    color: "#999",
+    color: "#666",
     fontSize: 15,
+    lineHeight: 22,
   },
   loadingText: {
-    fontSize: 20,
-    color: "#000000ff",
+    fontSize: 18,
+    color: "#333",
+    marginTop: 12,
+    fontWeight: "500",
   },
   sectionTitle: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
-    marginTop: 8,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 16,
+    marginTop: 12,
+    letterSpacing: -0.3,
   },
   seccionUnificadas: {
-    marginTop: 24,
-    paddingTop: 20,
+    marginTop: 28,
+    paddingTop: 24,
     borderTopWidth: 2,
     borderTopColor: "#FFC107",
   },
   seccionUnificadasTitle: {
     fontSize: 22,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
-  },
-  historialButton: {
-    flexShrink: 1,
-    flexGrow: 0,
-    minWidth: 120,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: "#6f42c1",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  historialButtonText: {
-    fontSize: 16,
-    color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
 });
